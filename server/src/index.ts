@@ -4,6 +4,8 @@ import cors from "cors";
 import passport from "@utils/passport.util.js";
 import authRoutes from "@routes/auth.route.js";
 import { PORT, CLIENT_URL } from "@utils/config.util.js";
+import aiRouter from "@routes/ai.route.js";
+import testRouter from "@routes/test.route.js";
 
 const app = express();
 
@@ -17,6 +19,9 @@ app.get("/", (req, res) => {
 });
 
 app.use("/api/auth", authRoutes);
+app.use("/api/ai", aiRouter);
+app.use("/api/test", testRouter);
+
 
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
