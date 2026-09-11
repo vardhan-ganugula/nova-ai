@@ -1,142 +1,200 @@
 import React from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
   Video,
   Image as ImageIcon,
-  PenTool,
-  FolderHeart,
+  Mic,
+  Compass,
   Settings,
   Sparkles,
-  Crown,
+  Zap,
   LogOut,
 } from "lucide-react";
-import toast from "react-hot-toast";
+import { useGetUserQuery, useLogoutMutation } from "@/store/authSlice";
 
 interface SidebarProps {
   activeItem?: string;
 }
 
-export function DashboardSidebar({ activeItem = "Image Generator" }: SidebarProps) {
+export function DashboardSidebar({ activeItem }: SidebarProps) {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const { data: userData } = useGetUserQuery();
+  const [handleLogout] = useLogoutMutation();
+
+  const user = userData?.user;
+  const credits = user?.credits ?? 100;
+  const currentPath = location.pathname;
+
+  const onLogout = async () => {
+    try {
+      await handleLogout({}).unwrap();
+    } catch {
+      // ignore
+    }
+    navigate("/login");
+  };
+
+  const navItems = [
+    {
+      label: "Dashboard",
+      path: "/dashboard",
+      icon: LayoutDashboard,
+      active: activeItem === "Dashboard" || currentPath === "/dashboard",
+    },
+    {
+      label: "Image Generator",
+      path: "/image-gen",
+      icon: ImageIcon,
+      active: activeItem === "Image Generator" || currentPath === "/image-gen" || currentPath === "/generate",
+    },
+    {
+      label: "Explore Gallery",
+      path: "/image-gallary",
+      icon: Compass,
+      badge: "NEW",
+      badgeColor: "text-purple-700 border-purple-200 bg-purple-50",
+      active: activeItem === "Explore Gallery" || currentPath === "/image-gallary" || currentPath === "/image-gallery",
+    },
+    {
+      label: "Video Studio",
+      path: "/dashboard#video",
+      icon: Video,
+      badge: "HD",
+      badgeColor: "text-cyan-700 border-cyan-200 bg-cyan-50",
+      active: activeItem === "Video Studio",
+    },
+    {
+      label: "Audio Generator",
+      path: "/dashboard#audio",
+      icon: Mic,
+      active: activeItem === "Audio Generator",
+    },
+    {
+      label: "Settings",
+      path: "/settings",
+      icon: Settings,
+      active: activeItem === "Settings" || currentPath === "/settings",
+    },
+  ];
+
   return (
-    <aside className="fixed inset-y-0 left-0 z-40 hidden w-64 flex-col border-r border-border bg-card/70 backdrop-blur-xl md:flex">
+    <aside className="fixed inset-y-0 left-0 z-40 hidden w-64 flex-col border-r border-slate-200/90 bg-white backdrop-blur-xl md:flex shadow-xs">
       {/* Workspace Brand Logo: Nova AI */}
-      <div className="flex h-16 items-center gap-3 px-6 border-b border-border">
-        <Link to="/" className="flex items-center gap-2.5">
-          <div className="relative flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-primary shadow-elegant">
-            <Sparkles className="h-4.5 w-4.5 text-white" />
+      <div className="flex h-16 items-center gap-3 px-6 border-b border-slate-100">
+        <Link to="/dashboard" className="flex items-center gap-3 group">
+          <div className="relative flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-tr from-purple-600 via-rose-500 to-amber-400 shadow-sm group-hover:scale-105 transition-transform duration-300">
+            <Sparkles className="h-4 w-4 text-white" />
           </div>
           <div className="flex flex-col">
-            <span className="text-base font-bold tracking-tight text-foreground flex items-center gap-1.5">
+            <span className="font-serif-heading text-lg font-bold tracking-wide text-slate-900 flex items-center gap-2">
               Nova AI
-              <span className="rounded-md bg-primary/10 px-1.5 py-0.5 text-[10px] font-semibold text-primary border border-primary/20">
-                Studio
+              <span className="font-mono text-[9px] uppercase tracking-wider text-purple-700 border border-purple-200 px-1.5 py-0.2 rounded-full bg-purple-50">
+                [ STUDIO ]
               </span>
             </span>
-            <span className="text-[11px] text-muted-foreground font-medium">Creative Suite v2.0</span>
           </div>
         </Link>
       </div>
 
       {/* Navigation Items */}
       <nav className="flex-1 space-y-1.5 px-3 py-6">
-        <div className="px-3 pb-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-          Core Modules
+        <div className="px-3 pb-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">
+          [ 01 MODULES ]
         </div>
 
-        <Link
-          to="/"
-          className="group flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-medium text-muted-foreground transition-all duration-200 hover:bg-muted hover:text-foreground"
-        >
-          <LayoutDashboard className="h-4 w-4 text-muted-foreground transition-colors group-hover:text-foreground" />
-          <span>Dashboard</span>
-        </Link>
+        {navItems.map((item) => {
+          const Icon = item.icon;
+          if (item.active) {
+            return (
+              <div key={item.label} className="relative">
+                <Link
+                  to={item.path}
+                  className="flex items-center gap-3 rounded-xl bg-purple-50 px-3.5 py-2.5 text-xs font-semibold text-purple-900 border border-purple-200/80 shadow-xs"
+                >
+                  <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-purple-600 shadow-xs">
+                    <Icon className="h-3.5 w-3.5 text-white" />
+                  </div>
+                  <span>{item.label}</span>
+                  <span className="ml-auto flex h-1.5 w-1.5 rounded-full bg-purple-600" />
+                </Link>
+              </div>
+            );
+          }
 
-        <button
-          onClick={() => toast("Video Generator module active in Nova Studio", { icon: "🎬" })}
-          className="group flex w-full items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-medium text-muted-foreground transition-all duration-200 hover:bg-muted hover:text-foreground"
-        >
-          <Video className="h-4 w-4 text-muted-foreground transition-colors group-hover:text-foreground" />
-          <span>Video Generator</span>
-          <span className="ml-auto rounded-full bg-blue-500/10 px-2 py-0.5 text-[10px] font-semibold text-blue-600 border border-blue-500/20">
-            HD
-          </span>
-        </button>
-
-        {/* Active Highlight: Image Generator */}
-        <div className="relative">
-          <div className="flex items-center gap-3 rounded-xl bg-muted/80 px-3.5 py-2.5 text-sm font-semibold text-foreground border border-border shadow-sm">
-            <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-gradient-primary shadow-elegant">
-              <ImageIcon className="h-3.5 w-3.5 text-white" />
-            </div>
-            <span>Image Generator</span>
-            <span className="ml-auto flex h-2 w-2 rounded-full bg-primary shadow-[0_0_8px_hsl(var(--primary))]" />
-          </div>
-          {/* Active left indicator */}
-          <div className="absolute left-0 top-1/2 -translate-y-1/2 h-6 w-1 rounded-r-full bg-gradient-primary shadow-[0_0_8px_hsl(var(--primary))]" />
-        </div>
-
-        <button
-          onClick={() => toast("Content Writer module ready", { icon: "✍️" })}
-          className="group flex w-full items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-medium text-muted-foreground transition-all duration-200 hover:bg-muted hover:text-foreground"
-        >
-          <PenTool className="h-4 w-4 text-muted-foreground transition-colors group-hover:text-foreground" />
-          <span>Content Writer</span>
-        </button>
-
-        <button
-          onClick={() => toast("Opening user asset cloud gallery", { icon: "📂" })}
-          className="group flex w-full items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-medium text-muted-foreground transition-all duration-200 hover:bg-muted hover:text-foreground"
-        >
-          <FolderHeart className="h-4 w-4 text-muted-foreground transition-colors group-hover:text-foreground" />
-          <span>My Assets</span>
-          <span className="ml-auto text-xs font-mono text-muted-foreground">248</span>
-        </button>
-
-        <div className="pt-4 px-3 pb-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-          System
-        </div>
-
-        <button
-          onClick={() => toast("Settings & API Keys modal", { icon: "⚙️" })}
-          className="group flex w-full items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-medium text-muted-foreground transition-all duration-200 hover:bg-muted hover:text-foreground"
-        >
-          <Settings className="h-4 w-4 text-muted-foreground transition-colors group-hover:text-foreground" />
-          <span>Settings</span>
-        </button>
+          return (
+            <Link
+              key={item.label}
+              to={item.path}
+              className="cursor-pointer group flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-xs font-medium text-slate-600 transition-all duration-200 hover:bg-slate-50 hover:text-slate-900"
+            >
+              <Icon className="h-4 w-4 text-slate-400 transition-colors group-hover:text-slate-700" />
+              <span>{item.label}</span>
+              {item.badge && (
+                <span className={`ml-auto font-mono text-[9px] uppercase tracking-wider border px-1.5 py-0.5 rounded-full ${item.badgeColor}`}>
+                  {item.badge}
+                </span>
+              )}
+            </Link>
+          );
+        })}
       </nav>
 
-      {/* Pro Plan Credit Badge */}
-      <div className="px-4 py-3 mx-3 mb-4 rounded-2xl bg-muted/50 border border-border">
+      {/* Token Counter & Tracker Card at Bottom */}
+      <div className="mx-3 mb-3 rounded-2xl border border-slate-200 bg-slate-50/70 p-3.5 shadow-xs">
         <div className="flex items-center justify-between text-xs mb-1.5">
-          <span className="flex items-center gap-1.5 font-medium text-foreground">
-            <Crown className="h-3.5 w-3.5 text-amber-500" /> Nova Pro GPU
+          <span className="flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-wider text-slate-700 font-semibold">
+            <Zap className="h-3.5 w-3.5 text-amber-500 fill-amber-500" /> FAST TOKENS
           </span>
-          <span className="text-[11px] font-mono font-semibold text-primary">840/1000 Fast</span>
+          <span className="font-mono text-[10px] font-bold text-purple-700">[ {credits}/1000 ]</span>
         </div>
-        <div className="h-1.5 w-full rounded-full bg-border overflow-hidden">
-          <div className="h-full w-[84%] rounded-full bg-gradient-primary shadow-elegant" />
+        <div className="h-1.5 w-full rounded-full bg-slate-200 overflow-hidden">
+          <div
+            className="h-full rounded-full bg-gradient-to-r from-purple-500 via-rose-500 to-amber-500 transition-all duration-500"
+            style={{ width: `${Math.min(100, Math.max(5, (credits / 1000) * 100))}%` }}
+          />
         </div>
+        <p className="mt-2 font-mono text-[9px] uppercase text-slate-500 flex items-center justify-between">
+          <span>STANDARD PLAN</span>
+          <Link
+            to="/settings"
+            className="text-purple-600 hover:underline cursor-pointer bg-transparent border-none p-0 text-[9px] font-bold"
+          >
+            VIEW USAGE
+          </Link>
+        </p>
       </div>
 
       {/* User Profile Card at Bottom */}
-      <div className="border-t border-border p-4 bg-muted/30">
-        <div className="flex items-center gap-3 rounded-xl p-2 transition-colors hover:bg-muted">
+      <div className="border-t border-slate-100 p-3.5 bg-slate-50/40">
+        <div className="flex items-center gap-3 rounded-xl p-1.5 transition-colors hover:bg-slate-100/70">
           <div className="relative">
             <img
-              src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80"
+              src={
+                user?.profilePicture ||
+                "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80"
+              }
               alt="Avatar"
-              className="h-9 w-9 rounded-full object-cover border border-border ring-2 ring-primary/20"
+              className="h-8 w-8 rounded-full object-cover border border-slate-200"
             />
-            <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-emerald-500 ring-2 ring-card" />
+            <span className="absolute bottom-0 right-0 h-2 w-2 rounded-full bg-emerald-500 ring-2 ring-white" />
           </div>
           <div className="flex flex-col min-w-0">
-            <span className="text-xs font-semibold text-foreground truncate">Alex Morgan</span>
-            <span className="text-[11px] text-muted-foreground truncate">alex.m@nova-ai.io</span>
+            <span className="text-xs font-semibold text-slate-800 truncate">
+              {user?.displayName || user?.username || "Creative Artist"}
+            </span>
+            <span className="font-mono text-[9px] text-slate-400 truncate uppercase">
+              {user?.email || "user@nova.ai"}
+            </span>
           </div>
-          <Link to="/login" title="Logout" className="ml-auto p-1.5 text-muted-foreground hover:text-foreground rounded-lg hover:bg-muted">
+          <button
+            onClick={onLogout}
+            title="Logout"
+            className="ml-auto p-1.5 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-rose-50 transition-all cursor-pointer"
+          >
             <LogOut className="h-4 w-4" />
-          </Link>
+          </button>
         </div>
       </div>
     </aside>

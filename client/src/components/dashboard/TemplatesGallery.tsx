@@ -1,5 +1,5 @@
 import React from "react";
-import { Sparkles, ArrowRight, Copy } from "lucide-react";
+import { Sparkles, Copy } from "lucide-react";
 
 export interface TemplateCard {
   id: string;
@@ -8,6 +8,7 @@ export interface TemplateCard {
   prompt: string;
   image: string;
   badgeColor: string;
+  meshBg?: string;
 }
 
 interface TemplatesGalleryProps {
@@ -27,25 +28,25 @@ export function TemplatesGallery({
 }: TemplatesGalleryProps) {
   return (
     <section className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2.5">
-          <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-primary/10 border border-primary/20 text-primary">
-            <Sparkles className="h-3.5 w-3.5" />
-          </div>
-          <div>
-            <h2 className="text-base font-bold tracking-tight text-foreground">Prompt Templates Gallery</h2>
-            <p className="text-xs text-muted-foreground">Preset signature art styles curated for instant high-yield output</p>
-          </div>
+      {/* Section Header */}
+      <div className="flex items-center justify-between border-b border-slate-200 pb-3">
+        <div className="flex items-center gap-3">
+          <h2 className="font-serif-heading text-2xl font-bold tracking-tight text-slate-900">
+            Prompt Templates & Preset Styles
+          </h2>
+          <span className="font-mono text-[10px] uppercase tracking-wider text-purple-700 border border-purple-200 bg-purple-50 px-2 py-0.5 rounded-full font-semibold">
+            [ 03 PRESET STYLES ]
+          </span>
         </div>
 
         <div className="flex items-center gap-2">
-          <span className="text-xs font-medium text-primary flex items-center gap-1">
-            Hover style to inspect action triggers <ArrowRight className="h-3 w-3" />
+          <span className="font-mono text-[10px] uppercase text-slate-400 hidden sm:inline">
+            [ HOVER TO EXPAND ACTIONS ]
           </span>
         </div>
       </div>
 
-      {/* Template Cards Grid */}
+      {/* Grid of Prompt Presets */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {templates.map((template) => {
           const isHovered = hoveredTemplate === template.id;
@@ -54,76 +55,94 @@ export function TemplatesGallery({
             <div
               key={template.id}
               onMouseEnter={() => setHoveredTemplate(template.id)}
-              className={`group relative flex h-72 flex-col justify-end overflow-hidden rounded-2xl border transition-all duration-300 ${
+              onMouseLeave={() => setHoveredTemplate(null)}
+              className={`group relative flex h-72 flex-col justify-end overflow-hidden rounded-2xl border transition-all duration-300 shadow-sm ${
                 isHovered
-                  ? "border-primary/50 shadow-card-hover scale-[1.01]"
-                  : "border-border bg-card shadow-card hover:border-primary/30"
+                  ? "border-purple-300 -translate-y-1 scale-[1.01] shadow-md"
+                  : "border-slate-200/90 bg-white hover:border-slate-300"
               }`}
             >
-              {/* Background Image */}
+              {/* Background Preset Image */}
               <img
                 src={template.image}
                 alt={template.title}
-                className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
+                className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
               />
 
-              {/* Soft Gradient Veil */}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/40 to-transparent" />
+              {/* Light Scrim Overlay */}
+              <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 via-slate-900/40 to-transparent" />
 
-              {/* Top Tag */}
+              {/* Top Tag Pill */}
               <div className="absolute top-3.5 left-3.5 z-10">
                 <span
-                  className={`rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider backdrop-blur-md border ${template.badgeColor}`}
+                  className="rounded-full px-2.5 py-0.5 font-mono text-[9px] uppercase tracking-wider backdrop-blur-md border border-white/30 bg-black/40 text-white font-semibold"
                 >
-                  {template.tag}
+                  [ {template.tag} ]
                 </span>
               </div>
 
-              {/* Default Info Content (Shown when NOT hovered) */}
-              <div className={`relative z-10 p-5 transition-opacity duration-300 ${isHovered ? "opacity-0 pointer-events-none" : "opacity-100"}`}>
-                <h3 className="text-lg font-bold text-white tracking-tight">{template.title}</h3>
-                <p className="mt-1 text-xs text-zinc-200 line-clamp-2 leading-relaxed">
+              {/* Default Info Content */}
+              <div
+                className={`relative z-10 p-5 transition-opacity duration-300 ${
+                  isHovered ? "opacity-0 pointer-events-none" : "opacity-100"
+                }`}
+              >
+                <h3 className="font-serif-heading text-xl font-bold text-white tracking-wide">
+                  {template.title}
+                </h3>
+                <p className="mt-1 font-sans text-xs text-slate-200 line-clamp-2 leading-relaxed">
                   {template.prompt}
                 </p>
               </div>
 
-              {/* Active / Hovered Card Revealing Overlay Buttons */}
+              {/* Active Hover Overlay with Clean Glassmorphism */}
               <div
-                className={`absolute inset-0 z-20 flex flex-col justify-between bg-card/95 p-5 backdrop-blur-md transition-all duration-300 ${
-                  isHovered ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4 pointer-events-none"
+                className={`absolute inset-0 z-20 flex flex-col justify-between overflow-hidden bg-white/95 p-5 backdrop-blur-md transition-all duration-300 ${
+                  isHovered
+                    ? "opacity-100 translate-y-0"
+                    : "opacity-0 translate-y-4 pointer-events-none"
                 }`}
               >
                 <div>
                   <div className="flex items-center justify-between">
-                    <span className="text-sm font-bold text-foreground">{template.title}</span>
-                    <span className="text-[10px] font-mono text-primary bg-primary/10 px-2 py-0.5 rounded border border-primary/20">
-                      Preset Active
+                    <span className="font-serif-heading text-lg font-bold text-slate-900">
+                      {template.title}
+                    </span>
+                    <span className="font-mono text-[9px] uppercase tracking-wider text-purple-700 border border-purple-200 bg-purple-50 px-2 py-0.5 rounded-full font-bold">
+                      [ PRESET ]
                     </span>
                   </div>
-                  <p className="mt-2 text-xs text-muted-foreground leading-relaxed italic bg-muted/40 p-2.5 rounded-xl border border-border">
+                  <p className="mt-2 font-sans text-xs text-slate-700 leading-relaxed italic bg-slate-50 p-3 rounded-xl border border-slate-200">
                     "{template.prompt}"
                   </p>
                 </div>
 
-                {/* Overlay Action Buttons */}
-                <div className="flex flex-col gap-2 pt-2">
+                {/* Action Buttons */}
+                <div className="flex items-center gap-2 pt-1">
                   <button
-                    onClick={() => onReusePrompt(template.prompt)}
-                    className="flex w-full items-center justify-center gap-2 rounded-xl bg-card border border-border px-4 py-2.5 text-xs font-semibold text-foreground transition-all hover:bg-muted hover:border-primary/40 shadow-sm"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onReusePrompt(template.prompt);
+                    }}
+                    className="cursor-pointer flex-1 flex items-center justify-center gap-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-[11px] font-semibold text-slate-800 py-2 px-3 border border-slate-200 transition-all active:scale-95 shadow-xs"
                   >
-                    <Copy className="h-3.5 w-3.5 text-primary" />
-                    <span>Reuse Prompt</span>
+                    <Copy className="h-3 w-3 text-purple-600" />
+                    <span>Use Prompt</span>
                   </button>
 
                   <button
-                    onClick={() => onGenerateSimilar(template)}
-                    className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-primary px-4 py-2.5 text-xs font-bold text-white shadow-elegant hover:shadow-glow transition-all hover:scale-[1.02]"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onGenerateSimilar(template);
+                    }}
+                    className="cursor-pointer flex items-center justify-center gap-1.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-[11px] font-bold py-2 px-3 transition-all active:scale-95 shadow-xs hover:scale-105"
                   >
-                    <Sparkles className="h-3.5 w-3.5 text-amber-300" />
-                    <span>Generate Similar</span>
+                    <Sparkles className="h-3 w-3 text-white" />
+                    <span>Remix</span>
                   </button>
                 </div>
               </div>
+
             </div>
           );
         })}

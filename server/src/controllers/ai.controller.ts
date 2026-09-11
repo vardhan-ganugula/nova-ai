@@ -1,6 +1,20 @@
-import {falAI} from '@/services/ai.service.js';
+import { falAI } from '@/services/ai.service.js';
 
+export async function generateImageWithFalAI(
+    prompt: string, 
+    options?: { aspectRatio?: string; style?: string; negativePrompt?: string; model?: string }
+): Promise<string> {
+    return await falAI.generateImage(prompt, options);
+}
 
-export async function generateImageWithFalAI(prompt: string): Promise<void> {
-    await falAI.generateImage(prompt);
+export async function generateVideoWithFalAI(prompt: string): Promise<string> {
+    return await falAI.generateVideo(prompt);
+}
+
+export async function upscaleImageWithFalAI(imageUrl: string): Promise<string> {
+    return await falAI.upscaleImage(imageUrl);
+}
+
+export async function removeBackgroundWithFalAI(imageUrl: string): Promise<string> {
+    return await falAI.removeBackground(imageUrl);
 }

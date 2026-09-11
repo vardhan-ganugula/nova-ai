@@ -13,36 +13,16 @@ const apiSlice = createApi({
   }),
 
   reducerPath: 'api',
+  tagTypes: ['User', 'History', 'Gallery', 'Collection'],
 
   endpoints: (builder) => ({
 
-    getUser: builder.query({
+    getUser: builder.query<{ user: any }, void>({
       query: () => ({
         url: '/auth/user',
         method: 'GET',
       }),
-      onQueryStarted: async (_, { queryFulfilled }) => {
-        const curToast = toast.loading('Fetching user data...');
-        try {
-          await queryFulfilled;
-        } catch (err) {
-          const {error} = err as {error: FetchBaseQueryError | SerializedError};
-
-          if ('status' in error) {
-            if (error.status === 401 || error.status === 403) {
-              toast.error('Unauthorized access. Please log in.', { id: curToast });
-            }
-            else if (error.status === 'FETCH_ERROR') {
-              toast.error('Backend Error', { id: curToast });
-            }
-            else {
-              toast.error('An error occurred while fetching user data.', { id: curToast });
-            }
-          }
-
-        }
-
-      },
+      providesTags: ['User'],
     }),
 
     login: builder.mutation({
@@ -51,24 +31,24 @@ const apiSlice = createApi({
         method: 'POST',
         body: credentials,
       }),
+      invalidatesTags: ['User'],
       onQueryStarted: async (_, { queryFulfilled }) => {
-        const curToast = toast.loading('Logging in...');
         try {
-          const {data} = await queryFulfilled;
-          toast.success(data?.message, { id: curToast });
-        } catch (err) {
-          const {error} = err as { error: FetchBaseQueryError | SerializedError};
-          console.error('Error logging in:', error);
-          if ('status' in error) {
-            if (error.status === 401 || error.status === 403) {
-              toast.error('Invalid credentials. Please try again.', { id: curToast });
-            }
-            else if (error.status === 'FETCH_ERROR') {
-              toast.error('Backend Error', { id: curToast });
-            }
+          const { data } = await queryFulfilled;
+          const backendMessage = data?.message || data?.msg;
+          if (backendMessage) {
+            toast.success(backendMessage);
+          }
+        } catch (err: any) {
+          const errData = err?.error?.data;
+          const backendMessage =
+            typeof errData === 'string'
+              ? errData
+              : errData?.message || errData?.error;
+          if (backendMessage) {
+            toast.error(backendMessage);
           }
         }
-
       },
     }),
 
@@ -79,26 +59,22 @@ const apiSlice = createApi({
         body: userData,
       }),
       onQueryStarted: async (_, { queryFulfilled }) => {
-        const curToast = toast.loading('Registering...');
         try {
-          const {data} = await queryFulfilled;
-          toast.success(data?.message || 'Registration Successfull', { id: curToast });
-        } catch (err) {
-          const { error } = err as {
-            error: FetchBaseQueryError | SerializedError;
-          };
-          if ('status' in error) {
-            if (error.status === 400) {
-              toast.error('Invalid registration data. Please check your input.', { id: curToast });
-            }
-            else if (error.status === 'FETCH_ERROR') {
-              toast.error('Backend Error', { id: curToast });
-            } else {
-              toast.error('An error occurred during registration.', { id: curToast });
-            }
+          const { data } = await queryFulfilled;
+          const backendMessage = data?.message || data?.msg;
+          if (backendMessage) {
+            toast.success(backendMessage);
+          }
+        } catch (err: any) {
+          const errData = err?.error?.data;
+          const backendMessage =
+            typeof errData === 'string'
+              ? errData
+              : errData?.message || errData?.error;
+          if (backendMessage) {
+            toast.error(backendMessage);
           }
         }
-
       },
     }),
 
@@ -107,10 +83,163 @@ const apiSlice = createApi({
         url: '/auth/logout',
         method: 'POST',
       }),
+      invalidatesTags: ['User'],
+      onQueryStarted: async (_, { queryFulfilled }) => {
+        try {
+          const { data } = await queryFulfilled;
+          const backendMessage = data?.message || data?.msg;
+          if (backendMessage) {
+            toast.success(backendMessage);
+          }
+        } catch (err: any) {
+          const errData = err?.error?.data;
+          const backendMessage =
+            typeof errData === 'string'
+              ? errData
+              : errData?.message || errData?.error;
+          if (backendMessage) {
+            toast.error(backendMessage);
+          }
+        }
+      },
+    }),
+
+    generateImage: builder.mutation<
+      { message: string; url: string; image?: any; creditsRemaining: number; tokensDeducted: number },
+      { prompt: string; style?: string; aspectRatio?: string; model?: string; negativePrompt?: string }
+    >({
+      query: (body) => ({
+        url: '/ai/generate-image',
+        method: 'POST',
+        body,
+      }),
+      invalidatesTags: ['User', 'History', 'Gallery', 'Collection'],
+    }),
+
+    generateVideo: builder.mutation<{ message: string; url: string; creditsRemaining: number; tokensDeducted: number }, { prompt: string }>({
+      query: (body) => ({
+        url: '/ai/generate-video',
+        method: 'POST',
+        body,
+      }),
+      invalidatesTags: ['User'],
+    }),
+
+    generateText: builder.mutation<{ text: string; creditsRemaining: number; tokensDeducted: number }, { prompt: string; model?: string }>({
+      query: (body) => ({
+        url: '/ai/generate-text',
+        method: 'POST',
+        body,
+      }),
+      invalidatesTags: ['User'],
+    }),
+
+    upscaleImage: builder.mutation<{ message: string; url: string; creditsRemaining: number; tokensDeducted: number }, { imageUrl: string; prompt?: string }>({
+      query: (body) => ({
+        url: '/ai/upscale-image',
+        method: 'POST',
+        body,
+      }),
+      invalidatesTags: ['User', 'History', 'Collection'],
+    }),
+
+    removeBackground: builder.mutation<{ message: string; url: string; creditsRemaining: number; tokensDeducted: number }, { imageUrl: string; prompt?: string }>({
+      query: (body) => ({
+        url: '/ai/remove-bg',
+        method: 'POST',
+        body,
+      }),
+      invalidatesTags: ['User', 'History', 'Collection'],
+    }),
+
+    getUserHistory: builder.query<{ images: any[] }, void>({
+      query: () => ({
+        url: '/ai/user-history',
+        method: 'GET',
+      }),
+      providesTags: ['History'],
+    }),
+
+    getUserCollections: builder.query<{ collections: any[] }, void>({
+      query: () => ({
+        url: '/ai/user-collections',
+        method: 'GET',
+      }),
+      providesTags: ['Collection'],
+    }),
+
+    getPublicGallery: builder.query<{ images: any[] }, void>({
+      query: () => ({
+        url: '/ai/public-gallery',
+        method: 'GET',
+      }),
+      providesTags: ['Gallery'],
+    }),
+
+    toggleVisibility: builder.mutation<{ message: string; isPublic: boolean; image: any }, { id: string }>({
+      query: ({ id }) => ({
+        url: `/ai/images/${id}/toggle-visibility`,
+        method: 'PATCH',
+      }),
+      invalidatesTags: ['History', 'Gallery', 'Collection'],
+    }),
+
+    toggleLike: builder.mutation<{ liked: boolean; likesCount: number }, { id: string }>({
+      query: ({ id }) => ({
+        url: `/ai/images/${id}/like`,
+        method: 'POST',
+      }),
+      invalidatesTags: ['Gallery'],
+    }),
+
+    updateProfile: builder.mutation<{ user: any; message: string }, { displayName?: string; username?: string }>({
+      query: (body) => ({
+        url: '/auth/profile',
+        method: 'PATCH',
+        body,
+      }),
+      invalidatesTags: ['User'],
+    }),
+
+    changePassword: builder.mutation<{ message: string }, { currentPassword: string; newPassword: string }>({
+      query: (body) => ({
+        url: '/auth/change-password',
+        method: 'POST',
+        body,
+      }),
+    }),
+
+    getTokenUsage: builder.query<{
+      credits: number;
+      tokenCosts: { image: number; upscale: number; removeBg: number; video: number; text: number };
+      history: Array<{ id: string; prompt: string; type: string; r2Url: string; status: string; tokensDeducted: number; createdAt: string }>;
+    }, void>({
+      query: () => ({
+        url: '/ai/token-usage',
+        method: 'GET',
+      }),
+      providesTags: ['User'],
     }),
   })
 });
 
-
-export const { useGetUserQuery, useLoginMutation, useLogoutMutation, useRegisterMutation } = apiSlice;
+export const {
+  useGetUserQuery,
+  useLoginMutation,
+  useLogoutMutation,
+  useRegisterMutation,
+  useGenerateImageMutation,
+  useGenerateVideoMutation,
+  useGenerateTextMutation,
+  useUpscaleImageMutation,
+  useRemoveBackgroundMutation,
+  useGetUserHistoryQuery,
+  useGetUserCollectionsQuery,
+  useGetPublicGalleryQuery,
+  useToggleVisibilityMutation,
+  useToggleLikeMutation,
+  useUpdateProfileMutation,
+  useChangePasswordMutation,
+  useGetTokenUsageQuery,
+} = apiSlice;
 export default apiSlice;

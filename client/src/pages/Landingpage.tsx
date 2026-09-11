@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { useGetUserQuery } from "@/store/authSlice";
 
 import {
   Accordion,
@@ -968,14 +969,15 @@ function Footer() {
 /* -------------------------------------------------------------------------- */
 
 export default function Landing() {
-  // const { user, loading } = useAuth();
-  const loading = true;
-  const user = 'asdfsdf';
+  const { data: userData, isLoading } = useGetUserQuery();
+  const user = userData?.user;
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (!loading && user) navigate("/dashboard", { replace: true });
-  }, [user, loading, navigate]);
+    if (!isLoading && user) {
+      navigate("/dashboard", { replace: true });
+    }
+  }, [user, isLoading, navigate]);
 
   return (
     <div className="relative min-h-screen overflow-x-hidden bg-background text-foreground">
