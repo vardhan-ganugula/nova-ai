@@ -5,7 +5,10 @@ import bcrypt from 'bcrypt';
 import { Redis } from 'ioredis';
 import { v4 as uuidv4 } from 'uuid';
 import { REDIS_URL } from '@/utils/config.util.js';
+import {MailService} from './mail.service.js';
 
+
+const mailService = new MailService();
 const redis = new Redis(REDIS_URL);
 const SALT_ROUNDS = 10;
 
@@ -31,6 +34,7 @@ export class AuthService {
       email,
       username: username || generateDefaultUsername(),
       isVerified: false,
+      credits: 100,
     }).returning();
 
     await db.insert(accounts).values({
@@ -42,6 +46,7 @@ export class AuthService {
 
     const verificationToken = uuidv4();
     await redis.set(`verify:${verificationToken}`, newUser.id, 'EX', 86400);
+    await mailService.sendVerificationMail(email, newUser.username, verificationToken);
 
     return { message: "Registration successful. Please check your email to verify your account." };
   }
@@ -99,6 +104,7 @@ export class AuthService {
         displayName: name,
         profilePicture: picture,
         isVerified: true,
+        credits: 100,
       }).returning();
 
       user = userResult[0];
@@ -143,6 +149,7 @@ export class AuthService {
         displayName: name,
         profilePicture: picture,
         isVerified: true,
+        credits: 100,
       }).returning();
 
       user = userResult[0];
@@ -173,6 +180,50 @@ export class AuthService {
     const user = userResult[0];
     if (!user) throw new Error('User not found.');
     return this.sanitizeUser(user);
+  }
+
+  async updateProfile(userId: string, data: { displayName?: string; username?: string }) {
+    const updateData: any = { updatedAt: new Date() };
+    if (data.displayName !== undefined) updateData.displayName = data.displayName;
+    if (data.username !== undefined) updateData.username = data.username;
+
+    const [updatedUser] = await db
+      .update(users)
+      .set(updateData)
+      .where(eq(users.id, userId))
+      .returning();
+
+    if (!updatedUser) throw new Error("User not found.");
+    return this.sanitizeUser(updatedUser);
+  }
+
+  async changePassword(userId: string, currentPassword: string, newPassword: string) {
+    if (!newPassword || newPassword.length < 6) {
+      throw new Error("New password must be at least 6 characters long.");
+    }
+
+    const [account] = await db
+      .select()
+      .from(accounts)
+      .where(and(eq(accounts.userId, userId), eq(accounts.provider, 'credentials')))
+      .limit(1);
+
+    if (!account || !account.passwordHash) {
+      throw new Error("Password cannot be changed for OAuth-linked accounts (Google/GitHub).");
+    }
+
+    const isMatch = await bcrypt.compare(currentPassword, account.passwordHash);
+    if (!isMatch) {
+      throw new Error("Current password is incorrect.");
+    }
+
+    const newHash = await bcrypt.hash(newPassword, SALT_ROUNDS);
+    await db
+      .update(accounts)
+      .set({ passwordHash: newHash })
+      .where(eq(accounts.id, account.id));
+
+    return { message: "Password updated successfully." };
   }
 
   async destroySession(sessionId: string) {

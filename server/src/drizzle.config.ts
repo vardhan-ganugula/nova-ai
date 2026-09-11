@@ -1,5 +1,5 @@
 import { defineConfig } from "drizzle-kit";
-import {DATABASE_URL} from "@utils/config.util.js";
+import {DATABASE_URL, NODE_ENV} from "@utils/config.util.js";
 
 
 export default defineConfig({
@@ -8,6 +8,6 @@ export default defineConfig({
   dialect: "postgresql",
   dbCredentials: {
     url: DATABASE_URL,
-    ssl: "require"
+    ...(NODE_ENV === 'production' && {ssl : 'require'})
   },
 });
