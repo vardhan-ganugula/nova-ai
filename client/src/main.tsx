@@ -1,4 +1,9 @@
 import { StrictMode } from 'react'
+
+// Force dark theme globally
+if (typeof document !== 'undefined') {
+  document.documentElement.classList.add('dark');
+}
 import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.tsx';

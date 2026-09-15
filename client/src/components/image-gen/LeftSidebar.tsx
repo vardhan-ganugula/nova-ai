@@ -1,5 +1,6 @@
 import React from "react";
 import { Sparkles, Sliders, Layers, ChevronDown, Wand2 } from "lucide-react";
+import { useAppSelector } from "@/store";
 
 export interface GenParameters {
   aspectRatio: string;
@@ -79,6 +80,8 @@ export const LeftSidebar: React.FC<LeftSidebarProps> = ({
   isGenerating,
   onGenerate,
 }) => {
+  const imageModels = useAppSelector((state) => state.models.imageModels);
+  const activeModelPrice = imageModels[selectedModel]?.price ?? 10;
   return (
     <aside className="w-80 sm:w-96 flex-shrink-0 h-full border-r border-white/10 bg-[#141417] flex flex-col z-20 select-none">
       {/* Sidebar Header */}
@@ -153,14 +156,14 @@ export const LeftSidebar: React.FC<LeftSidebarProps> = ({
             <Layers className="w-3.5 h-3.5 text-[#FF7A00]" />
             Inference Model
           </label>
-          <div className="grid grid-cols-1 gap-2">
-            {MODELS.map((model) => {
-              const isSelected = selectedModel === model.id;
+          <div className="grid grid-cols-1 gap-2 max-h-64 overflow-y-auto pr-1 custom-scrollbar">
+            {Object.entries(imageModels).map(([key, model]) => {
+              const isSelected = selectedModel === key;
               return (
                 <button
-                  key={model.id}
+                  key={key}
                   type="button"
-                  onClick={() => setSelectedModel(model.id)}
+                  onClick={() => setSelectedModel(key)}
                   className={`relative p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
                     isSelected
                       ? "bg-[#FF7A00]/10 border-[#FF7A00] shadow-[0_0_15px_rgba(255,122,0,0.15)]"
@@ -169,20 +172,29 @@ export const LeftSidebar: React.FC<LeftSidebarProps> = ({
                 >
                   <div className="flex items-center justify-between mb-1">
                     <span className="font-semibold text-white flex items-center gap-1.5">
-                      {model.name}
-                      <span className="text-[10px] font-mono text-zinc-400">({model.version})</span>
+                      {key}
+                      {model.version && (
+                        <span className="text-[10px] font-mono text-zinc-400">({model.version})</span>
+                      )}
                     </span>
-                    <span
-                      className={`text-[9px] font-medium px-1.5 py-0.5 rounded ${
-                        isSelected
-                          ? "bg-[#FF7A00] text-black font-bold"
-                          : "bg-white/5 text-zinc-400"
-                      }`}
-                    >
-                      {model.badge}
-                    </span>
+                    <div className="flex items-center gap-1">
+                      {model.badge && (
+                        <span
+                          className={`text-[9px] font-medium px-1.5 py-0.5 rounded ${
+                            isSelected
+                              ? "bg-[#FF7A00] text-black font-bold"
+                              : "bg-white/5 text-zinc-400"
+                          }`}
+                        >
+                          {model.badge}
+                        </span>
+                      )}
+                      <span className="text-[9px] font-mono text-zinc-500 font-semibold">
+                        {model.price}T
+                      </span>
+                    </div>
                   </div>
-                  <p className="text-[11px] text-zinc-400 leading-snug line-clamp-1">{model.desc}</p>
+                  <p className="text-[11px] text-zinc-400 leading-snug line-clamp-1">{model.description}</p>
                 </button>
               );
             })}
@@ -297,7 +309,7 @@ export const LeftSidebar: React.FC<LeftSidebarProps> = ({
           ) : (
             <>
               <Sparkles className="w-4 h-4 fill-black text-black" />
-              <span>Generate Art (2 Tokens)</span>
+              <span>Generate Art ({activeModelPrice} Tokens)</span>
             </>
           )}
         </button>

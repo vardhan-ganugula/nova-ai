@@ -2,7 +2,8 @@ import { createOpenRouter } from '@openrouter/ai-sdk-provider';
 import { generateText } from 'ai';
 import { fal } from "@fal-ai/client";
 import { FAL_API_KEY, OPENROUTER_API_KEY } from '@/utils/config.util.js';
-import { aiChatModels } from '@/utils/ai.util.js';
+import { aiChatModels, aiImageModels } from '@/utils/ai.util.js';
+import { applyStyleToPrompt } from '@/utils/style.util.js';
 
 
 
@@ -39,13 +40,30 @@ class FalAI {
         prompt: string,
         options?: { aspectRatio?: string; style?: string; negativePrompt?: string; model?: string }
     ): Promise<string> {
-        let fullPrompt = prompt;
-        if (options?.style && options.style !== "Default" && options.style !== "None") {
-            fullPrompt = `${options.style} aesthetic, ${fullPrompt}`;
+        // Resolve Fal.ai model endpoint first
+        let endpoint = "fal-ai/flux/schnell";
+        if (options?.model) {
+            const matchedModel = (aiImageModels as Record<string, any>)[options.model];
+            if (matchedModel?.name) {
+                endpoint = matchedModel.name;
+            } else if (options.model.startsWith("fal-ai/")) {
+                endpoint = options.model;
+            } else {
+                const found = Object.entries(aiImageModels).find(
+                    ([k, v]) => k.toLowerCase() === options.model?.toLowerCase() || v.name.toLowerCase() === options.model?.toLowerCase()
+                );
+                if (found) {
+                    endpoint = found[1].name;
+                }
+            }
         }
-        if (options?.negativePrompt) {
-            fullPrompt = `${fullPrompt} (avoid: ${options.negativePrompt})`;
-        }
+
+        // Apply rich style presets, extract embedded negative prompts, and resolve conflicting terms
+        const { styledPrompt, finalNegativePrompt } = applyStyleToPrompt(
+            prompt,
+            options?.style,
+            options?.negativePrompt
+        );
 
         let imageSize: any = "landscape_16_9";
         if (options?.aspectRatio === "1:1") imageSize = "square_hd";
@@ -53,12 +71,26 @@ class FalAI {
         else if (options?.aspectRatio === "4:3") imageSize = "landscape_4_3";
         else if (options?.aspectRatio === "16:9") imageSize = "landscape_16_9";
 
-        const result: any = await fal.subscribe("fal-ai/flux/schnell", {
-            input: {
-                prompt: fullPrompt || "A futuristic cyberpunk city at night, cinematic lighting, highly detailed",
-                image_size: imageSize,
-                num_images: 1,
-            },
+        const inputPayload: Record<string, any> = {
+            prompt: styledPrompt || "A futuristic cyberpunk city at night, cinematic lighting, highly detailed",
+            image_size: imageSize,
+            num_images: 1,
+        };
+
+        const isFlux = endpoint.toLowerCase().includes("flux");
+        if (finalNegativePrompt && !isFlux) {
+            inputPayload.negative_prompt = finalNegativePrompt;
+        }
+
+        if (endpoint.includes("ideogram")) {
+            inputPayload.aspect_ratio = options?.aspectRatio || "16:9";
+            if (finalNegativePrompt) {
+                inputPayload.negative_prompt = finalNegativePrompt;
+            }
+        }
+
+        const result: any = await fal.subscribe(endpoint as any, {
+            input: inputPayload,
             logs: true,
             onQueueUpdate(update) {
                 if (update.status === "IN_PROGRESS") {
@@ -67,7 +99,7 @@ class FalAI {
             },
         });
         
-        const imageUrl = result?.data?.images?.[0]?.url;
+        const imageUrl = result?.data?.images?.[0]?.url || result?.images?.[0]?.url || result?.image?.url || result?.data?.image?.url;
         if (!imageUrl) {
             throw new Error("No image returned from Fal AI");
         }

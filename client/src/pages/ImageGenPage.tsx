@@ -6,6 +6,8 @@ import { LeftSidebar, type GenParameters } from "@/components/image-gen/LeftSide
 import { CenterCanvas, type GenerationStep } from "@/components/image-gen/CenterCanvas";
 import { RightSidebar, type PresetItem } from "@/components/image-gen/RightSidebar";
 import { useGetUserQuery, useGenerateImageMutation } from "@/store/authSlice";
+import { useAppDispatch, useAppSelector } from "@/store";
+import { setSelectedImageModel } from "@/store/modelsSlice";
 
 export default function ImageGenPage() {
   const { data: userData } = useGetUserQuery();
@@ -19,7 +21,9 @@ export default function ImageGenPage() {
   const [negativePrompt, setNegativePrompt] = useState<string>(
     "blurry, distorted anatomy, poor lighting, low resolution, bad hands"
   );
-  const [selectedModel, setSelectedModel] = useState<string>("flux-1-pro");
+  const dispatch = useAppDispatch();
+  const selectedModel = useAppSelector((state) => state.models.selectedImageModel);
+  const imageModels = useAppSelector((state) => state.models.imageModels);
   const [params, setParams] = useState<GenParameters>({
     aspectRatio: "16:9",
     guidanceScale: 7.5,
@@ -40,8 +44,9 @@ export default function ImageGenPage() {
       return;
     }
 
-    if (credits < 10) {
-      toast.error(`Insufficient tokens! You have ${credits} tokens, but generating an image requires 10.`);
+    const modelCost = imageModels[selectedModel]?.price ?? 10;
+    if (credits < modelCost) {
+      toast.error(`Insufficient tokens! You have ${credits} tokens, but generating with ${selectedModel} requires ${modelCost}.`);
       return;
     }
 
@@ -57,13 +62,18 @@ export default function ImageGenPage() {
     }, 1800);
 
     try {
-      const response = await generateImageApi({ prompt }).unwrap();
+      const response = await generateImageApi({ 
+        prompt, 
+        model: selectedModel,
+        aspectRatio: params.aspectRatio,
+        negativePrompt 
+      }).unwrap();
       if (response.url) {
         setActiveImage(response.url);
       }
       setCurrentStep("complete");
       setIsGenerating(false);
-      toast.success(`Artwork rendered! [10 Tokens deducted, ${response.creditsRemaining} left]`);
+      toast.success(`Artwork rendered with ${selectedModel}! [${response.tokensDeducted} Tokens deducted, ${response.creditsRemaining} left]`);
     } catch (err: any) {
       setTimeout(() => {
         const sampleImages = [
@@ -158,7 +168,7 @@ export default function ImageGenPage() {
           negativePrompt={negativePrompt}
           setNegativePrompt={setNegativePrompt}
           selectedModel={selectedModel}
-          setSelectedModel={setSelectedModel}
+          setSelectedModel={(m) => dispatch(setSelectedImageModel(m))}
           params={params}
           setParams={setParams}
           isGenerating={isGenerating}

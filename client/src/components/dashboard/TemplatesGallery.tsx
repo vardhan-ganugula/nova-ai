@@ -29,18 +29,18 @@ export function TemplatesGallery({
   return (
     <section className="space-y-4">
       {/* Section Header */}
-      <div className="flex items-center justify-between border-b border-slate-200 pb-3">
+      <div className="flex items-center justify-between border-b border-white/[0.07] pb-3">
         <div className="flex items-center gap-3">
-          <h2 className="font-serif-heading text-2xl font-bold tracking-tight text-slate-900">
+          <h2 className="font-serif-heading text-2xl font-bold tracking-tight text-white">
             Prompt Templates & Preset Styles
           </h2>
-          <span className="font-mono text-[10px] uppercase tracking-wider text-purple-700 border border-purple-200 bg-purple-50 px-2 py-0.5 rounded-full font-semibold">
+          <span className="font-mono text-[10px] uppercase tracking-wider text-[#FF7A00] border border-[#FF7A00]/30 bg-[#FF7A00]/10 px-2 py-0.5 rounded-full font-semibold">
             [ 03 PRESET STYLES ]
           </span>
         </div>
 
         <div className="flex items-center gap-2">
-          <span className="font-mono text-[10px] uppercase text-slate-400 hidden sm:inline">
+          <span className="font-mono text-[10px] uppercase text-white/30 hidden sm:inline">
             [ HOVER TO EXPAND ACTIONS ]
           </span>
         </div>
@@ -56,10 +56,10 @@ export function TemplatesGallery({
               key={template.id}
               onMouseEnter={() => setHoveredTemplate(template.id)}
               onMouseLeave={() => setHoveredTemplate(null)}
-              className={`group relative flex h-72 flex-col justify-end overflow-hidden rounded-2xl border transition-all duration-300 shadow-sm ${
+              className={`group relative flex h-72 flex-col justify-end overflow-hidden rounded-2xl border transition-all duration-300 ${
                 isHovered
-                  ? "border-purple-300 -translate-y-1 scale-[1.01] shadow-md"
-                  : "border-slate-200/90 bg-white hover:border-slate-300"
+                  ? "border-[#FF7A00]/40 -translate-y-1 scale-[1.01]"
+                  : "border-white/[0.07] bg-white/[0.03] hover:border-white/[0.12]"
               }`}
             >
               {/* Background Preset Image */}
@@ -97,7 +97,7 @@ export function TemplatesGallery({
 
               {/* Active Hover Overlay with Clean Glassmorphism */}
               <div
-                className={`absolute inset-0 z-20 flex flex-col justify-between overflow-hidden bg-white/95 p-5 backdrop-blur-md transition-all duration-300 ${
+                className={`absolute inset-0 z-20 flex flex-col justify-between overflow-hidden bg-[#111114]/95 p-5 backdrop-blur-md transition-all duration-300 border border-white/[0.08] ${
                   isHovered
                     ? "opacity-100 translate-y-0"
                     : "opacity-0 translate-y-4 pointer-events-none"
@@ -105,14 +105,14 @@ export function TemplatesGallery({
               >
                 <div>
                   <div className="flex items-center justify-between">
-                    <span className="font-serif-heading text-lg font-bold text-slate-900">
+                    <span className="font-serif-heading text-lg font-bold text-white">
                       {template.title}
                     </span>
-                    <span className="font-mono text-[9px] uppercase tracking-wider text-purple-700 border border-purple-200 bg-purple-50 px-2 py-0.5 rounded-full font-bold">
+                    <span className="font-mono text-[9px] uppercase tracking-wider text-[#FF7A00] border border-[#FF7A00]/30 bg-[#FF7A00]/10 px-2 py-0.5 rounded-full font-bold">
                       [ PRESET ]
                     </span>
                   </div>
-                  <p className="mt-2 font-sans text-xs text-slate-700 leading-relaxed italic bg-slate-50 p-3 rounded-xl border border-slate-200">
+                  <p className="mt-2 font-sans text-xs text-white/60 leading-relaxed italic bg-white/[0.05] p-3 rounded-xl border border-white/[0.08]">
                     "{template.prompt}"
                   </p>
                 </div>
@@ -124,9 +124,9 @@ export function TemplatesGallery({
                       e.stopPropagation();
                       onReusePrompt(template.prompt);
                     }}
-                    className="cursor-pointer flex-1 flex items-center justify-center gap-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-[11px] font-semibold text-slate-800 py-2 px-3 border border-slate-200 transition-all active:scale-95 shadow-xs"
+                    className="cursor-pointer flex-1 flex items-center justify-center gap-1.5 rounded-xl bg-white/[0.08] hover:bg-white/[0.12] text-[11px] font-semibold text-white/80 py-2 px-3 border border-white/[0.1] transition-all active:scale-95"
                   >
-                    <Copy className="h-3 w-3 text-purple-600" />
+                    <Copy className="h-3 w-3 text-[#FF7A00]" />
                     <span>Use Prompt</span>
                   </button>
 
@@ -135,7 +135,7 @@ export function TemplatesGallery({
                       e.stopPropagation();
                       onGenerateSimilar(template);
                     }}
-                    className="cursor-pointer flex items-center justify-center gap-1.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-[11px] font-bold py-2 px-3 transition-all active:scale-95 shadow-xs hover:scale-105"
+                    className="cursor-pointer flex items-center justify-center gap-1.5 rounded-xl bg-[#FF7A00] hover:bg-[#FF9A3C] text-white text-[11px] font-bold py-2 px-3 transition-all active:scale-95 shadow-[0_0_12px_rgba(255,122,0,0.3)] hover:scale-105"
                   >
                     <Sparkles className="h-3 w-3 text-white" />
                     <span>Remix</span>

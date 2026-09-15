@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import {
   Sparkles,
@@ -12,9 +12,10 @@ import {
   Image as ImageIcon,
   X,
   Zap,
+  Wand2,
+  Share2,
 } from "lucide-react";
-import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar";
-import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
+import { AppShell } from "@/components/layout/AppShell";
 import {
   useGetUserQuery,
   useGetPublicGalleryQuery,
@@ -22,6 +23,7 @@ import {
 } from "@/store/authSlice";
 
 export default function ImageGalleryPage() {
+  const navigate = useNavigate();
   const { data: userData } = useGetUserQuery();
   const { data: galleryData, isLoading } = useGetPublicGalleryQuery();
   const [toggleLikeApi] = useToggleLikeMutation();
@@ -33,9 +35,8 @@ export default function ImageGalleryPage() {
   const [selectedTag, setSelectedTag] = useState("All");
   const [selectedModalImage, setSelectedModalImage] = useState<any>(null);
 
-  const tags = ["All", "Cyberpunk", "Cinematic", "Anime", "Fantasy", "Portrait", "Sci-Fi"];
+  const tags = ["All", "Cinematic", "Cyberpunk", "Anime", "Fantasy", "Photoreal", "Sci-Fi"];
 
-  // Default fallback items with watermarked badge if database has few records
   const sampleFallback = [
     {
       id: "sample-1",
@@ -59,14 +60,39 @@ export default function ImageGalleryPage() {
       authorAvatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=80",
       createdAt: new Date().toISOString(),
     },
+    {
+      id: "sample-3",
+      prompt: "Porcelain android geisha with holographic origami butterflies, ambient gold glow",
+      style: "Anime",
+      displayUrl: "https://images.unsplash.com/photo-1578632767115-351597cf2477?w=1200&auto=format&fit=crop&q=80",
+      watermarkedR2Url: "https://images.unsplash.com/photo-1578632767115-351597cf2477?w=1200&auto=format&fit=crop&q=80",
+      likesCount: 215,
+      author: "Kira",
+      authorAvatar: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100&auto=format&fit=crop&q=80",
+      createdAt: new Date().toISOString(),
+    },
+    {
+      id: "sample-4",
+      prompt: "Ancient overgrown solarpunk sky towers with vertical hydroponic gardens at dawn",
+      style: "Fantasy",
+      displayUrl: "https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=1200&auto=format&fit=crop&q=80",
+      watermarkedR2Url: "https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=1200&auto=format&fit=crop&q=80",
+      likesCount: 76,
+      author: "Elena",
+      authorAvatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80",
+      createdAt: new Date().toISOString(),
+    },
   ];
 
   const galleryImages = galleryData?.images?.length ? galleryData.images : sampleFallback;
 
   const filteredImages = galleryImages.filter((img: any) => {
-    const matchesSearch = img.prompt.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    const matchesSearch =
+      img.prompt.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (img.author && img.author.toLowerCase().includes(searchQuery.toLowerCase()));
-    const matchesTag = selectedTag === "All" || (img.style && img.style.toLowerCase().includes(selectedTag.toLowerCase()));
+    const matchesTag =
+      selectedTag === "All" ||
+      (img.style && img.style.toLowerCase().includes(selectedTag.toLowerCase()));
     return matchesSearch && matchesTag;
   });
 
@@ -87,260 +113,276 @@ export default function ImageGalleryPage() {
   };
 
   return (
-    <div className="min-h-screen w-full bg-[#F8FAFC] text-slate-900 font-sans antialiased">
-      <div className="flex min-h-screen w-full">
-        <DashboardSidebar activeItem="Explore Gallery" />
+    <AppShell title="Explore Community" subtitleBadge="[ PUBLIC EXHIBIT ]">
+      <div className="max-w-7xl mx-auto space-y-6 pb-12">
+        {/* Header Hero Banner */}
+        <div className="relative overflow-hidden rounded-2xl border border-white/[0.08] bg-gradient-to-br from-[#16161a] to-[#0c0c0e] p-6 sm:p-8">
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <span className="font-mono text-[10px] uppercase tracking-wider text-orange-400 border border-orange-500/30 bg-orange-500/10 px-2.5 py-0.5 rounded font-semibold">
+                  WATERMARKED COMMUNITY EXHIBIT
+                </span>
+                <span className="font-mono text-[10px] uppercase tracking-wider text-emerald-400 border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-0.5 rounded flex items-center gap-1 font-semibold">
+                  <ShieldCheck className="h-3 w-3" />
+                  VERIFIED RIGHTS
+                </span>
+              </div>
+              <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-white">
+                Explore Community Creations
+              </h1>
+              <p className="text-xs sm:text-sm text-zinc-400 max-w-2xl leading-relaxed">
+                Browse prompt designs and fine-tuned latent renders synthesized by creators worldwide. Click any artwork to inspect prompts, remix parameters in Studio, or copy prompt tags.
+              </p>
+            </div>
 
-        <div className="flex flex-1 flex-col md:pl-64">
-          <DashboardHeader
-            title="Public Watermarked Gallery"
-            subtitleBadge="[ COMMUNITY FEED ]"
-            tokens={credits}
-          />
+            <Link
+              to="/create"
+              className="inline-flex items-center gap-2 rounded-lg bg-orange-500 hover:bg-orange-600 text-black px-4 py-2.5 text-xs font-semibold shadow-[0_0_15px_rgba(249,115,22,0.3)] transition-colors"
+            >
+              <Sparkles className="h-3.5 w-3.5 fill-black" />
+              <span>Create Your Own</span>
+            </Link>
+          </div>
+        </div>
 
-          <main className="flex-1 space-y-8 p-6 lg:p-8 max-w-[1600px] mx-auto w-full">
-            {/* Header Hero Banner */}
-            <div className="relative overflow-hidden rounded-2xl border border-slate-200/90 bg-white p-8 shadow-sm">
-              <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2">
-                    <span className="font-mono text-[11px] uppercase tracking-wider text-purple-700 border border-purple-200 bg-purple-50 px-2.5 py-0.5 rounded-full font-semibold">
-                      [ WATERMARKED PUBLIC EXHIBIT ]
-                    </span>
-                    <span className="font-mono text-[11px] uppercase tracking-wider text-emerald-700 border border-emerald-200 bg-emerald-50 px-2.5 py-0.5 rounded-full flex items-center gap-1 font-semibold">
-                      <ShieldCheck className="h-3 w-3" />
-                      PROTECTED PREVIEWS
-                    </span>
+        {/* Filter & Search Bar */}
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+          <div className="relative w-full sm:w-80">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-zinc-500" />
+            <input
+              type="text"
+              placeholder="Search prompts or creators..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-9 pr-4 py-2 bg-[#121215] border border-white/[0.08] rounded-lg text-xs font-medium text-zinc-200 placeholder:text-zinc-500 focus:outline-none focus:border-orange-500/50 transition-all"
+            />
+          </div>
+
+          <div className="flex items-center gap-1.5 overflow-x-auto w-full sm:w-auto pb-1 sm:pb-0">
+            <span className="text-xs text-zinc-500 font-mono flex items-center gap-1 mr-1">
+              <Filter className="h-3 w-3" /> Filter:
+            </span>
+            {tags.map((tag) => (
+              <button
+                key={tag}
+                onClick={() => setSelectedTag(tag)}
+                className={`cursor-pointer px-3 py-1 rounded-md text-xs font-medium transition-all ${
+                  selectedTag === tag
+                    ? "bg-orange-500 text-black font-semibold shadow-xs"
+                    : "bg-[#121215] text-zinc-400 border border-white/5 hover:border-white/15 hover:text-white"
+                }`}
+              >
+                {tag}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Masonry / Grid Gallery */}
+        {isLoading ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            {[1, 2, 3, 4, 5, 6, 7, 8].map((n) => (
+              <div
+                key={n}
+                className="rounded-xl border border-white/5 bg-[#121215] p-3 animate-pulse space-y-3"
+              >
+                <div className="aspect-[4/3] bg-white/[0.05] rounded-lg" />
+                <div className="h-3 bg-white/[0.05] rounded w-3/4" />
+                <div className="h-2 bg-white/[0.03] rounded w-1/2" />
+              </div>
+            ))}
+          </div>
+        ) : filteredImages.length === 0 ? (
+          <div className="text-center py-16 bg-[#121215] rounded-xl border border-white/5 p-8">
+            <ImageIcon className="h-10 w-10 text-zinc-600 mx-auto mb-3" />
+            <h3 className="text-sm font-semibold text-zinc-200">No artworks found</h3>
+            <p className="text-xs text-zinc-500 mt-1 max-w-sm mx-auto">
+              Be the first to publish an artwork from your Studio canvas!
+            </p>
+            <Link
+              to="/create"
+              className="mt-4 inline-flex items-center gap-2 rounded-lg bg-orange-500 text-black px-4 py-2 text-xs font-semibold hover:bg-orange-600 transition-colors"
+            >
+              Open Studio Canvas
+            </Link>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            {filteredImages.map((item: any) => (
+              <div
+                key={item.id}
+                onClick={() => setSelectedModalImage(item)}
+                className="group cursor-pointer rounded-xl border border-white/[0.07] bg-[#121215] hover:border-orange-500/40 hover:bg-[#16161a] transition-all overflow-hidden flex flex-col"
+              >
+                {/* Artwork Container */}
+                <div className="relative aspect-[4/3] w-full overflow-hidden bg-black">
+                  <img
+                    src={item.displayUrl || item.watermarkedR2Url || item.r2Url}
+                    alt={item.prompt}
+                    className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                  />
+
+                  {/* Watermark stamp */}
+                  <div className="absolute bottom-2 right-2 pointer-events-none z-10 flex items-center gap-1.5 rounded bg-black/80 px-2 py-0.5 border border-white/10 text-[9px] font-mono font-bold uppercase text-zinc-300">
+                    <Zap className="h-2.5 w-2.5 text-orange-400 fill-orange-400" />
+                    <span>NOVA AI</span>
                   </div>
-                  <h1 className="font-serif-heading text-3xl md:text-4xl font-bold tracking-tight text-slate-900">
-                    Community Creation Gallery
-                  </h1>
-                  <p className="text-sm text-slate-600 max-w-2xl leading-relaxed">
-                    Explore high-resolution artworks published by creators across the world. All public artworks are automatically stamped with the authentic Nova watermark badge for digital rights protection.
-                  </p>
+
+                  {/* Style tag */}
+                  {item.style && (
+                    <div className="absolute top-2 left-2">
+                      <span className="rounded bg-black/70 backdrop-blur-md px-2 py-0.5 text-[9px] font-mono uppercase text-zinc-300 border border-white/10">
+                        {item.style}
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Quick Remix on Hover */}
+                  <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        copyPrompt(item.prompt, e);
+                      }}
+                      className="p-1.5 rounded-md bg-black/70 hover:bg-black text-zinc-300 hover:text-white border border-white/10"
+                      title="Copy Prompt"
+                    >
+                      <Copy className="h-3 w-3" />
+                    </button>
+                  </div>
                 </div>
 
-                <div className="flex items-center gap-3">
-                  <Link
-                    to="/image-gen"
-                    className="inline-flex items-center gap-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white px-5 py-2.5 text-xs font-bold shadow-sm transition-all hover:scale-105 active:scale-95"
+                {/* Card Info */}
+                <div className="p-3 flex-1 flex flex-col justify-between space-y-2.5">
+                  <p className="text-xs text-zinc-300 line-clamp-2 leading-relaxed">
+                    "{item.prompt}"
+                  </p>
+
+                  <div className="flex items-center justify-between pt-2 border-t border-white/5 text-xs">
+                    <div className="flex items-center gap-2">
+                      <img
+                        src={
+                          item.authorAvatar ||
+                          "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=60&auto=format&fit=crop&q=80"
+                        }
+                        alt="Author"
+                        className="h-5 w-5 rounded-full object-cover border border-white/10"
+                      />
+                      <span className="text-[11px] font-medium text-zinc-400">
+                        {item.author || "Nova Artist"}
+                      </span>
+                    </div>
+
+                    <button
+                      onClick={(e) => handleLikeToggle(item.id, e)}
+                      className="flex items-center gap-1 text-zinc-400 hover:text-rose-400 transition-colors"
+                    >
+                      <Heart className="h-3.5 w-3.5 fill-rose-500 text-rose-500" />
+                      <span className="font-mono text-[11px]">{item.likesCount || 0}</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Modal View for Inspection */}
+        {selectedModalImage && (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-sm p-4 animate-in fade-in duration-150"
+            onClick={() => setSelectedModalImage(null)}
+          >
+            <div
+              className="relative w-full max-w-4xl bg-[#121215] rounded-2xl border border-white/10 shadow-2xl overflow-hidden flex flex-col md:flex-row max-h-[90vh]"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button
+                onClick={() => setSelectedModalImage(null)}
+                className="absolute top-4 right-4 z-20 rounded-lg bg-black/60 hover:bg-white/10 p-2 text-zinc-400 hover:text-white transition-all"
+              >
+                <X className="h-4 w-4" />
+              </button>
+
+              {/* Left Image */}
+              <div className="relative flex-1 bg-black flex items-center justify-center min-h-[320px]">
+                <img
+                  src={
+                    selectedModalImage.displayUrl ||
+                    selectedModalImage.watermarkedR2Url ||
+                    selectedModalImage.r2Url
+                  }
+                  alt={selectedModalImage.prompt}
+                  className="max-h-[80vh] w-full object-contain"
+                />
+                <div className="absolute bottom-4 right-4 flex items-center gap-1.5 rounded bg-black/80 px-2.5 py-1 border border-white/15 text-[10px] font-mono font-bold uppercase text-white">
+                  <Zap className="h-3 w-3 text-orange-400 fill-orange-400" />
+                  <span>PUBLIC WATERMARKED PREVIEW</span>
+                </div>
+              </div>
+
+              {/* Right Meta */}
+              <div className="w-full md:w-80 p-6 flex flex-col justify-between space-y-4 bg-[#0c0c0e] border-t md:border-t-0 md:border-l border-white/[0.08]">
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono text-[10px] uppercase tracking-wider text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded font-semibold">
+                      PUBLIC EXHIBIT
+                    </span>
+                  </div>
+
+                  <div>
+                    <h4 className="text-[10px] font-mono uppercase text-zinc-500">PROMPT</h4>
+                    <p className="text-xs font-medium text-zinc-200 mt-1 leading-relaxed">
+                      "{selectedModalImage.prompt}"
+                    </p>
+                  </div>
+
+                  <div className="flex items-center gap-3 pt-2">
+                    <img
+                      src={
+                        selectedModalImage.authorAvatar ||
+                        "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=60&auto=format&fit=crop&q=80"
+                      }
+                      alt="Creator"
+                      className="h-8 w-8 rounded-full object-cover border border-white/10"
+                    />
+                    <div>
+                      <div className="text-xs font-semibold text-zinc-200">
+                        {selectedModalImage.author || "Nova Artist"}
+                      </div>
+                      <div className="text-[10px] text-zinc-500 font-mono">
+                        Verified Creator
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-2 pt-4 border-t border-white/[0.08]">
+                  <button
+                    onClick={() => copyPrompt(selectedModalImage.prompt)}
+                    className="w-full flex items-center justify-center gap-2 rounded-lg border border-white/10 bg-white/[0.05] hover:bg-white/10 py-2.5 text-xs font-medium text-zinc-300 transition-colors"
                   >
-                    <Sparkles className="h-3.5 w-3.5" />
-                    <span>Create Your Own</span>
+                    <Copy className="h-3.5 w-3.5" />
+                    <span>Copy Prompt</span>
+                  </button>
+
+                  <Link
+                    to="/create"
+                    onClick={() => {
+                      copyPrompt(selectedModalImage.prompt);
+                    }}
+                    className="w-full flex items-center justify-center gap-2 rounded-lg bg-orange-500 hover:bg-orange-600 py-2.5 text-xs font-semibold text-black transition-colors"
+                  >
+                    <Wand2 className="h-3.5 w-3.5" />
+                    <span>Remix in Studio</span>
                   </Link>
                 </div>
               </div>
             </div>
-
-            {/* Search & Filtering Bar */}
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-              <div className="relative w-full sm:w-80">
-                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                <input
-                  type="text"
-                  placeholder="Search prompts or creators..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-500/30 focus:border-purple-500 transition-all shadow-sm"
-                />
-              </div>
-
-              <div className="flex items-center gap-1.5 overflow-x-auto w-full sm:w-auto pb-1 sm:pb-0">
-                <span className="text-xs text-slate-500 font-mono flex items-center gap-1 mr-1">
-                  <Filter className="h-3 w-3" /> FILTER:
-                </span>
-                {tags.map((tag) => (
-                  <button
-                    key={tag}
-                    onClick={() => setSelectedTag(tag)}
-                    className={`cursor-pointer px-3 py-1 rounded-lg text-xs font-medium whitespace-nowrap transition-all ${
-                      selectedTag === tag
-                        ? "bg-purple-600 text-white shadow-sm"
-                        : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50"
-                    }`}
-                  >
-                    {tag}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Gallery Grid */}
-            {isLoading ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                {[1, 2, 3, 4, 5, 6, 7, 8].map((n) => (
-                  <div key={n} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm animate-pulse space-y-3">
-                    <div className="aspect-[4/3] bg-slate-100 rounded-xl" />
-                    <div className="h-4 bg-slate-100 rounded w-3/4" />
-                    <div className="h-3 bg-slate-100 rounded w-1/2" />
-                  </div>
-                ))}
-              </div>
-            ) : filteredImages.length === 0 ? (
-              <div className="text-center py-16 bg-white rounded-2xl border border-slate-200 p-8">
-                <ImageIcon className="h-10 w-10 text-slate-300 mx-auto mb-3" />
-                <h3 className="text-base font-bold text-slate-800">No public artworks found</h3>
-                <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
-                  Be the first to publish an artwork from your Image Studio canvas by clicking "Make Public"!
-                </p>
-                <Link
-                  to="/image-gen"
-                  className="mt-4 inline-flex items-center gap-2 rounded-lg bg-purple-600 text-white px-4 py-2 text-xs font-semibold hover:bg-purple-700 transition-all"
-                >
-                  Go to Image Studio
-                </Link>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                {filteredImages.map((item: any) => (
-                  <div
-                    key={item.id}
-                    onClick={() => setSelectedModalImage(item)}
-                    className="group cursor-pointer rounded-2xl border border-slate-200/90 bg-white shadow-sm hover:shadow-md hover:border-purple-300 transition-all overflow-hidden flex flex-col"
-                  >
-                    {/* Watermarked Image Container */}
-                    <div className="relative aspect-[4/3] w-full overflow-hidden bg-slate-100">
-                      <img
-                        src={item.displayUrl || item.watermarkedR2Url || item.r2Url}
-                        alt={item.prompt}
-                        className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                      />
-
-                      {/* Visible Watermark Stamp */}
-                      <div className="absolute bottom-2.5 right-2.5 pointer-events-none z-10 flex items-center gap-1 rounded-full bg-slate-900/80 backdrop-blur-md px-2.5 py-0.5 border border-white/30 text-[9px] font-mono font-bold uppercase tracking-wider text-white shadow-lg">
-                        <Zap className="h-2.5 w-2.5 text-amber-300 fill-amber-300" />
-                        <span>NOVA AI</span>
-                      </div>
-
-                      {/* Style Tag */}
-                      {item.style && (
-                        <div className="absolute top-2.5 left-2.5">
-                          <span className="rounded-full bg-white/90 backdrop-blur-md px-2.5 py-0.5 text-[10px] font-mono font-semibold uppercase text-slate-800 border border-slate-200/80 shadow-sm">
-                            {item.style}
-                          </span>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Card Meta Content */}
-                    <div className="p-4 flex-1 flex flex-col justify-between space-y-3">
-                      <p className="text-xs font-medium text-slate-800 line-clamp-2 leading-relaxed">
-                        "{item.prompt}"
-                      </p>
-
-                      <div className="flex items-center justify-between pt-2 border-t border-slate-100 text-xs">
-                        <div className="flex items-center gap-2">
-                          <img
-                            src={item.authorAvatar || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=60&auto=format&fit=crop&q=80"}
-                            alt={item.author || "Creator"}
-                            className="h-6 w-6 rounded-full object-cover border border-slate-200"
-                          />
-                          <span className="text-[11px] font-semibold text-slate-700">
-                            {item.author || "Nova Artist"}
-                          </span>
-                        </div>
-
-                        <button
-                          onClick={(e) => handleLikeToggle(item.id, e)}
-                          className="cursor-pointer flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium text-slate-600 hover:text-rose-600 hover:bg-rose-50 transition-colors"
-                        >
-                          <Heart className="h-3.5 w-3.5 fill-rose-500 text-rose-500" />
-                          <span className="font-mono text-[11px]">{item.likesCount || 0}</span>
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </main>
-        </div>
-      </div>
-
-      {/* Modal View for Watermarked Image Inspection */}
-      {selectedModalImage && (
-        <div 
-          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in duration-200"
-          onClick={() => setSelectedModalImage(null)}
-        >
-          <div 
-            className="relative w-full max-w-4xl bg-white rounded-3xl border border-slate-200 shadow-2xl overflow-hidden flex flex-col md:flex-row max-h-[90vh]"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Close Button */}
-            <button
-              onClick={() => setSelectedModalImage(null)}
-              className="absolute top-4 right-4 z-20 rounded-full bg-slate-100 hover:bg-slate-200 p-2 text-slate-600 transition-all"
-            >
-              <X className="h-4 w-4" />
-            </button>
-
-            {/* Left Image View */}
-            <div className="relative flex-1 bg-slate-100 flex items-center justify-center overflow-hidden min-h-[300px]">
-              <img
-                src={selectedModalImage.displayUrl || selectedModalImage.watermarkedR2Url || selectedModalImage.r2Url}
-                alt={selectedModalImage.prompt}
-                className="max-h-[80vh] w-full object-contain"
-              />
-              <div className="absolute bottom-4 right-4 flex items-center gap-1.5 rounded-full bg-slate-900/85 backdrop-blur-md px-3 py-1 border border-white/40 text-xs font-mono font-bold uppercase tracking-wider text-white shadow-xl">
-                <Zap className="h-3 w-3 text-amber-300 fill-amber-300" />
-                <span>WATERMARKED GALLERY PREVIEW</span>
-              </div>
-            </div>
-
-            {/* Right Meta Details */}
-            <div className="w-full md:w-80 p-6 flex flex-col justify-between space-y-4 bg-white">
-              <div className="space-y-4">
-                <div className="flex items-center gap-2">
-                  <span className="font-mono text-[10px] uppercase tracking-wider text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full font-semibold">
-                    PUBLIC EXHIBIT
-                  </span>
-                  <span className="font-mono text-[10px] uppercase tracking-wider text-slate-500 border border-slate-200 px-2 py-0.5 rounded-full">
-                    {selectedModalImage.aspectRatio || "16:9"}
-                  </span>
-                </div>
-
-                <div>
-                  <h3 className="text-xs font-mono uppercase tracking-wider text-slate-400">PROMPT</h3>
-                  <p className="text-sm font-medium text-slate-800 mt-1 leading-relaxed">
-                    "{selectedModalImage.prompt}"
-                  </p>
-                </div>
-
-                <div className="flex items-center gap-3 pt-2">
-                  <img
-                    src={selectedModalImage.authorAvatar || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=60&auto=format&fit=crop&q=80"}
-                    alt={selectedModalImage.author}
-                    className="h-8 w-8 rounded-full object-cover border border-slate-200"
-                  />
-                  <div>
-                    <div className="text-xs font-bold text-slate-800">{selectedModalImage.author || "Nova Artist"}</div>
-                    <div className="text-[10px] text-slate-400 font-mono">Verified Creator</div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="space-y-2 pt-4 border-t border-slate-100">
-                <button
-                  onClick={() => copyPrompt(selectedModalImage.prompt)}
-                  className="w-full flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 py-2.5 text-xs font-semibold text-slate-700 transition-all"
-                >
-                  <Copy className="h-3.5 w-3.5" />
-                  <span>Copy Prompt</span>
-                </button>
-
-                <button
-                  onClick={(e) => handleLikeToggle(selectedModalImage.id, e)}
-                  className="w-full flex items-center justify-center gap-2 rounded-xl bg-purple-600 hover:bg-purple-700 py-2.5 text-xs font-bold text-white shadow-sm transition-all"
-                >
-                  <Heart className="h-3.5 w-3.5 fill-white" />
-                  <span>Like ({selectedModalImage.likesCount || 0})</span>
-                </button>
-              </div>
-            </div>
           </div>
-        </div>
-      )}
-    </div>
+        )}
+      </div>
+    </AppShell>
   );
 }

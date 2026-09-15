@@ -12,8 +12,19 @@ import { users, images, collections, imageLikes } from "@/db/schema.js";
 import { eq, and, desc } from "drizzle-orm";
 import { uploadFromFalToR2, uploadFromFalToR2WithWatermark } from "@/utils/storage.util.js";
 import { inngest } from "@/inngest/client.js";
+import { aiImageModels, aiChatModels, aiAudioModels, aiVideoModels } from "@/utils/ai.util.js";
 
 const aiRouter = Router(); 
+
+// Get all available AI models
+aiRouter.get("/models", (req, res) => {
+    res.json({
+        imageModels: aiImageModels,
+        chatModels: aiChatModels,
+        audioModels: aiAudioModels,
+        videoModels: aiVideoModels,
+    });
+});
 
 const IMAGE_TOKEN_COST = 10;
 const UPSCALE_TOKEN_COST = 5;
@@ -54,10 +65,12 @@ aiRouter.post("/generate-text", requireAuth, async (req: any, res: Response) => 
 aiRouter.post("/generate-image", requireAuth, async (req: any, res: Response) => {
     const { prompt, negativePrompt, style, aspectRatio, model } = req.body;
     const user = req.user;
+    const modelConfig = model ? (aiImageModels as any)[model] : null;
+    const tokenCost = modelConfig?.price || IMAGE_TOKEN_COST;
 
-    if (user.credits < IMAGE_TOKEN_COST) {
+    if (user.credits < tokenCost) {
         return res.status(403).json({
-            error: `Insufficient tokens. Image generation requires ${IMAGE_TOKEN_COST} tokens, but you only have ${user.credits} tokens.`,
+            error: `Insufficient tokens. Generating with ${model || "default model"} requires ${tokenCost} tokens, but you only have ${user.credits} tokens.`,
             credits: user.credits,
         });
     }
@@ -72,7 +85,7 @@ aiRouter.post("/generate-image", requireAuth, async (req: any, res: Response) =>
                 negativePrompt,
                 style,
                 aspectRatio,
-                model,
+                model: model || "Flux Schnell",
             },
         });
 
@@ -95,7 +108,7 @@ aiRouter.post("/generate-image", requireAuth, async (req: any, res: Response) =>
             negativePrompt: negativePrompt || null,
             style: style || null,
             aspectRatio: aspectRatio || "16:9",
-            model: model || "flux/schnell",
+            model: model || "Flux Schnell",
             r2Url: storageResult.original.presignedUrl,
             r2Key: storageResult.original.key,
             watermarkedR2Url: storageResult.watermarked.presignedUrl,
@@ -112,7 +125,7 @@ aiRouter.post("/generate-image", requireAuth, async (req: any, res: Response) =>
         }).onConflictDoNothing();
 
         // Deduct user tokens
-        const newCredits = user.credits - IMAGE_TOKEN_COST;
+        const newCredits = user.credits - tokenCost;
         await db.update(users).set({ credits: newCredits }).where(eq(users.id, user.id));
 
         res.json({
@@ -120,7 +133,7 @@ aiRouter.post("/generate-image", requireAuth, async (req: any, res: Response) =>
             url: storageResult.original.presignedUrl,
             image: savedImage,
             creditsRemaining: newCredits,
-            tokensDeducted: IMAGE_TOKEN_COST,
+            tokensDeducted: tokenCost,
         });
     } catch (error: any) {
         console.error("Error generating image:", error);

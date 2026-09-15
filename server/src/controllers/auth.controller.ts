@@ -2,6 +2,7 @@ import { type Request, type Response } from "express";
 import { authService } from "@services/auth.service.js";
 import { CLIENT_URL, REDIS_URL } from "@utils/config.util.js";
 import { MailService } from "@/services/mail.service.js";
+import { aiImageModels, aiChatModels, aiAudioModels, aiVideoModels } from "@/utils/ai.util.js";
 
 const mailService = new MailService();
 
@@ -25,7 +26,16 @@ export async function login(req: Request, res: Response) {
       sameSite: "lax",
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
-    res.json({ user: result.user, message: 'Login Success' });
+    res.json({
+      user: result.user,
+      message: 'Login Success',
+      models: {
+        imageModels: aiImageModels,
+        chatModels: aiChatModels,
+        audioModels: aiAudioModels,
+        videoModels: aiVideoModels,
+      },
+    });
   } catch (err: any) {
     res.status(401).json({ status: 'error', message: err.message, error: err.message });
   }
@@ -58,7 +68,15 @@ export async function getMe(req: Request, res: Response) {
     }
     const { userId } = JSON.parse(sessionData);
     const user = await authService.getCurrentUser(userId);
-    res.json({ user });
+    res.json({
+      user,
+      models: {
+        imageModels: aiImageModels,
+        chatModels: aiChatModels,
+        audioModels: aiAudioModels,
+        videoModels: aiVideoModels,
+      },
+    });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }

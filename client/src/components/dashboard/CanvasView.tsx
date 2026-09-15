@@ -78,26 +78,26 @@ export function CanvasView({ image, prompt, onImageUpdate, isPublic, onToggleVis
   return (
     <section className="space-y-4">
       {/* Section Header */}
-      <div className="flex items-center justify-between border-b border-slate-200 pb-3">
+      <div className="flex items-center justify-between border-b border-white/[0.07] pb-3">
         <div className="flex items-center gap-3">
-          <h2 className="font-serif-heading text-2xl font-bold tracking-tight text-slate-900">
+          <h2 className="font-serif-heading text-2xl font-bold tracking-tight text-white">
             Canvas View
           </h2>
-          <span className="font-mono text-[10px] uppercase tracking-wider text-purple-700 border border-purple-200 bg-purple-50 px-2 py-0.5 rounded-full font-semibold">
+          <span className="font-mono text-[10px] uppercase tracking-wider text-[#FF7A00] border border-[#FF7A00]/30 bg-[#FF7A00]/10 px-2 py-0.5 rounded-full font-semibold">
             [ 04 VIEWPORT TELEMETRY ]
           </span>
         </div>
 
         <div className="flex items-center gap-2">
-          <span className="font-mono text-[10px] uppercase text-slate-400 font-medium">
+          <span className="font-mono text-[10px] uppercase text-white/30 font-medium">
             [ RENDER: 8K · OCTANE 2.4 ]
           </span>
         </div>
       </div>
 
       {/* Main Image Display Frame */}
-      <div className="relative overflow-hidden rounded-3xl border border-slate-200/90 bg-white shadow-sm group transition-all">
-        <div className="relative aspect-[16/9] w-full overflow-hidden bg-slate-100">
+      <div className="relative overflow-hidden rounded-3xl border border-white/[0.07] bg-[#111114] group transition-all">
+        <div className="relative aspect-[16/9] w-full overflow-hidden bg-black/40">
           <img
             src={activeCanvasImage}
             alt="Studio Masterpiece Artwork"
@@ -106,13 +106,13 @@ export function CanvasView({ image, prompt, onImageUpdate, isPublic, onToggleVis
 
           {/* Top Canvas Badges */}
           <div className="absolute top-4 left-4 z-20 flex items-center gap-2">
-            <span className="rounded-full bg-white/90 px-3 py-1 font-mono text-[10px] uppercase tracking-wider text-slate-800 backdrop-blur-md border border-slate-200/90 shadow-sm font-semibold">
+            <span className="rounded-full bg-black/70 px-3 py-1 font-mono text-[10px] uppercase tracking-wider text-white backdrop-blur-md border border-white/20 shadow-sm font-semibold">
               [ {prompt ? prompt.slice(0, 32) + "..." : "STUDIO CANVAS"} ]
             </span>
             <span className={`rounded-full px-2.5 py-1 font-mono text-[10px] uppercase tracking-wider backdrop-blur-md border font-bold shadow-sm ${
               isPublic 
-                ? "bg-emerald-50 text-emerald-700 border-emerald-300" 
-                : "bg-amber-50 text-amber-800 border-amber-300"
+                ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/40" 
+                : "bg-[#FF7A00]/20 text-[#FF7A00] border-[#FF7A00]/40"
             }`}>
               [ {isPublic ? "PUBLIC (SHARED)" : "PRIVATE (ONLY YOU)"} ]
             </span>
@@ -126,7 +126,7 @@ export function CanvasView({ image, prompt, onImageUpdate, isPublic, onToggleVis
                 className={`cursor-pointer rounded-full px-3 py-1 font-mono text-[10px] uppercase tracking-wider font-bold backdrop-blur-md border transition-all duration-200 hover:scale-105 active:scale-95 shadow-sm ${
                   isPublic
                     ? "bg-emerald-600 text-white border-emerald-600 hover:bg-emerald-700"
-                    : "bg-white text-slate-800 border-slate-200 hover:bg-slate-50"
+                    : "bg-black/70 text-white border-white/20 hover:bg-white/20"
                 }`}
                 title="Toggle Public / Private sharing"
               >
@@ -150,7 +150,7 @@ export function CanvasView({ image, prompt, onImageUpdate, isPublic, onToggleVis
               target="_blank"
               rel="noreferrer"
               download="artwork.jpg"
-              className="cursor-pointer rounded-full bg-white/90 p-2 text-slate-700 hover:bg-white backdrop-blur-md border border-slate-200 hover:scale-110 active:scale-95 transition-all duration-200 shadow-sm"
+              className="cursor-pointer rounded-full bg-black/70 p-2 text-white/80 hover:bg-black/90 backdrop-blur-md border border-white/20 hover:scale-110 active:scale-95 transition-all duration-200 shadow-sm"
               title="Download Master"
             >
               <Download className="h-3.5 w-3.5" />
@@ -158,33 +158,33 @@ export function CanvasView({ image, prompt, onImageUpdate, isPublic, onToggleVis
           </div>
 
           {/* Floating Post-Processing Micro-Toolbar */}
-          <div className="absolute bottom-5 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2 rounded-full border border-slate-200/90 bg-white/95 px-3 py-1.5 backdrop-blur-xl shadow-lg transition-all duration-300">
+          <div className="absolute bottom-5 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2 rounded-full border border-white/[0.1] bg-black/80 px-3 py-1.5 backdrop-blur-xl shadow-lg transition-all duration-300">
             <button
               onClick={handleUpscale}
               disabled={isProcessing !== null}
-              className="cursor-pointer flex items-center gap-1.5 rounded-full px-3.5 py-1.5 font-sans text-xs font-semibold text-slate-800 hover:bg-slate-100 transition-all duration-200 active:scale-95 disabled:opacity-50"
+              className="cursor-pointer flex items-center gap-1.5 rounded-full px-3.5 py-1.5 font-sans text-xs font-semibold text-white/80 hover:bg-white/10 hover:text-white transition-all duration-200 active:scale-95 disabled:opacity-50"
             >
-              <Wand2 className="h-3.5 w-3.5 text-purple-600" />
+              <Wand2 className="h-3.5 w-3.5 text-[#FF7A00]" />
               <span>Upscale 8K</span>
             </button>
 
-            <div className="h-3.5 w-[1px] bg-slate-200" />
+            <div className="h-3.5 w-[1px] bg-white/20" />
 
             <button
               onClick={handleRemoveBg}
               disabled={isProcessing !== null}
-              className="cursor-pointer flex items-center gap-1.5 rounded-full px-3.5 py-1.5 font-sans text-xs font-semibold text-slate-800 hover:bg-slate-100 transition-all duration-200 active:scale-95 disabled:opacity-50"
+              className="cursor-pointer flex items-center gap-1.5 rounded-full px-3.5 py-1.5 font-sans text-xs font-semibold text-white/80 hover:bg-white/10 hover:text-white transition-all duration-200 active:scale-95 disabled:opacity-50"
             >
-              <Scissors className="h-3.5 w-3.5 text-cyan-600" />
+              <Scissors className="h-3.5 w-3.5 text-cyan-400" />
               <span>Remove BG</span>
             </button>
 
-            <div className="h-3.5 w-[1px] bg-slate-200" />
+            <div className="h-3.5 w-[1px] bg-white/20" />
 
             <button
               onClick={handleMotion}
               disabled={isProcessing !== null}
-              className="cursor-pointer flex items-center gap-1.5 rounded-full bg-purple-600 text-white px-3.5 py-1.5 font-sans text-xs font-bold shadow-xs hover:bg-purple-700 hover:scale-105 active:scale-95 transition-all duration-200 disabled:opacity-50"
+              className="cursor-pointer flex items-center gap-1.5 rounded-full bg-[#FF7A00] text-white px-3.5 py-1.5 font-sans text-xs font-bold shadow-[0_0_12px_rgba(255,122,0,0.4)] hover:bg-[#FF9A3C] hover:scale-105 active:scale-95 transition-all duration-200 disabled:opacity-50"
             >
               <Video className="h-3.5 w-3.5 text-white" />
               <span>Generate Motion</span>

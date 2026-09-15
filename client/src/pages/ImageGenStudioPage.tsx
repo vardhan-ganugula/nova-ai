@@ -16,6 +16,8 @@ import {
   useToggleVisibilityMutation,
   useToggleLikeMutation,
 } from "@/store/authSlice";
+import { useAppDispatch, useAppSelector } from "@/store";
+import { setSelectedImageModel } from "@/store/modelsSlice";
 
 export default function ImageGenStudioPage() {
   const { data: userData } = useGetUserQuery();
@@ -28,16 +30,22 @@ export default function ImageGenStudioPage() {
 
   const [activeTab, setActiveTab] = useState<"history" | "collections">("history");
 
+  const dispatch = useAppDispatch();
+  const selectedImageModel = useAppSelector((state) => state.models.selectedImageModel);
+  const imageModels = useAppSelector((state) => state.models.imageModels);
+
   const user = userData?.user;
   const credits = user?.credits ?? 100;
 
   const [prompt, setPrompt] = useState(
     "Futuristic cyberpunk cyber-samurai standing in rain drenched Neo-Tokyo street, glowing violet katana, volumetric neon reflections, ultra-detailed 8k octane render cinematic lighting"
   );
+  const [negativePrompt, setNegativePrompt] = useState(
+    "blurry, bad anatomy, lowres, distorted fingers, watermark, cropped"
+  );
   const [aspectRatio, setAspectRatio] = useState<"16:9" | "1:1" | "4:3" | "9:16">("16:9");
   const [resolution, setResolution] = useState<"1024x1024" | "1920x1080" | "4K UHD">("1920x1080");
   const [selectedStyle, setSelectedStyle] = useState("Cyberpunk Neo");
-  const [modelEngine, setModelEngine] = useState("Leonardo Phoenix XL");
   const [isGenerating, setIsGenerating] = useState(false);
   const [hoveredTemplate, setHoveredTemplate] = useState<string | null>("cyberpunk");
   const [currentImageRecord, setCurrentImageRecord] = useState<any>(null);
@@ -155,20 +163,22 @@ export default function ImageGenStudioPage() {
       return;
     }
 
-    if (credits < 10) {
-      toast.error(`Insufficient tokens! You have ${credits} tokens, but generating an image requires 10 tokens.`);
+    const modelCost = imageModels[selectedImageModel]?.price ?? 10;
+    if (credits < modelCost) {
+      toast.error(`Insufficient tokens! You have ${credits} tokens, but generating with ${selectedImageModel} requires ${modelCost} tokens.`);
       return;
     }
 
     setIsGenerating(true);
-    const toastId = toast.loading(`Synthesizing with ${modelEngine} & Inngest [10 Tokens]...`);
+    const toastId = toast.loading(`Synthesizing with ${selectedImageModel} & Inngest [${modelCost} Tokens]...`);
 
     try {
       const response = await generateImageApi({ 
         prompt,
+        negativePrompt,
         style: selectedStyle,
         aspectRatio,
-        model: modelEngine 
+        model: selectedImageModel 
       }).unwrap();
 
       if (response.url) {
@@ -201,12 +211,15 @@ export default function ImageGenStudioPage() {
   };
 
   const handleGenerateSimilar = (template: TemplateCard) => {
-    setPrompt(template.prompt + " --style " + template.title);
+    setPrompt(template.prompt);
+    if (template.tag) {
+      setSelectedStyle(template.tag);
+    }
     handleGenerate();
   };
 
   return (
-    <div className="min-h-screen w-full bg-[#F8FAFC] text-slate-900 font-sans antialiased">
+    <div className="min-h-screen w-full bg-[#0D0D0F] text-white font-sans antialiased">
       <div className="flex min-h-screen w-full">
         {/* Left Navigation Sidebar */}
         <DashboardSidebar activeItem="Image Generator" />
@@ -224,14 +237,16 @@ export default function ImageGenStudioPage() {
             <PromptStudioCard
               prompt={prompt}
               setPrompt={setPrompt}
+              negativePrompt={negativePrompt}
+              setNegativePrompt={setNegativePrompt}
               aspectRatio={aspectRatio}
               setAspectRatio={setAspectRatio}
               resolution={resolution}
               setResolution={setResolution}
               selectedStyle={selectedStyle}
               setSelectedStyle={setSelectedStyle}
-              modelEngine={modelEngine}
-              setModelEngine={setModelEngine}
+              modelEngine={selectedImageModel}
+              setModelEngine={(val) => dispatch(setSelectedImageModel(val))}
               isGenerating={isGenerating}
               onGenerate={handleGenerate}
             />
@@ -251,18 +266,18 @@ export default function ImageGenStudioPage() {
             {/* User Personal Collection & Recent History Section */}
             {((historyData?.images && historyData.images.length > 0) || (collectionsData?.collections && collectionsData.collections.length > 0)) && (
               <section className="space-y-4">
-                <div className="flex flex-wrap items-center justify-between border-b border-slate-200 pb-3 gap-3">
+                <div className="flex flex-wrap items-center justify-between border-b border-white/[0.07] pb-3 gap-3">
                   <div className="flex items-center gap-3">
-                    <h2 className="font-serif-heading text-2xl font-bold tracking-tight text-slate-900">
+                    <h2 className="font-serif-heading text-2xl font-bold tracking-tight text-white">
                       My Private Vault
                     </h2>
-                    <div className="flex items-center rounded-xl border border-slate-200 bg-slate-100 p-0.5">
+                    <div className="flex items-center rounded-xl border border-white/[0.08] bg-white/[0.04] p-0.5">
                       <button
                         onClick={() => setActiveTab("history")}
                         className={`cursor-pointer px-3 py-1 rounded-lg text-xs font-semibold transition-all ${
                           activeTab === "history" 
-                            ? "bg-white text-purple-700 shadow-xs" 
-                            : "text-slate-600 hover:text-slate-900"
+                            ? "bg-[#FF7A00] text-white shadow-xs" 
+                            : "text-white/50 hover:text-white"
                         }`}
                       >
                         History ({historyData?.images?.length || 0})
@@ -271,8 +286,8 @@ export default function ImageGenStudioPage() {
                         onClick={() => setActiveTab("collections")}
                         className={`cursor-pointer px-3 py-1 rounded-lg text-xs font-semibold transition-all ${
                           activeTab === "collections" 
-                            ? "bg-white text-purple-700 shadow-xs" 
-                            : "text-slate-600 hover:text-slate-900"
+                            ? "bg-[#FF7A00] text-white shadow-xs" 
+                            : "text-white/50 hover:text-white"
                         }`}
                       >
                         Collections ({collectionsData?.collections?.length || 0})
@@ -280,7 +295,7 @@ export default function ImageGenStudioPage() {
                     </div>
                   </div>
 
-                  <span className="font-mono text-[10px] uppercase tracking-wider text-amber-700 border border-amber-200 bg-amber-50 px-2.5 py-1 rounded-full font-bold">
+                  <span className="font-mono text-[10px] uppercase tracking-wider text-[#FF7A00] border border-[#FF7A00]/30 bg-[#FF7A00]/10 px-2.5 py-1 rounded-full font-bold">
                     [ ALL CREATIONS PRIVATE BY DEFAULT ]
                   </span>
                 </div>
@@ -295,7 +310,7 @@ export default function ImageGenStudioPage() {
                         setCurrentImageRecord(item);
                         toast.success("Loaded image onto canvas!");
                       }}
-                      className="group cursor-pointer relative aspect-square rounded-2xl overflow-hidden border border-slate-200 bg-slate-100 hover:border-purple-400 transition-all hover:scale-102 hover:shadow-md"
+                      className="group cursor-pointer relative aspect-square rounded-2xl overflow-hidden border border-white/[0.07] bg-white/[0.04] hover:border-[#FF7A00]/40 transition-all hover:scale-102"
                     >
                       <img src={item.r2Url} alt={item.prompt} className="h-full w-full object-cover" />
                       <div className="absolute inset-0 bg-gradient-to-t from-slate-900/90 via-slate-900/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity p-2.5 flex flex-col justify-end">

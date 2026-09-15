@@ -29,12 +29,12 @@ export function PopularCreations({
   return (
     <section className="space-y-4">
       {/* Section Header */}
-      <div className="flex items-center justify-between border-b border-slate-200 pb-3">
+      <div className="flex items-center justify-between border-b border-white/[0.07] pb-3">
         <div className="flex items-center gap-3">
-          <h2 className="font-serif-heading text-2xl font-bold tracking-tight text-slate-900">
+          <h2 className="font-serif-heading text-2xl font-bold tracking-tight text-white">
             Popular Creations
           </h2>
-          <span className="font-mono text-[10px] uppercase tracking-wider text-purple-700 border border-purple-200 bg-purple-50 px-2 py-0.5 rounded-full font-semibold">
+          <span className="font-mono text-[10px] uppercase tracking-wider text-[#FF7A00] border border-[#FF7A00]/30 bg-[#FF7A00]/10 px-2 py-0.5 rounded-full font-semibold">
             [ 02 COMMUNITY FEED ]
           </span>
         </div>
@@ -42,7 +42,7 @@ export function PopularCreations({
         <div className="flex items-center gap-2">
           <Link
             to="/image-gallary"
-            className="font-mono text-[11px] uppercase text-purple-600 font-bold hover:underline flex items-center gap-1"
+            className="font-mono text-[11px] uppercase text-[#FF7A00] font-bold hover:underline flex items-center gap-1"
           >
             <span>VIEW ALL IN GALLERY</span>
             <ArrowRight className="h-3 w-3" />
@@ -55,10 +55,10 @@ export function PopularCreations({
         {creations.map((item) => (
           <div
             key={item.id}
-            className="group relative flex flex-col overflow-hidden rounded-2xl border border-slate-200/90 bg-white transition-all duration-300 hover:border-purple-300 hover:-translate-y-1 hover:shadow-md shadow-sm"
+            className="group relative flex flex-col overflow-hidden rounded-2xl border border-white/[0.07] bg-white/[0.03] transition-all duration-300 hover:border-[#FF7A00]/30 hover:-translate-y-1"
           >
             {/* Image Container */}
-            <div className="relative aspect-video w-full overflow-hidden bg-slate-100">
+            <div className="relative aspect-video w-full overflow-hidden bg-black/40">
               <img
                 src={item.image}
                 alt={item.title}
@@ -70,7 +70,7 @@ export function PopularCreations({
 
               {/* Top Badges */}
               <div className="absolute top-2.5 left-2.5 right-2.5 flex items-center justify-between z-10">
-                <span className="rounded-full bg-white/90 px-2 py-0.5 font-mono text-[9px] uppercase tracking-wider text-slate-800 backdrop-blur-md border border-slate-200 shadow-xs font-semibold">
+                <span className="rounded-full bg-black/70 px-2 py-0.5 font-mono text-[9px] uppercase tracking-wider text-white backdrop-blur-md border border-white/20 shadow-xs font-semibold">
                   [ {item.tag} ]
                 </span>
 
@@ -81,8 +81,8 @@ export function PopularCreations({
                     onLikeToggle(item.id);
                   }}
                   className={`cursor-pointer flex items-center gap-1.5 rounded-full px-2.5 py-0.5 font-mono text-[10px] backdrop-blur-md border transition-all duration-200 hover:scale-105 active:scale-95 shadow-xs ${item.isLiked
-                      ? "border-rose-200 bg-rose-50 text-rose-600 font-bold"
-                      : "border-slate-200 bg-white/90 text-slate-600 hover:text-slate-900"
+                      ? "border-rose-400/40 bg-rose-500/20 text-rose-300 font-bold"
+                      : "border-white/20 bg-black/60 text-white/80 hover:text-white"
                     }`}
                 >
                   <Heart
@@ -100,7 +100,7 @@ export function PopularCreations({
                     onUsePrompt(item.title);
                     toast.success("Prompt loaded into creation bar!");
                   }}
-                  className="cursor-pointer flex-1 flex items-center justify-center gap-1 rounded-lg bg-white/95 hover:bg-white text-[10px] font-semibold text-slate-800 py-1.5 px-2 border border-slate-200 backdrop-blur-md transition-all active:scale-95 shadow-xs"
+                  className="cursor-pointer flex-1 flex items-center justify-center gap-1 rounded-lg bg-black/70 hover:bg-black/90 text-[10px] font-semibold text-white py-1.5 px-2 border border-white/20 backdrop-blur-md transition-all active:scale-95 shadow-xs"
                 >
                   <Copy className="h-3 w-3 text-purple-600" />
                   <span>Use Prompt</span>
@@ -109,18 +109,18 @@ export function PopularCreations({
             </div>
 
             {/* Card Content Details */}
-            <div className="flex flex-1 flex-col justify-between p-3.5 bg-white">
-              <h3 className="font-sans text-xs font-medium text-slate-800 line-clamp-1 group-hover:text-purple-600 transition-colors">
+            <div className="flex flex-1 flex-col justify-between p-3.5 bg-transparent">
+              <h3 className="font-sans text-xs font-medium text-white/70 line-clamp-1 group-hover:text-[#FF7A00] transition-colors">
                 {item.title}
               </h3>
 
-              <div className="flex items-center gap-2 pt-2 mt-1 border-t border-slate-100">
+              <div className="flex items-center gap-2 pt-2 mt-1 border-t border-white/[0.07]">
                 <img
                   src={item.authorAvatar}
                   alt={item.author}
-                  className="h-4.5 w-4.5 rounded-full object-cover border border-slate-200"
+                  className="h-4.5 w-4.5 rounded-full object-cover border border-white/10"
                 />
-                <span className="font-mono text-[10px] text-slate-500 truncate uppercase">
+                <span className="font-mono text-[10px] text-white/40 truncate uppercase">
                   {item.author}
                 </span>
               </div>
@@ -129,20 +129,20 @@ export function PopularCreations({
         ))}
 
         {/* Right-aligned Featured CTA Card */}
-        <div className="group relative flex flex-col items-center justify-center overflow-hidden rounded-2xl border border-purple-200 bg-gradient-to-br from-purple-50 via-white to-rose-50 p-6 text-center shadow-sm transition-all duration-300 hover:border-purple-300 hover:-translate-y-1 hover:shadow-md">
+        <div className="group relative flex flex-col items-center justify-center overflow-hidden rounded-2xl border border-[#FF7A00]/20 bg-[#FF7A00]/5 p-6 text-center transition-all duration-300 hover:border-[#FF7A00]/40 hover:-translate-y-1">
           <div className="relative z-20 flex flex-col items-center">
-            <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-purple-100 border border-purple-200 text-purple-700 shadow-xs group-hover:scale-110 transition-transform duration-300">
+            <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-[#FF7A00]/10 border border-[#FF7A00]/20 text-[#FF7A00] group-hover:scale-110 transition-transform duration-300">
               <Layers className="h-5 w-5" />
             </div>
 
-            <h3 className="font-serif-heading text-lg font-bold text-slate-900 tracking-tight">Explore 50K+</h3>
-            <p className="mt-1 font-mono text-[10px] uppercase text-slate-500 max-w-[130px]">
+            <h3 className="font-serif-heading text-lg font-bold text-white tracking-tight">Explore 50K+</h3>
+            <p className="mt-1 font-mono text-[10px] uppercase text-white/40 max-w-[130px]">
               [ COMMUNITY GALLERY ]
             </p>
 
             <Link
               to="/image-gallary"
-              className="mt-4 inline-flex items-center gap-1.5 rounded-xl bg-purple-600 hover:bg-purple-700 px-4 py-2 font-sans text-xs font-bold text-white shadow-xs transition-all duration-200 hover:scale-105 active:scale-95 group-hover:gap-2 cursor-pointer"
+              className="mt-4 inline-flex items-center gap-1.5 rounded-xl bg-[#FF7A00] hover:bg-[#FF9A3C] px-4 py-2 font-sans text-xs font-bold text-white shadow-[0_0_12px_rgba(255,122,0,0.3)] transition-all duration-200 hover:scale-105 active:scale-95 group-hover:gap-2 cursor-pointer"
             >
               <span>Go to Gallery</span>
               <ArrowRight className="h-3 w-3" />

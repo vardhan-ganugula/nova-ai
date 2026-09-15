@@ -1,6 +1,7 @@
 import type { SerializedError } from '@reduxjs/toolkit';
 import { createApi, fetchBaseQuery, type FetchBaseQueryError } from '@reduxjs/toolkit/query/react';
 import toast from 'react-hot-toast';
+import { setModels } from '@/store/modelsSlice.ts';
 
 
 const API_URL = (import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000') + '/api';
@@ -17,12 +18,20 @@ const apiSlice = createApi({
 
   endpoints: (builder) => ({
 
-    getUser: builder.query<{ user: any }, void>({
+    getUser: builder.query<{ user: any; models?: any }, void>({
       query: () => ({
         url: '/auth/user',
         method: 'GET',
       }),
       providesTags: ['User'],
+      onQueryStarted: async (_, { dispatch, queryFulfilled }) => {
+        try {
+          const { data } = await queryFulfilled;
+          if (data?.models) {
+            dispatch(setModels(data.models));
+          }
+        } catch {}
+      },
     }),
 
     login: builder.mutation({
@@ -32,9 +41,12 @@ const apiSlice = createApi({
         body: credentials,
       }),
       invalidatesTags: ['User'],
-      onQueryStarted: async (_, { queryFulfilled }) => {
+      onQueryStarted: async (_, { dispatch, queryFulfilled }) => {
         try {
           const { data } = await queryFulfilled;
+          if (data?.models) {
+            dispatch(setModels(data.models));
+          }
           const backendMessage = data?.message || data?.msg;
           if (backendMessage) {
             toast.success(backendMessage);
@@ -220,6 +232,26 @@ const apiSlice = createApi({
       }),
       providesTags: ['User'],
     }),
+
+    getAvailableModels: builder.query<{
+      imageModels: Record<string, any>;
+      chatModels: Record<string, any>;
+      audioModels: Record<string, any>;
+      videoModels: Record<string, any>;
+    }, void>({
+      query: () => ({
+        url: '/ai/models',
+        method: 'GET',
+      }),
+      onQueryStarted: async (_, { dispatch, queryFulfilled }) => {
+        try {
+          const { data } = await queryFulfilled;
+          if (data) {
+            dispatch(setModels(data));
+          }
+        } catch {}
+      },
+    }),
   })
 });
 
@@ -241,5 +273,6 @@ export const {
   useUpdateProfileMutation,
   useChangePasswordMutation,
   useGetTokenUsageQuery,
+  useGetAvailableModelsQuery,
 } = apiSlice;
 export default apiSlice;
