@@ -11,6 +11,9 @@ export const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET || '';
 export const GITHUB_CLIENT_ID = process.env.GITHUB_CLIENT_ID || '';
 export const GITHUB_CLIENT_SECRET = process.env.GITHUB_CLIENT_SECRET || '';
 export const REDIS_URL = process.env.REDIS_URL || 'redis://localhost:6379';
+export const UPSTASH_REDIS_REST_URL = process.env.UPSTASH_REDIS_REST_URL || '';
+export const UPSTASH_REDIS_REST_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN || '';
+export const USE_UPSTASH = process.env.USE_UPSTASH === 'true';
 export const SERVER_URL = process.env.SERVER_URL || 'http://localhost:8000';
 
 export const SMTP_HOST = process.env.SMTP_HOST;

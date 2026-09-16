@@ -1,11 +1,8 @@
 import { Request, Response, NextFunction } from 'express';
-import { Redis } from 'ioredis';
+import redis from '@/utils/redis.util.js';
 import { db } from '@db/index.js';
 import { users } from '@db/schema.js';
 import { eq } from 'drizzle-orm';
-import { REDIS_URL } from '@/utils/config.util.js';
-
-const redis = new Redis(REDIS_URL);
 interface AuthenticatedRequest extends Request {
   user?: any;
 }

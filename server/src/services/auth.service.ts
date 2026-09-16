@@ -2,16 +2,14 @@ import { db } from '@db/index.js';
 import { users, accounts } from '@db/schema.js';
 import { eq, and } from 'drizzle-orm';
 import bcrypt from 'bcrypt';
-import { Redis } from 'ioredis';
+import redis from '@/utils/redis.util.js';
 import { v4 as uuidv4 } from 'uuid';
-import { REDIS_URL } from '@/utils/config.util.js';
 import { getNextUtcMidnight, calculateActiveUserTokens, PURCHASED_TOKENS_EXPIRY_DAYS } from '@/utils/credit.util.js';
 
 import {MailService} from './mail.service.js';
 
 
 const mailService = new MailService();
-const redis = new Redis(REDIS_URL);
 const SALT_ROUNDS = 10;
 
 function generateDefaultUsername(): string {
