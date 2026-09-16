@@ -27,6 +27,7 @@ import {
   useGetPublicGalleryQuery,
   useToggleLikeMutation,
   useDownloadCleanImageMutation,
+  useGetUserHistoryQuery,
 } from "@/store/authSlice";
 
 export default function ImageGalleryPage() {
@@ -39,6 +40,9 @@ export default function ImageGalleryPage() {
 
   const user = userData?.user;
   const credits = user?.credits ?? 0;
+
+  const { data: userHistoryData } = useGetUserHistoryQuery(undefined, { skip: !user });
+  const userHistoryImages = userHistoryData?.images || [];
 
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedTag, setSelectedTag] = useState("All");
@@ -97,7 +101,18 @@ export default function ImageGalleryPage() {
     },
   ];
 
-  const galleryImages = galleryData?.images?.length ? galleryData.images : sampleFallback;
+  const rawGalleryImages = galleryData?.images?.length ? galleryData.images : sampleFallback;
+
+  // Deduplicate gallery images by watermarked URL or ID so no identical creations appear twice
+  const seenGalleryKeys = new Set<string>();
+  const galleryImages: any[] = [];
+  for (const item of rawGalleryImages) {
+    const key = item.watermarkedR2Url || item.displayUrl || item.id;
+    if (!seenGalleryKeys.has(key)) {
+      seenGalleryKeys.add(key);
+      galleryImages.push(item);
+    }
+  }
 
   // Sync URL parameter ?image=<id> with modal state
   const imageIdFromUrl = searchParams.get("image");
@@ -288,7 +303,18 @@ export default function ImageGalleryPage() {
     }
   };
 
-  // Clean HD Download (Gated: requires login, 0 tokens for creator, 1 token for non-creators)
+  const isImageOwnedOrAcquired = (img: any) => {
+    if (!user || !img) return false;
+    if (img.userId === user.id) return true;
+    return userHistoryImages.some(
+      (h: any) =>
+        (img.r2Url && h.r2Url === img.r2Url) ||
+        (img.watermarkedR2Url && h.watermarkedR2Url === img.watermarkedR2Url) ||
+        h.id === img.id
+    );
+  };
+
+  // Clean HD Download (Gated: requires login, 0 tokens for creator/already acquired, 1 token for new acquisition)
   const handleDownloadClean = async (img: any, e?: React.MouseEvent) => {
     e?.stopPropagation();
 
@@ -297,12 +323,12 @@ export default function ImageGalleryPage() {
       return;
     }
 
-    const isOwner = user.id && (img.userId === user.id);
+    const alreadyAcquired = isImageOwnedOrAcquired(img);
 
     setIsDownloading(true);
     const toastId = toast.loading(
-      isOwner
-        ? "Preparing your original clean creation (0 tokens)..."
+      alreadyAcquired
+        ? "Preparing clean master from your generations (0 tokens)..."
         : "Checking balance & preparing clean HD master (1 token)..."
     );
 
@@ -310,11 +336,11 @@ export default function ImageGalleryPage() {
       const res = await downloadCleanImageApi({ id: img.id }).unwrap();
       await triggerBrowserDownload(res.downloadUrl, `nova-ai-${img.id}-clean-hd.png`);
 
-      if (res.isOwner) {
-        toast.success("Downloaded original HD master! (Creator Free - 0 tokens)", { id: toastId });
+      if (res.tokensDeducted === 0) {
+        toast.success("Downloaded original HD master! (0 tokens - In your generations)", { id: toastId });
       } else {
         toast.success(
-          `Downloaded clean HD master! (${res.tokensDeducted} token deducted, ${res.creditsRemaining} remaining)`,
+          `Downloaded clean HD master & saved to your generations! (${res.tokensDeducted} token deducted, ${res.creditsRemaining} remaining)`,
           { id: toastId }
         );
       }
@@ -329,7 +355,8 @@ export default function ImageGalleryPage() {
     }
   };
 
-  const isCurrentModalOwner = user?.id && selectedModalImage?.userId === user?.id;
+  const isCurrentModalOriginalCreator = user?.id && selectedModalImage?.userId === user?.id;
+  const isCurrentModalOwner = isImageOwnedOrAcquired(selectedModalImage);
 
   return (
     <AppShell title="Explore Community" subtitleBadge="[ PUBLIC EXHIBIT ]">
@@ -587,19 +614,24 @@ export default function ImageGalleryPage() {
               </div>
 
               {/* Right Column: Spacious Meta & Actions Sidebar */}
-              <div className="w-full md:w-[420px] lg:w-[450px] shrink-0 bg-[#121216] border-t md:border-t-0 md:border-l border-white/[0.08] flex flex-col justify-between overflow-y-auto">
-                <div className="p-6 sm:p-7 space-y-6">
+              <div className="w-full md:w-[440px] lg:w-[480px] shrink-0 bg-[#121216] border-t md:border-t-0 md:border-l border-white/[0.08] flex flex-col justify-between overflow-y-auto">
+                <div className="p-5 sm:p-6 space-y-5">
                   {/* Header Row: Badges, Like, Share & Close Button (No Overlap) */}
-                  <div className="flex items-center justify-between gap-2 pb-2 border-b border-white/[0.06]">
-                    <div className="flex items-center gap-2 min-w-0">
-                      <span className="font-mono text-[10px] uppercase tracking-wider text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded-md font-semibold truncate">
+                  <div className="flex items-center justify-between gap-2 pb-3 border-b border-white/[0.06]">
+                    <div className="flex items-center gap-1.5 flex-wrap min-w-0">
+                      <span className="font-mono text-[10px] uppercase tracking-wider text-zinc-400 bg-white/[0.04] border border-white/10 px-2 py-0.5 rounded-md font-medium">
                         PUBLIC EXHIBIT
                       </span>
-                      {isCurrentModalOwner && (
-                        <span className="font-mono text-[10px] uppercase tracking-wider text-orange-400 bg-orange-500/10 border border-orange-500/20 px-2.5 py-1 rounded-md font-semibold truncate">
+                      {isCurrentModalOriginalCreator ? (
+                        <span className="font-mono text-[10px] uppercase tracking-wider text-orange-400 bg-orange-500/10 border border-orange-500/25 px-2 py-0.5 rounded-md font-semibold">
                           YOUR ARTWORK
                         </span>
-                      )}
+                      ) : isCurrentModalOwner ? (
+                        <span className="font-mono text-[10px] uppercase tracking-wider text-emerald-400 bg-emerald-500/10 border border-emerald-500/25 px-2 py-0.5 rounded-md font-semibold flex items-center gap-1">
+                          <CheckCircle2 className="h-3 w-3" />
+                          IN GENERATIONS
+                        </span>
+                      ) : null}
                     </div>
 
                     <div className="flex items-center gap-1.5 shrink-0">
@@ -645,28 +677,34 @@ export default function ImageGalleryPage() {
                   </div>
 
                   {/* Creator Info Card */}
-                  <div className="flex items-center gap-3.5 p-3 rounded-xl bg-white/[0.03] border border-white/[0.06]">
+                  <div className="flex items-center gap-3 p-3 rounded-xl bg-white/[0.03] border border-white/[0.06]">
                     <img
                       src={
                         selectedModalImage.authorAvatar ||
                         "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80"
                       }
                       alt="Creator"
-                      className="h-10 w-10 rounded-full object-cover border border-white/10 shrink-0"
+                      className="h-9 w-9 rounded-full object-cover border border-white/10 shrink-0"
                     />
                     <div className="min-w-0 flex-1">
                       <div className="text-xs font-bold text-white truncate">
                         {selectedModalImage.author || "Nova Artist"}
                       </div>
                       <div className="text-[11px] text-zinc-400 flex items-center gap-1.5 mt-0.5">
-                        <span className="text-emerald-400">●</span>
-                        <span>{isCurrentModalOwner ? "You (Original Creator)" : "Verified Creator"}</span>
+                        <span className="text-emerald-400 text-[9px]">●</span>
+                        <span className="truncate">
+                          {isCurrentModalOriginalCreator
+                            ? "You (Original Creator)"
+                            : isCurrentModalOwner
+                              ? "Acquired in your library"
+                              : "Verified Creator"}
+                        </span>
                       </div>
                     </div>
                   </div>
 
                   {/* Prompt Box */}
-                  <div className="space-y-2">
+                  <div className="space-y-1.5">
                     <div className="flex items-center justify-between">
                       <h4 className="text-[10px] font-mono uppercase tracking-wider text-zinc-400 font-semibold">
                         PROMPT FORMULA
@@ -688,55 +726,57 @@ export default function ImageGalleryPage() {
                         )}
                       </button>
                     </div>
-                    <div className="rounded-xl border border-white/[0.07] bg-black/40 p-3.5 text-xs text-zinc-300 leading-relaxed max-h-32 overflow-y-auto selection:bg-orange-500/30">
+                    <div className="rounded-xl border border-white/[0.07] bg-black/40 p-3 text-xs text-zinc-300 leading-relaxed max-h-28 overflow-y-auto selection:bg-orange-500/30">
                       "{selectedModalImage.prompt}"
                     </div>
                   </div>
 
                   {/* Download Options */}
-                  <div className="space-y-3">
+                  <div className="space-y-2.5">
                     <h4 className="text-[10px] font-mono uppercase tracking-wider text-zinc-400 font-semibold">
-                      DOWNLOAD OPTIONS
+                      DOWNLOAD ASSETS
                     </h4>
 
                     {/* Option 1: Watermarked (Free for all) */}
                     <button
                       onClick={() => handleDownloadWatermarked(selectedModalImage)}
-                      className="w-full flex items-center justify-between p-3 rounded-xl border border-white/10 bg-white/[0.03] hover:bg-white/[0.07] text-left transition-all group"
+                      className="w-full flex items-center justify-between p-3 rounded-xl border border-white/10 bg-white/[0.03] hover:bg-white/[0.07] text-left transition-all group cursor-pointer"
                     >
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-3 min-w-0 flex-1 mr-2">
                         <div className="h-8 w-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center shrink-0 group-hover:bg-white/10 transition-colors">
                           <Download className="h-4 w-4 text-zinc-300 group-hover:text-white" />
                         </div>
-                        <div>
-                          <div className="text-xs font-semibold text-white">
+                        <div className="min-w-0 flex-1">
+                          <div className="text-xs font-semibold text-white truncate">
                             Download Watermarked
                           </div>
-                          <div className="text-[10px] text-zinc-400 font-mono mt-0.5">
-                            Standard preview with Nova AI watermark
+                          <div className="text-[10px] text-zinc-400 font-mono mt-0.5 truncate">
+                            Standard preview with watermark
                           </div>
                         </div>
                       </div>
-                      <span className="font-mono text-[10px] font-bold text-emerald-400 border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 rounded-md">
+                      <span className="font-mono text-[10px] font-bold text-emerald-400 border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 rounded-md shrink-0">
                         FREE
                       </span>
                     </button>
 
-                    {/* Option 2: Clean HD Master (Token Gated) */}
+                    {/* Option 2: Clean HD Master (Token Gated / In Generations) */}
                     <button
                       onClick={() => handleDownloadClean(selectedModalImage)}
                       disabled={isDownloadingClean || isDownloading}
-                      className={`w-full flex items-center justify-between p-3 rounded-xl border text-left transition-all group ${isCurrentModalOwner
-                        ? "border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20"
-                        : "border-orange-500/30 bg-orange-500/10 hover:bg-orange-500/20"
-                        }`}
+                      className={`w-full flex items-center justify-between p-3 rounded-xl border text-left transition-all group cursor-pointer ${
+                        isCurrentModalOwner
+                          ? "border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20"
+                          : "border-orange-500/30 bg-orange-500/10 hover:bg-orange-500/20"
+                      }`}
                     >
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-3 min-w-0 flex-1 mr-2">
                         <div
-                          className={`h-8 w-8 rounded-lg flex items-center justify-center shrink-0 border ${isCurrentModalOwner
-                            ? "bg-emerald-500/20 border-emerald-500/30 text-emerald-400"
-                            : "bg-orange-500/20 border-orange-500/30 text-orange-400"
-                            }`}
+                          className={`h-8 w-8 rounded-lg flex items-center justify-center shrink-0 border ${
+                            isCurrentModalOwner
+                              ? "bg-emerald-500/20 border-emerald-500/30 text-emerald-400"
+                              : "bg-orange-500/20 border-orange-500/30 text-orange-400"
+                          }`}
                         >
                           {isDownloadingClean || isDownloading ? (
                             <Loader2 className="h-4 w-4 animate-spin" />
@@ -744,28 +784,31 @@ export default function ImageGalleryPage() {
                             <Sparkles className="h-4 w-4" />
                           )}
                         </div>
-                        <div>
-                          <div className="text-xs font-semibold text-white flex items-center gap-1.5">
+                        <div className="min-w-0 flex-1">
+                          <div className="text-xs font-semibold text-white flex items-center gap-1.5 flex-wrap">
                             <span>Download Clean HD</span>
-                            <span className="text-[9px] px-1.5 py-0.2 rounded bg-black/60 font-mono font-medium text-zinc-300 border border-white/10">
+                            <span className="text-[9px] px-1.5 py-0.2 rounded bg-black/60 font-mono font-medium text-zinc-300 border border-white/10 shrink-0">
                               No Watermark
                             </span>
                           </div>
-                          <div className="text-[10px] text-zinc-400 font-mono mt-0.5">
-                            {isCurrentModalOwner
+                          <div className="text-[10px] text-zinc-400 font-mono mt-0.5 truncate">
+                            {isCurrentModalOriginalCreator
                               ? "Original master • Creator Free (0 Tokens)"
-                              : user
-                                ? "Original master • 1 Token deduction"
-                                : "Sign in required • 1 Token or Creator Free"}
+                              : isCurrentModalOwner
+                                ? "In your generations • Free re-download"
+                                : user
+                                  ? "Saves to your generations • 1 Token"
+                                  : "Sign in required • 1 Token or Free"}
                           </div>
                         </div>
                       </div>
 
                       <span
-                        className={`font-mono text-[10px] font-bold px-2 py-0.5 rounded-md border ${isCurrentModalOwner
-                          ? "text-emerald-400 border-emerald-500/30 bg-emerald-500/20"
-                          : "text-orange-400 border-orange-500/30 bg-orange-500/20"
-                          }`}
+                        className={`font-mono text-[10px] font-bold px-2 py-0.5 rounded-md border shrink-0 ${
+                          isCurrentModalOwner
+                            ? "text-emerald-400 border-emerald-500/30 bg-emerald-500/20"
+                            : "text-orange-400 border-orange-500/30 bg-orange-500/20"
+                        }`}
                       >
                         {isCurrentModalOwner ? "0 TOKENS" : "1 TOKEN"}
                       </span>
@@ -774,23 +817,23 @@ export default function ImageGalleryPage() {
                 </div>
 
                 {/* Bottom Studio Remix Action */}
-                <div className="p-6 sm:p-7 pt-4 border-t border-white/[0.08] bg-[#0f0f13] space-y-2.5">
+                <div className="p-5 sm:p-6 pt-3.5 border-t border-white/[0.08] bg-[#0f0f13] space-y-2">
                   <Link
                     to="/create"
                     onClick={() => {
                       copyPrompt(selectedModalImage.prompt, selectedModalImage.id);
                     }}
-                    className="w-full flex items-center justify-center gap-2 rounded-xl bg-orange-500 hover:bg-orange-600 py-3 text-xs font-bold text-black transition-all shadow-[0_0_20px_rgba(249,115,22,0.25)] hover:shadow-[0_0_25px_rgba(249,115,22,0.4)]"
+                    className="w-full flex items-center justify-center gap-2 rounded-xl bg-orange-500 hover:bg-orange-600 py-2.5 text-xs font-bold text-black transition-all shadow-[0_0_20px_rgba(249,115,22,0.25)] hover:shadow-[0_0_25px_rgba(249,115,22,0.4)]"
                   >
                     <Wand2 className="h-4 w-4 fill-black" />
                     <span>Remix Prompt in Studio</span>
                   </Link>
 
                   <div className="flex items-center justify-between text-[11px] text-zinc-500 px-1 font-mono">
-                    <span>Direct Link: /explore?image={selectedModalImage.id.slice(0, 8)}...</span>
+                    <span className="truncate min-w-0 mr-2">Direct Link: /explore?image={selectedModalImage.id.slice(0, 8)}...</span>
                     <button
                       onClick={(e) => handleShareLink(selectedModalImage, e)}
-                      className="text-orange-400 hover:text-orange-300 transition-colors underline cursor-pointer"
+                      className="text-orange-400 hover:text-orange-300 transition-colors underline cursor-pointer shrink-0"
                     >
                       Copy URL
                     </button>

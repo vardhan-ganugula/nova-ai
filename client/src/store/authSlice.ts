@@ -215,7 +215,7 @@ const apiSlice = createApi({
         url: `/ai/images/${id}/download-clean`,
         method: 'POST',
       }),
-      invalidatesTags: ['User'],
+      invalidatesTags: ['User', 'History', 'Collection'],
     }),
 
     updateProfile: builder.mutation<{ user: any; message: string }, { displayName?: string; username?: string }>({

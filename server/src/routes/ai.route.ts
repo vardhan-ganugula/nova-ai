@@ -9,7 +9,7 @@ import {
 import { requireAuth } from "@/middlewares/auth.middleware.js";
 import { db } from "@/db/index.js";
 import { users, images, collections, imageLikes } from "@/db/schema.js";
-import { eq, and, desc } from "drizzle-orm";
+import { eq, and, desc, ne } from "drizzle-orm";
 import { uploadFromFalToR2, uploadFromFalToR2WithWatermark } from "@/utils/storage.util.js";
 import { inngest } from "@/inngest/client.js";
 import { aiImageModels, aiChatModels, aiAudioModels, aiVideoModels } from "@/utils/ai.util.js";
@@ -386,12 +386,29 @@ aiRouter.get("/public-gallery", async (_req, res: Response) => {
             })
             .from(images)
             .leftJoin(users, eq(images.userId, users.id))
-            .where(eq(images.isPublic, true))
+            .where(
+                and(
+                    eq(images.isPublic, true),
+                    ne(images.generationType, "download")
+                )
+            )
             .orderBy(desc(images.createdAt))
-            .limit(60);
+            .limit(100);
+
+        // Deduplicate by watermarkedR2Url so the exact same image creation never appears twice in public gallery
+        const seenImageKeys = new Set<string>();
+        const uniqueGalleryItems: typeof publicImages = [];
+
+        for (const img of publicImages) {
+            const key = img.watermarkedR2Url || img.id;
+            if (!seenImageKeys.has(key)) {
+                seenImageKeys.add(key);
+                uniqueGalleryItems.push(img);
+            }
+        }
 
         // Map displayUrl to the watermarked copy for public visitors and search indexers
-        const galleryWithWatermarks = publicImages.map((img) => ({
+        const galleryWithWatermarks = uniqueGalleryItems.slice(0, 60).map((img) => ({
             id: img.id,
             prompt: img.prompt,
             watermarkedR2Url: img.watermarkedR2Url,
@@ -411,7 +428,7 @@ aiRouter.get("/public-gallery", async (_req, res: Response) => {
     }
 });
 
-// Download Clean Artwork Without Watermark (Requires Login, Token-Gated, Free for Owner)
+// Download Clean Artwork Without Watermark (Requires Login, Token-Gated, Free for Owner & Already Acquired)
 aiRouter.post("/images/:id/download-clean", requireAuth, async (req: any, res: Response) => {
     const user = req.user;
     const { id } = req.params;
@@ -429,9 +446,23 @@ aiRouter.post("/images/:id/download-clean", requireAuth, async (req: any, res: R
         }
 
         const isOwner = targetImage.userId === user.id;
-        const tokensDeducted = isOwner ? 0 : DOWNLOAD_WATERMARK_FREE_TOKEN_COST;
 
-        if (!isOwner && user.credits < tokensDeducted) {
+        // Check if user has already acquired this artwork into their generations (same r2Url)
+        const existingCopy = isOwner ? [] : await db
+            .select()
+            .from(images)
+            .where(
+                and(
+                    eq(images.userId, user.id),
+                    eq(images.r2Url, targetImage.r2Url)
+                )
+            )
+            .limit(1);
+
+        const alreadyInGenerations = isOwner || existingCopy.length > 0;
+        const tokensDeducted = alreadyInGenerations ? 0 : DOWNLOAD_WATERMARK_FREE_TOKEN_COST;
+
+        if (!alreadyInGenerations && user.credits < tokensDeducted) {
             return res.status(403).json({
                 error: `Insufficient tokens. Downloading clean original artwork requires ${tokensDeducted} token, but you only have ${user.credits} tokens.`,
                 credits: user.credits,
@@ -439,17 +470,41 @@ aiRouter.post("/images/:id/download-clean", requireAuth, async (req: any, res: R
         }
 
         let newCredits = user.credits;
-        if (!isOwner && tokensDeducted > 0) {
+        if (!alreadyInGenerations && tokensDeducted > 0) {
             newCredits = user.credits - tokensDeducted;
             await db.update(users).set({ credits: newCredits }).where(eq(users.id, user.id));
+
+            // Move/copy this image to user's generations without re-uploading (same R2 storage address)
+            // isPublic is FALSE so it belongs to the user's personal generations/library and never duplicates on Explore
+            const [copiedGeneration] = await db.insert(images).values({
+                userId: user.id,
+                prompt: targetImage.prompt,
+                negativePrompt: targetImage.negativePrompt,
+                style: targetImage.style,
+                aspectRatio: targetImage.aspectRatio,
+                model: targetImage.model || "Community Download",
+                r2Url: targetImage.r2Url, // Same storage address! Do not delete or re-upload!
+                r2Key: targetImage.r2Key,
+                watermarkedR2Url: targetImage.watermarkedR2Url,
+                watermarkedR2Key: targetImage.watermarkedR2Key,
+                isPublic: false, // Must be FALSE: user's personal generation copy
+                status: "completed",
+                generationType: "download",
+            }).returning();
+
+            // Also add to user collections for easy library management
+            await db.insert(collections).values({
+                userId: user.id,
+                imageId: copiedGeneration.id,
+            }).onConflictDoNothing();
         }
 
         res.json({
-            message: isOwner
-                ? "Original artwork ready for download (Creator - Free)"
-                : `Clean artwork ready for download (${tokensDeducted} Token deducted)`,
+            message: alreadyInGenerations
+                ? "Original artwork ready for download (In your generations - 0 tokens)"
+                : `Clean artwork downloaded and added to your generations (${tokensDeducted} Token deducted)`,
             downloadUrl: targetImage.r2Url,
-            isOwner,
+            isOwner: alreadyInGenerations,
             tokensDeducted,
             creditsRemaining: newCredits,
         });
