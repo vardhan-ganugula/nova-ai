@@ -125,45 +125,64 @@ export const AppTopBar: React.FC<AppTopBarProps> = ({
           </Link>
         )}
 
-        {/* Tokens Badge */}
-        <Link
-          to="/settings"
-          title="Manage generation credits"
-          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-orange-500/25 bg-orange-500/10 font-mono text-[11px] font-bold text-orange-400 hover:bg-orange-500/15 transition-all"
-        >
-          <Zap className="h-3.5 w-3.5 fill-orange-400 text-orange-400" />
-          <span>{credits}</span>
-          <span className="hidden sm:inline text-orange-400/70 font-normal text-[10px]">
-            Credits
-          </span>
-        </Link>
+        {user ? (
+          <>
+            {/* Tokens Badge */}
+            <Link
+              to="/settings"
+              title="Manage generation credits"
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-orange-500/25 bg-orange-500/10 font-mono text-[11px] font-bold text-orange-400 hover:bg-orange-500/15 transition-all"
+            >
+              <Zap className="h-3.5 w-3.5 fill-orange-400 text-orange-400" />
+              <span>{credits}</span>
+              <span className="hidden sm:inline text-orange-400/70 font-normal text-[10px]">
+                Credits
+              </span>
+            </Link>
 
-        {/* Notifications */}
-        <button
-          onClick={() => toast("All systems operational. No unread alerts.")}
-          className="relative p-2 rounded-lg border border-white/[0.08] bg-white/[0.02] text-zinc-400 hover:text-white hover:bg-white/[0.05] transition-colors"
-          title="Notifications"
-        >
-          <Bell className="h-3.5 w-3.5" />
-          <span className="absolute top-1.5 right-1.5 h-1.5 w-1.5 rounded-full bg-orange-500" />
-        </button>
+            {/* Notifications */}
+            <button
+              onClick={() => toast("All systems operational. No unread alerts.")}
+              className="relative p-2 rounded-lg border border-white/[0.08] bg-white/[0.02] text-zinc-400 hover:text-white hover:bg-white/[0.05] transition-colors"
+              title="Notifications"
+            >
+              <Bell className="h-3.5 w-3.5" />
+              <span className="absolute top-1.5 right-1.5 h-1.5 w-1.5 rounded-full bg-orange-500" />
+            </button>
 
-        {/* Avatar link */}
-        <Link
-          to="/settings"
-          className="h-8 w-8 rounded-lg overflow-hidden border border-white/10 hover:border-orange-500/50 transition-colors flex items-center justify-center bg-white/[0.04]"
-          title="Account Settings"
-        >
-          {user?.profilePicture ? (
-            <img
-              src={user.profilePicture}
-              alt="User"
-              className="h-full w-full object-cover"
-            />
-          ) : (
-            <User className="h-4 w-4 text-zinc-400" />
-          )}
-        </Link>
+            {/* Avatar link */}
+            <Link
+              to="/settings"
+              className="h-8 w-8 rounded-lg overflow-hidden border border-white/10 hover:border-orange-500/50 transition-colors flex items-center justify-center bg-white/[0.04]"
+              title="Account Settings"
+            >
+              {user?.profilePicture ? (
+                <img
+                  src={user.profilePicture}
+                  alt="User"
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                <User className="h-4 w-4 text-zinc-400" />
+              )}
+            </Link>
+          </>
+        ) : (
+          <div className="flex items-center gap-2">
+            <Link
+              to="/login"
+              className="px-3 py-1.5 rounded-lg border border-white/10 text-xs font-medium text-zinc-300 hover:text-white hover:bg-white/5 transition-colors"
+            >
+              Sign In
+            </Link>
+            <Link
+              to="/register"
+              className="px-3 py-1.5 rounded-lg bg-orange-500 hover:bg-orange-600 text-black text-xs font-semibold shadow-xs transition-colors"
+            >
+              Join Nova
+            </Link>
+          </div>
+        )}
       </div>
     </header>
   );

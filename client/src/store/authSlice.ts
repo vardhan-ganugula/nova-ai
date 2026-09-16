@@ -204,6 +204,20 @@ const apiSlice = createApi({
       invalidatesTags: ['Gallery'],
     }),
 
+    downloadCleanImage: builder.mutation<{
+      message: string;
+      downloadUrl: string;
+      isOwner: boolean;
+      tokensDeducted: number;
+      creditsRemaining: number;
+    }, { id: string }>({
+      query: ({ id }) => ({
+        url: `/ai/images/${id}/download-clean`,
+        method: 'POST',
+      }),
+      invalidatesTags: ['User'],
+    }),
+
     updateProfile: builder.mutation<{ user: any; message: string }, { displayName?: string; username?: string }>({
       query: (body) => ({
         url: '/auth/profile',
@@ -270,6 +284,7 @@ export const {
   useGetPublicGalleryQuery,
   useToggleVisibilityMutation,
   useToggleLikeMutation,
+  useDownloadCleanImageMutation,
   useUpdateProfileMutation,
   useChangePasswordMutation,
   useGetTokenUsageQuery,

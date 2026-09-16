@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import toast from "react-hot-toast";
 import {
   Sparkles,
@@ -14,26 +14,39 @@ import {
   Zap,
   Wand2,
   Share2,
+  Download,
+  LogIn,
+  CheckCircle2,
+  AlertCircle,
+  Loader2,
+  Check,
 } from "lucide-react";
 import { AppShell } from "@/components/layout/AppShell";
 import {
   useGetUserQuery,
   useGetPublicGalleryQuery,
   useToggleLikeMutation,
+  useDownloadCleanImageMutation,
 } from "@/store/authSlice";
 
 export default function ImageGalleryPage() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { data: userData } = useGetUserQuery();
   const { data: galleryData, isLoading } = useGetPublicGalleryQuery();
   const [toggleLikeApi] = useToggleLikeMutation();
+  const [downloadCleanImageApi, { isLoading: isDownloadingClean }] = useDownloadCleanImageMutation();
 
   const user = userData?.user;
-  const credits = user?.credits ?? 100;
+  const credits = user?.credits ?? 0;
 
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedTag, setSelectedTag] = useState("All");
   const [selectedModalImage, setSelectedModalImage] = useState<any>(null);
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
+  const [copiedPromptId, setCopiedPromptId] = useState<string | null>(null);
+  const [copiedShareId, setCopiedShareId] = useState<string | null>(null);
 
   const tags = ["All", "Cinematic", "Cyberpunk", "Anime", "Fantasy", "Photoreal", "Sci-Fi"];
 
@@ -86,9 +99,64 @@ export default function ImageGalleryPage() {
 
   const galleryImages = galleryData?.images?.length ? galleryData.images : sampleFallback;
 
+  // Sync URL parameter ?image=<id> with modal state
+  const imageIdFromUrl = searchParams.get("image");
+
+  useEffect(() => {
+    if (imageIdFromUrl && galleryImages.length > 0) {
+      const match = galleryImages.find((img: any) => String(img.id) === String(imageIdFromUrl));
+      if (match) {
+        setSelectedModalImage(match);
+      }
+    } else if (!imageIdFromUrl && selectedModalImage) {
+      setSelectedModalImage(null);
+    }
+  }, [imageIdFromUrl, galleryData]);
+
+  // Open modal and reflect ?image=<id> in URL bar
+  const openImageModal = (img: any) => {
+    setSelectedModalImage(img);
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      next.set("image", img.id);
+      return next;
+    }, { replace: false });
+  };
+
+  // Close modal and remove ?image from URL bar
+  const closeImageModal = () => {
+    setSelectedModalImage(null);
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      next.delete("image");
+      return next;
+    }, { replace: true });
+  };
+
+  // Close modal on Escape key press
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && selectedModalImage) {
+        closeImageModal();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [selectedModalImage]);
+
+  // Copy shareable direct URL
+  const handleShareLink = (img: any, e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    const shareUrl = `${window.location.origin}/explore?image=${img.id}`;
+    navigator.clipboard.writeText(shareUrl);
+    setCopiedShareId(img.id);
+    setTimeout(() => setCopiedShareId(null), 2000);
+    toast.success("Artwork link copied to clipboard!");
+  };
+
   const filteredImages = galleryImages.filter((img: any) => {
     const matchesSearch =
-      img.prompt.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      img.prompt?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (img.author && img.author.toLowerCase().includes(searchQuery.toLowerCase()));
     const matchesTag =
       selectedTag === "All" ||
@@ -96,8 +164,71 @@ export default function ImageGalleryPage() {
     return matchesSearch && matchesTag;
   });
 
+  // Google Image Search SEO: JSON-LD Schema injection
+  // Strictly exposes watermarkedR2Url / displayUrl to search crawlers, protecting clean master assets
+  useEffect(() => {
+    document.title = "Explore AI Art & Generations | Nova AI Public Gallery";
+
+    let metaDesc = document.querySelector('meta[name="description"]');
+    if (!metaDesc) {
+      metaDesc = document.createElement("meta");
+      metaDesc.setAttribute("name", "description");
+      document.head.appendChild(metaDesc);
+    }
+    metaDesc.setAttribute(
+      "content",
+      "Discover community-generated AI art synthesized on Nova AI. Browse watermarked previews, examine prompt formulas, and download watermark-free HD creations."
+    );
+
+    const schemaId = "nova-gallery-ld-json";
+    let scriptTag = document.getElementById(schemaId) as HTMLScriptElement | null;
+    if (!scriptTag) {
+      scriptTag = document.createElement("script");
+      scriptTag.id = schemaId;
+      scriptTag.type = "application/ld+json";
+      document.head.appendChild(scriptTag);
+    }
+
+    const itemsToExpose = (galleryData?.images?.length ? galleryData.images : sampleFallback).slice(0, 50);
+    const structuredData = {
+      "@context": "https://schema.org",
+      "@type": "ImageGallery",
+      "name": "Nova AI Public Art Exhibition",
+      "description": "Public exhibition of fine-tuned latent renders synthesized on Nova AI",
+      "publisher": {
+        "@type": "Organization",
+        "name": "Nova AI",
+        "url": window.location.origin,
+      },
+      "image": itemsToExpose.map((img: any) => ({
+        "@type": "ImageObject",
+        "contentUrl": img.watermarkedR2Url || img.displayUrl,
+        "thumbnail": img.watermarkedR2Url || img.displayUrl,
+        "name": img.prompt?.slice(0, 100) || "AI Art",
+        "description": img.prompt,
+        "author": {
+          "@type": "Person",
+          "name": img.author || "Nova Artist",
+        },
+        "datePublished": img.createdAt || new Date().toISOString(),
+        "acquireLicensePage": `${window.location.origin}/explore`,
+      })),
+    };
+
+    scriptTag.text = JSON.stringify(structuredData);
+
+    return () => {
+      const el = document.getElementById(schemaId);
+      if (el) el.remove();
+    };
+  }, [galleryData]);
+
   const handleLikeToggle = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
+    if (!user) {
+      setShowAuthModal(true);
+      return;
+    }
     try {
       const res = await toggleLikeApi({ id }).unwrap();
       toast.success(res.liked ? "Liked artwork! ❤️" : "Removed like");
@@ -106,11 +237,99 @@ export default function ImageGalleryPage() {
     }
   };
 
-  const copyPrompt = (text: string, e?: React.MouseEvent) => {
+  const copyPrompt = (text: string, id: string, e?: React.MouseEvent) => {
     e?.stopPropagation();
     navigator.clipboard.writeText(text);
+    setCopiedPromptId(id);
+    setTimeout(() => setCopiedPromptId(null), 2000);
     toast.success("Prompt copied to clipboard!");
   };
+
+  // Browser download helper
+  const triggerBrowserDownload = async (url: string, filename: string) => {
+    try {
+      const res = await fetch(url);
+      if (!res.ok) throw new Error("Network response was not ok");
+      const blob = await res.blob();
+      const blobUrl = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = blobUrl;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(blobUrl);
+    } catch {
+      const a = document.createElement("a");
+      a.href = url;
+      a.target = "_blank";
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }
+  };
+
+  // Free Watermarked Download (Public for all visitors)
+  const handleDownloadWatermarked = async (img: any, e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    const targetUrl = img.watermarkedR2Url || img.displayUrl || img.r2Url;
+    if (!targetUrl) {
+      toast.error("Image file not available");
+      return;
+    }
+
+    const toastId = toast.loading("Downloading watermarked image...");
+    try {
+      await triggerBrowserDownload(targetUrl, `nova-ai-${img.id || "creation"}-watermarked.png`);
+      toast.success("Downloaded watermarked preview!", { id: toastId });
+    } catch {
+      toast.error("Download failed. Please try again.", { id: toastId });
+    }
+  };
+
+  // Clean HD Download (Gated: requires login, 0 tokens for creator, 1 token for non-creators)
+  const handleDownloadClean = async (img: any, e?: React.MouseEvent) => {
+    e?.stopPropagation();
+
+    if (!user) {
+      setShowAuthModal(true);
+      return;
+    }
+
+    const isOwner = user.id && (img.userId === user.id);
+
+    setIsDownloading(true);
+    const toastId = toast.loading(
+      isOwner
+        ? "Preparing your original clean creation (0 tokens)..."
+        : "Checking balance & preparing clean HD master (1 token)..."
+    );
+
+    try {
+      const res = await downloadCleanImageApi({ id: img.id }).unwrap();
+      await triggerBrowserDownload(res.downloadUrl, `nova-ai-${img.id}-clean-hd.png`);
+
+      if (res.isOwner) {
+        toast.success("Downloaded original HD master! (Creator Free - 0 tokens)", { id: toastId });
+      } else {
+        toast.success(
+          `Downloaded clean HD master! (${res.tokensDeducted} token deducted, ${res.creditsRemaining} remaining)`,
+          { id: toastId }
+        );
+      }
+    } catch (err: any) {
+      const errMsg =
+        err?.data?.error ||
+        err?.data?.message ||
+        "Failed to download clean asset. Ensure you have at least 1 token.";
+      toast.error(errMsg, { id: toastId });
+    } finally {
+      setIsDownloading(false);
+    }
+  };
+
+  const isCurrentModalOwner = user?.id && selectedModalImage?.userId === user?.id;
 
   return (
     <AppShell title="Explore Community" subtitleBadge="[ PUBLIC EXHIBIT ]">
@@ -120,29 +339,37 @@ export default function ImageGalleryPage() {
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
             <div className="space-y-2">
               <div className="flex items-center gap-2">
-                <span className="font-mono text-[10px] uppercase tracking-wider text-orange-400 border border-orange-500/30 bg-orange-500/10 px-2.5 py-0.5 rounded font-semibold">
-                  WATERMARKED COMMUNITY EXHIBIT
+                <span className="font-mono text-[10px] uppercase tracking-wider text-emerald-400 border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-0.5 rounded font-semibold">
+                  Free Image Gallery
                 </span>
-                <span className="font-mono text-[10px] uppercase tracking-wider text-emerald-400 border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-0.5 rounded flex items-center gap-1 font-semibold">
-                  <ShieldCheck className="h-3 w-3" />
-                  VERIFIED RIGHTS
-                </span>
+
               </div>
               <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-white">
                 Explore Community Creations
               </h1>
               <p className="text-xs sm:text-sm text-zinc-400 max-w-2xl leading-relaxed">
-                Browse prompt designs and fine-tuned latent renders synthesized by creators worldwide. Click any artwork to inspect prompts, remix parameters in Studio, or copy prompt tags.
+                Browse prompt designs and fine-tuned latent renders synthesized by creators worldwide. Public visitors can download watermarked previews for free. Sign in to download pristine HD watermark-free masters (free for creators, 1 token for community members).
               </p>
             </div>
 
-            <Link
-              to="/create"
-              className="inline-flex items-center gap-2 rounded-lg bg-orange-500 hover:bg-orange-600 text-black px-4 py-2.5 text-xs font-semibold shadow-[0_0_15px_rgba(249,115,22,0.3)] transition-colors"
-            >
-              <Sparkles className="h-3.5 w-3.5 fill-black" />
-              <span>Create Your Own</span>
-            </Link>
+            <div className="flex items-center gap-3">
+              {!user && (
+                <Link
+                  to="/login"
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 px-3.5 py-2 text-xs font-semibold text-zinc-200 transition-colors"
+                >
+                  <LogIn className="h-3.5 w-3.5" />
+                  <span>Sign In</span>
+                </Link>
+              )}
+              <Link
+                to="/create"
+                className="inline-flex items-center gap-2 rounded-lg bg-orange-500 hover:bg-orange-600 text-black px-4 py-2.5 text-xs font-semibold shadow-[0_0_15px_rgba(249,115,22,0.3)] transition-colors"
+              >
+                <Sparkles className="h-3.5 w-3.5 fill-black" />
+                <span>Create Your Own</span>
+              </Link>
+            </div>
           </div>
         </div>
 
@@ -167,11 +394,10 @@ export default function ImageGalleryPage() {
               <button
                 key={tag}
                 onClick={() => setSelectedTag(tag)}
-                className={`cursor-pointer px-3 py-1 rounded-md text-xs font-medium transition-all ${
-                  selectedTag === tag
-                    ? "bg-orange-500 text-black font-semibold shadow-xs"
-                    : "bg-[#121215] text-zinc-400 border border-white/5 hover:border-white/15 hover:text-white"
-                }`}
+                className={`cursor-pointer px-3 py-1 rounded-md text-xs font-medium transition-all ${selectedTag === tag
+                  ? "bg-orange-500 text-black font-semibold shadow-xs"
+                  : "bg-[#121215] text-zinc-400 border border-white/5 hover:border-white/15 hover:text-white"
+                  }`}
               >
                 {tag}
               </button>
@@ -212,14 +438,17 @@ export default function ImageGalleryPage() {
             {filteredImages.map((item: any) => (
               <div
                 key={item.id}
-                onClick={() => setSelectedModalImage(item)}
+                onClick={() => openImageModal(item)}
                 className="group cursor-pointer rounded-xl border border-white/[0.07] bg-[#121215] hover:border-orange-500/40 hover:bg-[#16161a] transition-all overflow-hidden flex flex-col"
               >
                 {/* Artwork Container */}
                 <div className="relative aspect-[4/3] w-full overflow-hidden bg-black">
                   <img
-                    src={item.displayUrl || item.watermarkedR2Url || item.r2Url}
+                    src={item.watermarkedR2Url || item.displayUrl || item.r2Url}
                     alt={item.prompt}
+                    title={item.prompt}
+                    loading="lazy"
+                    decoding="async"
                     className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                   />
 
@@ -238,17 +467,36 @@ export default function ImageGalleryPage() {
                     </div>
                   )}
 
-                  {/* Quick Remix on Hover */}
-                  <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                  {/* Quick Action Overlay on Hover */}
+                  <div className="absolute top-2 right-2 flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
                     <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        copyPrompt(item.prompt, e);
-                      }}
-                      className="p-1.5 rounded-md bg-black/70 hover:bg-black text-zinc-300 hover:text-white border border-white/10"
+                      onClick={(e) => handleShareLink(item, e)}
+                      className="p-1.5 rounded-md bg-black/70 hover:bg-black text-zinc-300 hover:text-white border border-white/10 transition-colors"
+                      title="Share Direct Link"
+                    >
+                      {copiedShareId === item.id ? (
+                        <Check className="h-3 w-3 text-emerald-400" />
+                      ) : (
+                        <Share2 className="h-3 w-3" />
+                      )}
+                    </button>
+                    <button
+                      onClick={(e) => handleDownloadWatermarked(item, e)}
+                      className="p-1.5 rounded-md bg-black/70 hover:bg-black text-zinc-300 hover:text-white border border-white/10 transition-colors"
+                      title="Download Free (Watermarked)"
+                    >
+                      <Download className="h-3 w-3" />
+                    </button>
+                    <button
+                      onClick={(e) => copyPrompt(item.prompt, item.id, e)}
+                      className="p-1.5 rounded-md bg-black/70 hover:bg-black text-zinc-300 hover:text-white border border-white/10 transition-colors"
                       title="Copy Prompt"
                     >
-                      <Copy className="h-3 w-3" />
+                      {copiedPromptId === item.id ? (
+                        <Check className="h-3 w-3 text-emerald-400" />
+                      ) : (
+                        <Copy className="h-3 w-3" />
+                      )}
                     </button>
                   </div>
                 </div>
@@ -288,96 +536,346 @@ export default function ImageGalleryPage() {
           </div>
         )}
 
-        {/* Modal View for Inspection */}
+        {/* Spacious, Elegant Inspection Modal with Direct Shareable URL */}
         {selectedModalImage && (
           <div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-sm p-4 animate-in fade-in duration-150"
-            onClick={() => setSelectedModalImage(null)}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md p-3 sm:p-6 animate-in fade-in duration-200"
+            onClick={closeImageModal}
           >
             <div
-              className="relative w-full max-w-4xl bg-[#121215] rounded-2xl border border-white/10 shadow-2xl overflow-hidden flex flex-col md:flex-row max-h-[90vh]"
+              className="relative w-full max-w-5xl xl:max-w-6xl h-auto max-h-[92vh] md:h-[86vh] bg-[#0e0e12] rounded-2xl border border-white/10 shadow-[0_25px_70px_rgba(0,0,0,0.95)] overflow-hidden flex flex-col md:flex-row"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Left Column: Generous Image Canvas Preview */}
+              <div className="relative flex-1 bg-[#060608] flex items-center justify-center p-4 sm:p-8 min-h-[300px] md:min-h-0 select-none overflow-hidden">
+                {/* Mobile close button on image canvas */}
+                <button
+                  onClick={closeImageModal}
+                  className="md:hidden absolute top-3 right-3 z-20 rounded-lg bg-black/80 backdrop-blur-md p-2 text-zinc-400 hover:text-white border border-white/15 cursor-pointer"
+                  title="Close preview"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+
+                <img
+                  src={
+                    selectedModalImage.watermarkedR2Url ||
+                    selectedModalImage.displayUrl ||
+                    selectedModalImage.r2Url
+                  }
+                  alt={selectedModalImage.prompt}
+                  title={selectedModalImage.prompt}
+                  className="max-h-full max-w-full object-contain rounded-xl shadow-2xl transition-transform duration-300"
+                />
+
+                {/* Floating Top Tag */}
+                {selectedModalImage.style && (
+                  <div className="absolute top-4 left-4">
+                    <span className="rounded-lg bg-black/80 backdrop-blur-md px-3 py-1 text-[10px] font-mono font-semibold uppercase text-zinc-300 border border-white/10 shadow-lg">
+                      {selectedModalImage.style}
+                    </span>
+                  </div>
+                )}
+
+                {/* Floating Bottom Preview Notice */}
+                <div className="absolute bottom-4 left-4 right-4 md:right-auto flex items-center gap-2 rounded-xl bg-black/80 backdrop-blur-md px-3 py-1.5 border border-white/10 text-[10px] font-mono text-zinc-300 shadow-lg">
+                  <Zap className="h-3 w-3 text-orange-400 fill-orange-400 shrink-0" />
+                  <span className="font-semibold text-white">NOVA AI PUBLIC PREVIEW</span>
+                  <span className="text-zinc-500">•</span>
+                  <span className="text-zinc-400">Watermarked for Free Public Viewing</span>
+                </div>
+              </div>
+
+              {/* Right Column: Spacious Meta & Actions Sidebar */}
+              <div className="w-full md:w-[420px] lg:w-[450px] shrink-0 bg-[#121216] border-t md:border-t-0 md:border-l border-white/[0.08] flex flex-col justify-between overflow-y-auto">
+                <div className="p-6 sm:p-7 space-y-6">
+                  {/* Header Row: Badges, Like, Share & Close Button (No Overlap) */}
+                  <div className="flex items-center justify-between gap-2 pb-2 border-b border-white/[0.06]">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="font-mono text-[10px] uppercase tracking-wider text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded-md font-semibold truncate">
+                        PUBLIC EXHIBIT
+                      </span>
+                      {isCurrentModalOwner && (
+                        <span className="font-mono text-[10px] uppercase tracking-wider text-orange-400 bg-orange-500/10 border border-orange-500/20 px-2.5 py-1 rounded-md font-semibold truncate">
+                          YOUR ARTWORK
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <button
+                        onClick={(e) => handleShareLink(selectedModalImage, e)}
+                        className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 text-zinc-300 hover:text-white text-xs font-medium transition-colors cursor-pointer"
+                        title="Copy shareable direct link"
+                      >
+                        {copiedShareId === selectedModalImage.id ? (
+                          <>
+                            <Check className="h-3.5 w-3.5 text-emerald-400" />
+                            <span className="text-emerald-400 font-mono text-[11px]">Copied!</span>
+                          </>
+                        ) : (
+                          <>
+                            <Share2 className="h-3.5 w-3.5 text-zinc-400" />
+                            <span className="font-mono text-[11px]">Share</span>
+                          </>
+                        )}
+                      </button>
+
+                      <button
+                        onClick={(e) => handleLikeToggle(selectedModalImage.id, e)}
+                        className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 text-zinc-300 hover:text-rose-400 text-xs font-medium transition-colors cursor-pointer"
+                        title="Like artwork"
+                      >
+                        <Heart className="h-3.5 w-3.5 fill-rose-500 text-rose-500" />
+                        <span className="font-mono text-[11px]">
+                          {selectedModalImage.likesCount || 0}
+                        </span>
+                      </button>
+
+                      <div className="h-4 w-[1px] bg-white/10 mx-0.5" />
+
+                      <button
+                        onClick={closeImageModal}
+                        className="hidden md:flex items-center justify-center rounded-lg bg-white/5 hover:bg-white/15 p-1.5 text-zinc-400 hover:text-white transition-all border border-white/10 cursor-pointer"
+                        title="Close preview (Esc)"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Creator Info Card */}
+                  <div className="flex items-center gap-3.5 p-3 rounded-xl bg-white/[0.03] border border-white/[0.06]">
+                    <img
+                      src={
+                        selectedModalImage.authorAvatar ||
+                        "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80"
+                      }
+                      alt="Creator"
+                      className="h-10 w-10 rounded-full object-cover border border-white/10 shrink-0"
+                    />
+                    <div className="min-w-0 flex-1">
+                      <div className="text-xs font-bold text-white truncate">
+                        {selectedModalImage.author || "Nova Artist"}
+                      </div>
+                      <div className="text-[11px] text-zinc-400 flex items-center gap-1.5 mt-0.5">
+                        <span className="text-emerald-400">●</span>
+                        <span>{isCurrentModalOwner ? "You (Original Creator)" : "Verified Creator"}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Prompt Box */}
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-[10px] font-mono uppercase tracking-wider text-zinc-400 font-semibold">
+                        PROMPT FORMULA
+                      </h4>
+                      <button
+                        onClick={(e) => copyPrompt(selectedModalImage.prompt, selectedModalImage.id, e)}
+                        className="inline-flex items-center gap-1 text-[10px] font-mono text-zinc-400 hover:text-white transition-colors cursor-pointer"
+                      >
+                        {copiedPromptId === selectedModalImage.id ? (
+                          <>
+                            <Check className="h-3 w-3 text-emerald-400" />
+                            <span className="text-emerald-400">Copied!</span>
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="h-3 w-3" />
+                            <span>Copy</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+                    <div className="rounded-xl border border-white/[0.07] bg-black/40 p-3.5 text-xs text-zinc-300 leading-relaxed max-h-32 overflow-y-auto selection:bg-orange-500/30">
+                      "{selectedModalImage.prompt}"
+                    </div>
+                  </div>
+
+                  {/* Download Options */}
+                  <div className="space-y-3">
+                    <h4 className="text-[10px] font-mono uppercase tracking-wider text-zinc-400 font-semibold">
+                      DOWNLOAD OPTIONS
+                    </h4>
+
+                    {/* Option 1: Watermarked (Free for all) */}
+                    <button
+                      onClick={() => handleDownloadWatermarked(selectedModalImage)}
+                      className="w-full flex items-center justify-between p-3 rounded-xl border border-white/10 bg-white/[0.03] hover:bg-white/[0.07] text-left transition-all group"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="h-8 w-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center shrink-0 group-hover:bg-white/10 transition-colors">
+                          <Download className="h-4 w-4 text-zinc-300 group-hover:text-white" />
+                        </div>
+                        <div>
+                          <div className="text-xs font-semibold text-white">
+                            Download Watermarked
+                          </div>
+                          <div className="text-[10px] text-zinc-400 font-mono mt-0.5">
+                            Standard preview with Nova AI watermark
+                          </div>
+                        </div>
+                      </div>
+                      <span className="font-mono text-[10px] font-bold text-emerald-400 border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 rounded-md">
+                        FREE
+                      </span>
+                    </button>
+
+                    {/* Option 2: Clean HD Master (Token Gated) */}
+                    <button
+                      onClick={() => handleDownloadClean(selectedModalImage)}
+                      disabled={isDownloadingClean || isDownloading}
+                      className={`w-full flex items-center justify-between p-3 rounded-xl border text-left transition-all group ${isCurrentModalOwner
+                        ? "border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20"
+                        : "border-orange-500/30 bg-orange-500/10 hover:bg-orange-500/20"
+                        }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div
+                          className={`h-8 w-8 rounded-lg flex items-center justify-center shrink-0 border ${isCurrentModalOwner
+                            ? "bg-emerald-500/20 border-emerald-500/30 text-emerald-400"
+                            : "bg-orange-500/20 border-orange-500/30 text-orange-400"
+                            }`}
+                        >
+                          {isDownloadingClean || isDownloading ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Sparkles className="h-4 w-4" />
+                          )}
+                        </div>
+                        <div>
+                          <div className="text-xs font-semibold text-white flex items-center gap-1.5">
+                            <span>Download Clean HD</span>
+                            <span className="text-[9px] px-1.5 py-0.2 rounded bg-black/60 font-mono font-medium text-zinc-300 border border-white/10">
+                              No Watermark
+                            </span>
+                          </div>
+                          <div className="text-[10px] text-zinc-400 font-mono mt-0.5">
+                            {isCurrentModalOwner
+                              ? "Original master • Creator Free (0 Tokens)"
+                              : user
+                                ? "Original master • 1 Token deduction"
+                                : "Sign in required • 1 Token or Creator Free"}
+                          </div>
+                        </div>
+                      </div>
+
+                      <span
+                        className={`font-mono text-[10px] font-bold px-2 py-0.5 rounded-md border ${isCurrentModalOwner
+                          ? "text-emerald-400 border-emerald-500/30 bg-emerald-500/20"
+                          : "text-orange-400 border-orange-500/30 bg-orange-500/20"
+                          }`}
+                      >
+                        {isCurrentModalOwner ? "0 TOKENS" : "1 TOKEN"}
+                      </span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Bottom Studio Remix Action */}
+                <div className="p-6 sm:p-7 pt-4 border-t border-white/[0.08] bg-[#0f0f13] space-y-2.5">
+                  <Link
+                    to="/create"
+                    onClick={() => {
+                      copyPrompt(selectedModalImage.prompt, selectedModalImage.id);
+                    }}
+                    className="w-full flex items-center justify-center gap-2 rounded-xl bg-orange-500 hover:bg-orange-600 py-3 text-xs font-bold text-black transition-all shadow-[0_0_20px_rgba(249,115,22,0.25)] hover:shadow-[0_0_25px_rgba(249,115,22,0.4)]"
+                  >
+                    <Wand2 className="h-4 w-4 fill-black" />
+                    <span>Remix Prompt in Studio</span>
+                  </Link>
+
+                  <div className="flex items-center justify-between text-[11px] text-zinc-500 px-1 font-mono">
+                    <span>Direct Link: /explore?image={selectedModalImage.id.slice(0, 8)}...</span>
+                    <button
+                      onClick={(e) => handleShareLink(selectedModalImage, e)}
+                      className="text-orange-400 hover:text-orange-300 transition-colors underline cursor-pointer"
+                    >
+                      Copy URL
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Visitor Login Required Modal */}
+        {showAuthModal && (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-sm p-4 animate-in fade-in duration-150"
+            onClick={() => setShowAuthModal(false)}
+          >
+            <div
+              className="relative w-full max-w-md bg-[#16161a] rounded-2xl border border-white/15 p-6 shadow-2xl space-y-5"
               onClick={(e) => e.stopPropagation()}
             >
               <button
-                onClick={() => setSelectedModalImage(null)}
-                className="absolute top-4 right-4 z-20 rounded-lg bg-black/60 hover:bg-white/10 p-2 text-zinc-400 hover:text-white transition-all"
+                onClick={() => setShowAuthModal(false)}
+                className="absolute top-4 right-4 rounded-lg bg-white/5 hover:bg-white/10 p-2 text-zinc-400 hover:text-white transition-all"
               >
                 <X className="h-4 w-4" />
               </button>
 
-              {/* Left Image */}
-              <div className="relative flex-1 bg-black flex items-center justify-center min-h-[320px]">
-                <img
-                  src={
-                    selectedModalImage.displayUrl ||
-                    selectedModalImage.watermarkedR2Url ||
-                    selectedModalImage.r2Url
-                  }
-                  alt={selectedModalImage.prompt}
-                  className="max-h-[80vh] w-full object-contain"
-                />
-                <div className="absolute bottom-4 right-4 flex items-center gap-1.5 rounded bg-black/80 px-2.5 py-1 border border-white/15 text-[10px] font-mono font-bold uppercase text-white">
-                  <Zap className="h-3 w-3 text-orange-400 fill-orange-400" />
-                  <span>PUBLIC WATERMARKED PREVIEW</span>
+              <div className="space-y-2">
+                <div className="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-orange-500/10 border border-orange-500/30 text-orange-400">
+                  <Sparkles className="h-5 w-5" />
+                </div>
+                <h3 className="text-lg font-bold text-white">Sign In to Nova AI</h3>
+                <p className="text-xs text-zinc-400 leading-relaxed">
+                  Watermark-free master downloads require a verified account.
+                </p>
+              </div>
+
+              <div className="space-y-2.5 rounded-xl border border-white/10 bg-black/40 p-3.5 text-xs">
+                <div className="flex items-start gap-2 text-zinc-300">
+                  <CheckCircle2 className="h-4 w-4 text-emerald-400 mt-0.5 shrink-0" />
+                  <span>
+                    <strong className="text-white">Creators download for 0 tokens:</strong> Always free to download your own original creations.
+                  </span>
+                </div>
+                <div className="flex items-start gap-2 text-zinc-300">
+                  <Zap className="h-4 w-4 text-orange-400 mt-0.5 shrink-0" />
+                  <span>
+                    <strong className="text-white">Community creations:</strong> Download pristine HD watermark-free copies for just 1 token.
+                  </span>
+                </div>
+                <div className="flex items-start gap-2 text-zinc-300">
+                  <ShieldCheck className="h-4 w-4 text-blue-400 mt-0.5 shrink-0" />
+                  <span>
+                    <strong className="text-white">Watermarked preview:</strong> Always 100% free for everyone, no login needed.
+                  </span>
                 </div>
               </div>
 
-              {/* Right Meta */}
-              <div className="w-full md:w-80 p-6 flex flex-col justify-between space-y-4 bg-[#0c0c0e] border-t md:border-t-0 md:border-l border-white/[0.08]">
-                <div className="space-y-4">
-                  <div className="flex items-center gap-2">
-                    <span className="font-mono text-[10px] uppercase tracking-wider text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded font-semibold">
-                      PUBLIC EXHIBIT
-                    </span>
-                  </div>
+              <div className="space-y-2 pt-2">
+                <Link
+                  to="/login"
+                  className="w-full flex items-center justify-center gap-2 rounded-lg bg-orange-500 hover:bg-orange-600 py-2.5 text-xs font-semibold text-black transition-colors"
+                >
+                  <LogIn className="h-4 w-4" />
+                  <span>Sign In with Account</span>
+                </Link>
 
-                  <div>
-                    <h4 className="text-[10px] font-mono uppercase text-zinc-500">PROMPT</h4>
-                    <p className="text-xs font-medium text-zinc-200 mt-1 leading-relaxed">
-                      "{selectedModalImage.prompt}"
-                    </p>
-                  </div>
+                <Link
+                  to="/register"
+                  className="w-full flex items-center justify-center gap-2 rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 py-2.5 text-xs font-semibold text-zinc-200 transition-colors"
+                >
+                  <span>Create New Account</span>
+                </Link>
 
-                  <div className="flex items-center gap-3 pt-2">
-                    <img
-                      src={
-                        selectedModalImage.authorAvatar ||
-                        "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=60&auto=format&fit=crop&q=80"
-                      }
-                      alt="Creator"
-                      className="h-8 w-8 rounded-full object-cover border border-white/10"
-                    />
-                    <div>
-                      <div className="text-xs font-semibold text-zinc-200">
-                        {selectedModalImage.author || "Nova Artist"}
-                      </div>
-                      <div className="text-[10px] text-zinc-500 font-mono">
-                        Verified Creator
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="space-y-2 pt-4 border-t border-white/[0.08]">
+                {selectedModalImage && (
                   <button
-                    onClick={() => copyPrompt(selectedModalImage.prompt)}
-                    className="w-full flex items-center justify-center gap-2 rounded-lg border border-white/10 bg-white/[0.05] hover:bg-white/10 py-2.5 text-xs font-medium text-zinc-300 transition-colors"
-                  >
-                    <Copy className="h-3.5 w-3.5" />
-                    <span>Copy Prompt</span>
-                  </button>
-
-                  <Link
-                    to="/create"
                     onClick={() => {
-                      copyPrompt(selectedModalImage.prompt);
+                      setShowAuthModal(false);
+                      handleDownloadWatermarked(selectedModalImage);
                     }}
-                    className="w-full flex items-center justify-center gap-2 rounded-lg bg-orange-500 hover:bg-orange-600 py-2.5 text-xs font-semibold text-black transition-colors"
+                    className="w-full text-center text-xs text-zinc-500 hover:text-zinc-300 py-1 transition-colors"
                   >
-                    <Wand2 className="h-3.5 w-3.5" />
-                    <span>Remix in Studio</span>
-                  </Link>
-                </div>
+                    Download watermarked preview instead
+                  </button>
+                )}
               </div>
             </div>
           </div>

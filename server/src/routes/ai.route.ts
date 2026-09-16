@@ -13,6 +13,7 @@ import { eq, and, desc } from "drizzle-orm";
 import { uploadFromFalToR2, uploadFromFalToR2WithWatermark } from "@/utils/storage.util.js";
 import { inngest } from "@/inngest/client.js";
 import { aiImageModels, aiChatModels, aiAudioModels, aiVideoModels } from "@/utils/ai.util.js";
+import { DOWNLOAD_WATERMARK_FREE_TOKEN_COST } from "@/utils/config.util.js";
 
 const aiRouter = Router(); 
 
@@ -367,14 +368,13 @@ aiRouter.get("/user-collections", requireAuth, async (req: any, res: Response) =
     }
 });
 
-// Get Public Community Gallery (returns watermarked copies)
+// Get Public Community Gallery (returns watermarked copies, sanitizing original r2Url)
 aiRouter.get("/public-gallery", async (_req, res: Response) => {
     try {
         const publicImages = await db
             .select({
                 id: images.id,
                 prompt: images.prompt,
-                r2Url: images.r2Url,
                 watermarkedR2Url: images.watermarkedR2Url,
                 aspectRatio: images.aspectRatio,
                 style: images.style,
@@ -390,15 +390,72 @@ aiRouter.get("/public-gallery", async (_req, res: Response) => {
             .orderBy(desc(images.createdAt))
             .limit(60);
 
-        // Map displayUrl to the watermarked copy (fallback to r2Url if watermark not present)
+        // Map displayUrl to the watermarked copy for public visitors and search indexers
         const galleryWithWatermarks = publicImages.map((img) => ({
-            ...img,
-            displayUrl: img.watermarkedR2Url || img.r2Url,
+            id: img.id,
+            prompt: img.prompt,
+            watermarkedR2Url: img.watermarkedR2Url,
+            displayUrl: img.watermarkedR2Url,
+            aspectRatio: img.aspectRatio,
+            style: img.style,
+            likesCount: img.likesCount,
+            createdAt: img.createdAt,
+            userId: img.userId,
+            author: img.author,
+            authorAvatar: img.authorAvatar,
         }));
 
         res.json({ images: galleryWithWatermarks });
     } catch (error: any) {
         res.status(500).json({ error: error.message || "Failed to fetch public gallery" });
+    }
+});
+
+// Download Clean Artwork Without Watermark (Requires Login, Token-Gated, Free for Owner)
+aiRouter.post("/images/:id/download-clean", requireAuth, async (req: any, res: Response) => {
+    const user = req.user;
+    const { id } = req.params;
+
+    try {
+        const targetImageResult = await db
+            .select()
+            .from(images)
+            .where(eq(images.id, id))
+            .limit(1);
+
+        const targetImage = targetImageResult[0];
+        if (!targetImage) {
+            return res.status(404).json({ error: "Artwork not found" });
+        }
+
+        const isOwner = targetImage.userId === user.id;
+        const tokensDeducted = isOwner ? 0 : DOWNLOAD_WATERMARK_FREE_TOKEN_COST;
+
+        if (!isOwner && user.credits < tokensDeducted) {
+            return res.status(403).json({
+                error: `Insufficient tokens. Downloading clean original artwork requires ${tokensDeducted} token, but you only have ${user.credits} tokens.`,
+                credits: user.credits,
+            });
+        }
+
+        let newCredits = user.credits;
+        if (!isOwner && tokensDeducted > 0) {
+            newCredits = user.credits - tokensDeducted;
+            await db.update(users).set({ credits: newCredits }).where(eq(users.id, user.id));
+        }
+
+        res.json({
+            message: isOwner
+                ? "Original artwork ready for download (Creator - Free)"
+                : `Clean artwork ready for download (${tokensDeducted} Token deducted)`,
+            downloadUrl: targetImage.r2Url,
+            isOwner,
+            tokensDeducted,
+            creditsRemaining: newCredits,
+        });
+    } catch (error: any) {
+        console.error("Error processing clean download:", error);
+        res.status(500).json({ error: error.message || "Failed to process download" });
     }
 });
 

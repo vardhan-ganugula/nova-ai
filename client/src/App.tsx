@@ -60,15 +60,8 @@ function App() {
       <Route path="/image-gen" element={<Navigate to="/create" replace />} />
       <Route path="/generate" element={<Navigate to="/create" replace />} />
 
-      {/* Explore Community Gallery */}
-      <Route
-        path="/explore"
-        element={
-          <ProtectedRoute>
-            <ImageGalleryPage />
-          </ProtectedRoute>
-        }
-      />
+      {/* Explore Community Gallery (Public for visitors & search indexing) */}
+      <Route path="/explore" element={<ImageGalleryPage />} />
       <Route path="/image-gallary" element={<Navigate to="/explore" replace />} />
       <Route path="/image-gallery" element={<Navigate to="/explore" replace />} />
 
