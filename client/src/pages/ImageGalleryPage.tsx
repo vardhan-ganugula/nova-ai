@@ -945,8 +945,8 @@ export default function ImageGalleryPage() {
               </button>
 
               <div className="space-y-2">
-                <div className="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-orange-500/10 border border-orange-500/30 text-orange-400">
-                  <Sparkles className="h-5 w-5" />
+                <div className="inline-flex items-center justify-center w-10 h-10 rounded-xl overflow-hidden shadow-md">
+                  <img src="/logo.webp" alt="Nova AI Logo" className="h-full w-full object-contain" />
                 </div>
                 <h3 className="text-lg font-bold text-white">Sign In to Nova AI</h3>
                 <p className="text-xs text-zinc-400 leading-relaxed">

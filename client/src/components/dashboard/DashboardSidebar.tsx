@@ -86,8 +86,8 @@ export function DashboardSidebar({ activeItem }: SidebarProps) {
       {/* Brand Logo */}
       <div className="flex h-16 items-center gap-3 px-6 border-b border-white/[0.06]">
         <Link to="/dashboard" className="flex items-center gap-3 group">
-          <div className="relative flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-tr from-[#FF7A00] via-[#FF9A3C] to-[#FFB347] shadow-lg group-hover:scale-105 transition-transform duration-300 group-hover:shadow-[0_0_20px_rgba(255,122,0,0.4)]">
-            <Sparkles className="h-4 w-4 text-white" />
+          <div className="relative flex h-8 w-8 items-center justify-center rounded-xl overflow-hidden shadow-lg group-hover:scale-105 transition-transform duration-300 group-hover:shadow-[0_0_20px_rgba(255,122,0,0.4)]">
+            <img src="/logo.webp" alt="Nova AI Logo" className="h-full w-full object-contain" />
           </div>
           <div className="flex flex-col">
             <span className="font-serif-heading text-lg font-bold tracking-wide text-white flex items-center gap-2">

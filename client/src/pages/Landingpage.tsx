@@ -150,8 +150,8 @@ function Navbar({ onLogin, onSignup }: { onLogin: () => void; onSignup: () => vo
     >
       <nav className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6">
         <a href="#" className="flex items-center gap-2.5">
-          <div className="relative flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-primary shadow-elegant">
-            <Sparkles className="h-4.5 w-4.5 text-white" />
+          <div className="relative flex h-9 w-9 items-center justify-center rounded-xl overflow-hidden shadow-elegant">
+            <img src="/logo.webp" alt="Nova AI Logo" className="h-full w-full object-contain" />
           </div>
           <span className="text-lg font-semibold tracking-tight text-foreground">Nova AI</span>
         </a>
@@ -913,8 +913,8 @@ function Footer() {
           {/* Brand */}
           <div className="md:col-span-2">
             <a href="#" className="flex items-center gap-2.5">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-primary shadow-elegant">
-                <Sparkles className="h-4.5 w-4.5 text-white" />
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl overflow-hidden shadow-elegant">
+                <img src="/logo.webp" alt="Nova AI Logo" className="h-full w-full object-contain" />
               </div>
               <span className="text-lg font-semibold tracking-tight text-foreground">Nova AI</span>
             </a>

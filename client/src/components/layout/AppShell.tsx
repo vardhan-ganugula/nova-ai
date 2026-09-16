@@ -81,8 +81,8 @@ export const AppShell: React.FC<AppShellProps> = ({
             <div>
               <div className="flex items-center justify-between pb-4 border-b border-white/10">
                 <div className="flex items-center gap-2">
-                  <div className="h-7 w-7 rounded-lg bg-orange-500 flex items-center justify-center">
-                    <Sparkles className="h-4 w-4 text-black fill-black" />
+                  <div className="h-7 w-7 rounded-lg overflow-hidden flex items-center justify-center">
+                    <img src="/logo.webp" alt="Nova AI Logo" className="h-full w-full object-contain" />
                   </div>
                   <span className="font-bold text-sm text-white">Nova AI</span>
                 </div>
