@@ -76,13 +76,14 @@ export default function Dashboard() {
     },
   ];
 
-  const recentCreations = historyData?.history?.length
-    ? historyData.history.slice(0, 8).map((h: any) => ({
+  const rawHistory = historyData?.images || historyData?.history || [];
+  const recentCreations = rawHistory.length
+    ? rawHistory.slice(0, 8).map((h: any) => ({
         id: h.id,
         prompt: h.prompt,
-        url: h.r2Url || h.displayUrl,
+        url: h.r2Url || h.displayUrl || h.url,
         model: h.model || "Flux.1 Pro",
-        style: h.type || "Image",
+        style: h.style || h.type || "Image",
       }))
     : sampleFallbacks;
 

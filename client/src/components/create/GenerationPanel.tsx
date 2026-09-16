@@ -197,11 +197,10 @@ export const GenerationPanel: React.FC<GenerationPanelProps> = ({
                   key={key}
                   type="button"
                   onClick={() => setSelectedModel(key)}
-                  className={`p-2 rounded-lg border text-left transition-all ${
-                    isSelected
-                      ? "bg-orange-500/10 border-orange-500/40 text-white"
-                      : "bg-[#121215] border-white/5 hover:border-white/15 text-zinc-400 hover:text-zinc-200"
-                  }`}
+                  className={`p-2 rounded-lg border text-left transition-all ${isSelected
+                    ? "bg-orange-500/10 border-orange-500/40 text-white"
+                    : "bg-[#121215] border-white/5 hover:border-white/15 text-zinc-400 hover:text-zinc-200"
+                    }`}
                 >
                   <div className="flex items-center justify-between">
                     <span className="font-semibold text-xs text-zinc-100 flex items-center gap-1.5">
@@ -215,11 +214,10 @@ export const GenerationPanel: React.FC<GenerationPanelProps> = ({
                     <div className="flex items-center gap-1.5">
                       {model.badge && (
                         <span
-                          className={`text-[9px] font-mono px-1.5 py-0.2 rounded ${
-                            isSelected
-                              ? "bg-orange-500 text-black font-bold"
-                              : "bg-white/[0.06] text-zinc-400"
-                          }`}
+                          className={`text-[9px] font-mono px-1.5 py-0.2 rounded ${isSelected
+                            ? "bg-orange-500 text-black font-bold"
+                            : "bg-white/[0.06] text-zinc-400"
+                            }`}
                         >
                           {model.badge}
                         </span>
@@ -240,19 +238,18 @@ export const GenerationPanel: React.FC<GenerationPanelProps> = ({
 
         {/* Style / Aesthetic Filter Chips */}
         {setSelectedStyle && (
-          <div className="space-y-1.5">
-            <label className="text-zinc-200 font-medium">Aesthetic Preset</label>
-            <div className="flex flex-wrap gap-1">
+          <div className="space-y-2">
+            <label className="text-zinc-200 font-medium my-1">Aesthetic Preset</label>
+            <div className="flex flex-wrap gap-1 pt-2">
               {STYLES.map((style) => (
                 <button
                   key={style.id}
                   type="button"
                   onClick={() => setSelectedStyle(style.id)}
-                  className={`px-2 py-1 rounded text-[11px] font-medium transition-colors ${
-                    selectedStyle === style.id
-                      ? "bg-orange-500 text-black font-semibold"
-                      : "bg-[#121215] text-zinc-400 border border-white/5 hover:border-white/15"
-                  }`}
+                  className={`px-2 py-1 rounded text-[11px] font-medium transition-colors ${selectedStyle === style.id
+                    ? "bg-orange-500 text-black font-semibold"
+                    : "bg-[#121215] text-zinc-400 border border-white/5 hover:border-white/15"
+                    }`}
                 >
                   {style.name}
                 </button>
@@ -273,11 +270,10 @@ export const GenerationPanel: React.FC<GenerationPanelProps> = ({
                 key={item.ratio}
                 type="button"
                 onClick={() => setParams((p) => ({ ...p, aspectRatio: item.ratio }))}
-                className={`py-1.5 px-1 rounded text-center font-mono text-[11px] transition ${
-                  params.aspectRatio === item.ratio
-                    ? "bg-orange-500 text-black font-bold"
-                    : "bg-[#121215] text-zinc-400 border border-white/5 hover:border-white/20"
-                }`}
+                className={`py-1.5 px-1 rounded text-center font-mono text-[11px] transition ${params.aspectRatio === item.ratio
+                  ? "bg-orange-500 text-black font-bold"
+                  : "bg-[#121215] text-zinc-400 border border-white/5 hover:border-white/20"
+                  }`}
                 title={item.desc}
               >
                 {item.label}

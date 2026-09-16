@@ -42,7 +42,7 @@ export const generateImageFn = inngest.createFunction(
           r2Key: storageResult.original.key,
           watermarkedR2Url: storageResult.watermarked.presignedUrl,
           watermarkedR2Key: storageResult.watermarked.key,
-          isPublic: false, // private by default
+          isPublic: true, // public by default
           status: "completed",
           generationType: "generate",
         })
@@ -79,7 +79,34 @@ export const generateVideoFn = inngest.createFunction(
       return await uploadFromFalToR2(falUrl, `users/${userId}/videos`, filename);
     });
 
-    return { success: true, url: storageResult.presignedUrl, key: storageResult.key };
+    const savedVideo = await step.run("save-video-to-db", async () => {
+      const [vid] = await db
+        .insert(images)
+        .values({
+          userId,
+          prompt,
+          aspectRatio: "16:9",
+          model: "Kling Video",
+          r2Url: storageResult.presignedUrl,
+          r2Key: storageResult.key,
+          isPublic: true, // public by default
+          status: "completed",
+          generationType: "video",
+        })
+        .returning();
+
+      await db
+        .insert(collections)
+        .values({
+          userId,
+          imageId: vid.id,
+        })
+        .onConflictDoNothing();
+
+      return vid;
+    });
+
+    return { success: true, url: storageResult.presignedUrl, key: storageResult.key, video: savedVideo };
   }
 );
 

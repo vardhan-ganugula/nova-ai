@@ -63,9 +63,8 @@ export default function HistoryPage() {
     },
   ];
 
-  const historyItems = historyData?.history?.length
-    ? historyData.history
-    : sampleHistory;
+  const rawHistory = historyData?.images || historyData?.history || [];
+  const historyItems = rawHistory.length ? rawHistory : sampleHistory;
 
   const filteredItems = historyItems.filter((item: any) =>
     item.prompt.toLowerCase().includes(searchQuery.toLowerCase())

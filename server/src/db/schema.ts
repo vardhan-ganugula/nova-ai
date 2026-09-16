@@ -35,7 +35,7 @@ export const images = pgTable('images', {
   r2Key: text('r2_key').notNull(),
   watermarkedR2Url: text('watermarked_r2_url'),
   watermarkedR2Key: text('watermarked_r2_key'),
-  isPublic: boolean('is_public').default(false).notNull(),
+  isPublic: boolean('is_public').default(true).notNull(),
   likesCount: integer('likes_count').default(0).notNull(),
   status: text('status').default('completed').notNull(), // pending, completed, failed
   generationType: text('generation_type').default('generate').notNull(), // generate, upscale, remove-bg

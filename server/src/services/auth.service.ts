@@ -71,49 +71,79 @@ export class AuthService {
 
   async handleGoogleSignIn(googlePayload: { sub: string; email: string; name: string; picture: string }) {
     const { sub, email, name, picture } = googlePayload;
+    const normalizedEmail = email ? email.trim().toLowerCase() : '';
 
-    let userResult;
-    try {
-      userResult = await db.select().from(users).where(eq(users.email, email)).limit(1);
-    } catch (err: any) {
-      console.error('DB Error in handleGoogleSignIn:', err.message, err.detail || '', err.hint || '');
-      throw err;
-    }
-    let user = userResult[0];
+    // 1. Check if an account already exists with provider 'google' and providerAccountId 'sub'
+    const existingAccountResult = await db
+      .select()
+      .from(accounts)
+      .where(and(eq(accounts.provider, 'google'), eq(accounts.providerAccountId, sub)))
+      .limit(1);
 
-    if (user) {
-      if (!user.isVerified) {
-        await db.update(users).set({ isVerified: true }).where(eq(users.id, user.id));
-        user.isVerified = true;
-      }
+    let user: any = null;
 
-      const existingAccountResult = await db.select().from(accounts).where(and(eq(accounts.userId, user.id), eq(accounts.provider, 'google'))).limit(1);
-      const existingAccount = existingAccountResult[0];
-
-      if (!existingAccount) {
-        await db.insert(accounts).values({
-          userId: user.id,
-          provider: 'google',
-          providerAccountId: sub,
-        });
-      }
-    } else {
-      const userResult = await db.insert(users).values({
-        email,
-        username: generateDefaultUsername(),
-        displayName: name,
-        profilePicture: picture,
-        isVerified: true,
-        credits: 100,
-      }).returning();
-
+    if (existingAccountResult.length > 0) {
+      const userResult = await db
+        .select()
+        .from(users)
+        .where(eq(users.id, existingAccountResult[0].userId))
+        .limit(1);
       user = userResult[0];
+    }
+
+    // 2. If not found by account, check by email
+    if (!user && normalizedEmail) {
+      const userByEmail = await db
+        .select()
+        .from(users)
+        .where(eq(users.email, normalizedEmail))
+        .limit(1);
+
+      if (userByEmail.length > 0) {
+        user = userByEmail[0];
+
+        // Link Google account to this user if not yet linked
+        if (existingAccountResult.length === 0) {
+          await db.insert(accounts).values({
+            userId: user.id,
+            provider: 'google',
+            providerAccountId: sub,
+          });
+        }
+      }
+    }
+
+    // 3. If user still does not exist, create new user and link account
+    if (!user) {
+      const [newUser] = await db
+        .insert(users)
+        .values({
+          email: normalizedEmail,
+          username: generateDefaultUsername(),
+          displayName: name || 'vandron',
+          profilePicture: picture || null,
+          isVerified: true,
+          credits: 100,
+        })
+        .returning();
+
+      user = newUser;
 
       await db.insert(accounts).values({
         userId: user.id,
         provider: 'google',
         providerAccountId: sub,
       });
+    } else {
+      const updates: any = {};
+      if (!user.isVerified) updates.isVerified = true;
+      if (!user.profilePicture && picture) updates.profilePicture = picture;
+      if ((!user.displayName || user.displayName === 'vandron') && name) updates.displayName = name;
+
+      if (Object.keys(updates).length > 0) {
+        await db.update(users).set(updates).where(eq(users.id, user.id));
+        user = { ...user, ...updates };
+      }
     }
 
     const session = await this.createUserSession(user.id);
@@ -122,43 +152,79 @@ export class AuthService {
 
   async handleGithubSignIn(githubPayload: { githubId: string; email: string; name: string; picture: string }) {
     const { githubId, email, name, picture } = githubPayload;
+    const resolvedEmail = (email && email.trim().length > 0) ? email.trim().toLowerCase() : `${githubId}@github.user`;
 
-    let userResult = await db.select().from(users).where(eq(users.email, email)).limit(1);
-    let user = userResult[0];
+    // 1. First, check if an existing account link exists for this GitHub ID
+    const existingAccountResult = await db
+      .select()
+      .from(accounts)
+      .where(and(eq(accounts.provider, 'github'), eq(accounts.providerAccountId, githubId)))
+      .limit(1);
 
-    if (user) {
-      if (!user.isVerified) {
-        await db.update(users).set({ isVerified: true }).where(eq(users.id, user.id));
-        user.isVerified = true;
-      }
+    let user: any = null;
 
-      const existingAccountResult = await db.select().from(accounts).where(and(eq(accounts.userId, user.id), eq(accounts.provider, 'github'))).limit(1);
-      const existingAccount = existingAccountResult[0];
-
-      if (!existingAccount) {
-        await db.insert(accounts).values({
-          userId: user.id,
-          provider: 'github',
-          providerAccountId: githubId,
-        });
-      }
-    } else {
-      const userResult = await db.insert(users).values({
-        email: email || `${githubId}@github.user`,
-        username: generateDefaultUsername(),
-        displayName: name,
-        profilePicture: picture,
-        isVerified: true,
-        credits: 100,
-      }).returning();
-
+    if (existingAccountResult.length > 0) {
+      const userResult = await db
+        .select()
+        .from(users)
+        .where(eq(users.id, existingAccountResult[0].userId))
+        .limit(1);
       user = userResult[0];
+    }
+
+    // 2. If no account linked yet, check if a user exists with resolvedEmail
+    if (!user) {
+      const userByEmail = await db
+        .select()
+        .from(users)
+        .where(eq(users.email, resolvedEmail))
+        .limit(1);
+
+      if (userByEmail.length > 0) {
+        user = userByEmail[0];
+
+        // Link GitHub account to this existing user if not yet linked
+        if (existingAccountResult.length === 0) {
+          await db.insert(accounts).values({
+            userId: user.id,
+            provider: 'github',
+            providerAccountId: githubId,
+          });
+        }
+      }
+    }
+
+    // 3. If user still does not exist, create new user and link account
+    if (!user) {
+      const [newUser] = await db
+        .insert(users)
+        .values({
+          email: resolvedEmail,
+          username: generateDefaultUsername(),
+          displayName: name || 'vandron',
+          profilePicture: picture || null,
+          isVerified: true,
+          credits: 100,
+        })
+        .returning();
+
+      user = newUser;
 
       await db.insert(accounts).values({
         userId: user.id,
         provider: 'github',
         providerAccountId: githubId,
       });
+    } else {
+      const updates: any = {};
+      if (!user.isVerified) updates.isVerified = true;
+      if (!user.profilePicture && picture) updates.profilePicture = picture;
+      if ((!user.displayName || user.displayName === 'vandron') && name) updates.displayName = name;
+
+      if (Object.keys(updates).length > 0) {
+        await db.update(users).set(updates).where(eq(users.id, user.id));
+        user = { ...user, ...updates };
+      }
     }
 
     const session = await this.createUserSession(user.id);

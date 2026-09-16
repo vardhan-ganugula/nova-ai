@@ -259,7 +259,7 @@ export default function ImageGenStudioPage() {
                 setGeneratedImageUrl(url);
                 if (record) setCurrentImageRecord(record);
               }}
-              isPublic={currentImageRecord?.isPublic ?? false}
+              isPublic={currentImageRecord?.isPublic ?? true}
               onToggleVisibility={handleToggleVisibility}
             />
 

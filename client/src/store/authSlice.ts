@@ -164,7 +164,7 @@ const apiSlice = createApi({
       invalidatesTags: ['User', 'History', 'Collection'],
     }),
 
-    getUserHistory: builder.query<{ images: any[] }, void>({
+    getUserHistory: builder.query<{ images?: any[]; history?: any[] }, void>({
       query: () => ({
         url: '/ai/user-history',
         method: 'GET',

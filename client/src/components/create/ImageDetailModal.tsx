@@ -41,7 +41,7 @@ export const ImageDetailModal: React.FC<ImageDetailModalProps> = ({
   samplingSteps = 30,
   seed = "-1",
   sampler = "DPM++ 2M Karras",
-  isPublic = false,
+  isPublic = true,
   onClose,
   onApplySettings,
   onToggleVisibility,

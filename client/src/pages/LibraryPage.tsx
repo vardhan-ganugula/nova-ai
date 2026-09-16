@@ -60,7 +60,8 @@ export default function LibraryPage() {
     },
   ];
 
-  const libraryItems = historyData?.history?.length ? historyData.history : sampleLibrary;
+  const rawHistory = historyData?.images || historyData?.history || [];
+  const libraryItems = rawHistory.length ? rawHistory : sampleLibrary;
 
   const filteredItems = libraryItems.filter((item: any) => {
     const matchesSearch = item.prompt.toLowerCase().includes(searchQuery.toLowerCase());

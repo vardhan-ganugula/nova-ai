@@ -17,6 +17,11 @@ import {
   Globe,
   Lock,
   Share2,
+  History,
+  ChevronRight,
+  ChevronUp,
+  ChevronDown,
+  Film,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import {
@@ -42,6 +47,11 @@ interface CanvasPanelProps {
   onSelectPrompt?: (p: string) => void;
   onOpenDetailModal?: () => void;
   onVariation?: () => void;
+  historyItems?: any[];
+  onSelectHistoryItem?: (item: any) => void;
+  onToggleHistoryPanel?: () => void;
+  isHistoryPanelOpen?: boolean;
+  historyCount?: number;
 }
 
 const STEPPERS = [
@@ -57,14 +67,20 @@ export const CanvasPanel: React.FC<CanvasPanelProps> = ({
   prompt = "",
   negativePrompt = "",
   selectedModel = "flux-1-pro",
-  isPublic = false,
+  isPublic = true,
   onToggleVisibility,
   onSelectPrompt,
   onOpenDetailModal,
   onVariation,
+  historyItems = [],
+  onSelectHistoryItem,
+  onToggleHistoryPanel,
+  isHistoryPanelOpen = false,
+  historyCount,
 }) => {
   const [zoomLevel, setZoomLevel] = useState<number>(100);
   const [isProcessing, setIsProcessing] = useState<string | null>(null);
+  const [isFilmstripOpen, setIsFilmstripOpen] = useState<boolean>(true);
 
   const [upscaleImageApi] = useUpscaleImageMutation();
   const [removeBgApi] = useRemoveBackgroundMutation();
@@ -173,8 +189,29 @@ export const CanvasPanel: React.FC<CanvasPanelProps> = ({
           })}
         </div>
 
-        {/* Viewport Meta & Zoom indicator */}
+        {/* Viewport Meta, History Toggle & Zoom indicator */}
         <div className="flex items-center gap-2 text-xs font-mono">
+          {onToggleHistoryPanel && (
+            <button
+              type="button"
+              onClick={onToggleHistoryPanel}
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium border transition-all ${
+                isHistoryPanelOpen
+                  ? "bg-orange-500/20 text-orange-400 border-orange-500/40 shadow-[0_0_10px_rgba(249,115,22,0.15)]"
+                  : "bg-[#141417] hover:bg-white/10 text-zinc-300 border-white/10"
+              }`}
+              title={isHistoryPanelOpen ? "Close History Panel" : "Open History & Presets Panel"}
+            >
+              <History className="w-3.5 h-3.5 text-orange-400" />
+              <span className="hidden sm:inline">History & Queue</span>
+              {typeof historyCount === "number" && historyCount > 0 && (
+                <span className="px-1.5 py-0.2 rounded-full text-[10px] font-mono bg-orange-500/20 text-orange-300 border border-orange-500/30">
+                  {historyCount}
+                </span>
+              )}
+            </button>
+          )}
+
           {isPublic !== undefined && (
             <span
               className={`hidden md:inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-mono font-semibold border ${
@@ -403,6 +440,22 @@ export const CanvasPanel: React.FC<CanvasPanelProps> = ({
 
           <div className="h-4 w-[1px] bg-white/15 mx-0.5" />
 
+          {/* Toggle Filmstrip button */}
+          {historyItems && historyItems.length > 0 && (
+            <button
+              onClick={() => setIsFilmstripOpen((prev) => !prev)}
+              title={isFilmstripOpen ? "Hide History Filmstrip" : "Show History Filmstrip"}
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium border transition ${
+                isFilmstripOpen
+                  ? "bg-orange-500/15 text-orange-400 border-orange-500/30"
+                  : "bg-white/5 hover:bg-white/10 text-zinc-300 border-white/5"
+              }`}
+            >
+              <Film className="w-3.5 h-3.5" />
+              <span className="hidden xl:inline">Filmstrip</span>
+            </button>
+          )}
+
           {/* Export / Download button */}
           <button
             onClick={handleDownload}
@@ -415,6 +468,86 @@ export const CanvasPanel: React.FC<CanvasPanelProps> = ({
           </button>
         </div>
       </div>
+
+      {/* Bottom Filmstrip of Recent Creations */}
+      {isFilmstripOpen && historyItems && historyItems.length > 0 && (
+        <div className="border-t border-white/[0.08] bg-[#0c0c0e]/95 backdrop-blur-md px-4 py-2 z-10 flex-shrink-0">
+          <div className="flex items-center justify-between mb-1.5">
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-mono text-zinc-400 uppercase tracking-wider flex items-center gap-1.5">
+                <History className="w-3 h-3 text-orange-400" />
+                History Timeline
+              </span>
+              <span className="text-[9px] font-mono text-zinc-500">
+                ({historyItems.length} creations)
+              </span>
+            </div>
+            <div className="flex items-center gap-3">
+              {onToggleHistoryPanel && (
+                <button
+                  onClick={onToggleHistoryPanel}
+                  className="text-[10px] text-orange-400 hover:text-orange-300 transition flex items-center gap-0.5 font-mono"
+                >
+                  <span>Full History Panel</span>
+                  <ChevronRight className="w-3 h-3" />
+                </button>
+              )}
+              <button
+                onClick={() => setIsFilmstripOpen(false)}
+                title="Collapse Filmstrip"
+                className="text-zinc-500 hover:text-zinc-300 p-0.5 rounded transition"
+              >
+                <ChevronDown className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 overflow-x-auto pb-1 custom-scrollbar">
+            {historyItems.slice(0, 15).map((item: any) => {
+              const url =
+                item.r2Url ||
+                item.displayUrl ||
+                item.watermarkedR2Url ||
+                item.url;
+              const isSelected =
+                activeImage === item.r2Url ||
+                activeImage === item.displayUrl ||
+                activeImage === item.url;
+
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => onSelectHistoryItem?.(item)}
+                  title={item.prompt}
+                  className={`relative flex-shrink-0 h-14 w-14 rounded-lg overflow-hidden border transition-all group ${
+                    isSelected
+                      ? "border-orange-500 ring-2 ring-orange-500/40 shadow-[0_0_12px_rgba(249,115,22,0.4)] scale-105"
+                      : "border-white/10 hover:border-white/30 hover:scale-102 opacity-80 hover:opacity-100"
+                  }`}
+                >
+                  <img
+                    src={url}
+                    alt={item.prompt}
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src =
+                        "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=200&auto=format&fit=crop&q=80";
+                    }}
+                    className="h-full w-full object-cover"
+                  />
+                  {isSelected && (
+                    <div className="absolute inset-0 border-2 border-orange-400 rounded-lg pointer-events-none" />
+                  )}
+                  {item.isSample && (
+                    <span className="absolute bottom-0.5 right-0.5 bg-black/80 text-[7px] font-mono px-1 rounded text-zinc-400">
+                      demo
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </main>
   );
 };

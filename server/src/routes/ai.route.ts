@@ -101,7 +101,7 @@ aiRouter.post("/generate-image", requireAuth, async (req: any, res: Response) =>
         const filename = `img_${user.id}_${Date.now()}.jpg`;
         const storageResult = await uploadFromFalToR2WithWatermark(falImageUrl, `users/${user.id}/images`, filename);
 
-        // Store into DB as private by default
+        // Store into DB as public by default
         const [savedImage] = await db.insert(images).values({
             userId: user.id,
             prompt,
@@ -113,7 +113,7 @@ aiRouter.post("/generate-image", requireAuth, async (req: any, res: Response) =>
             r2Key: storageResult.original.key,
             watermarkedR2Url: storageResult.watermarked.presignedUrl,
             watermarkedR2Key: storageResult.watermarked.key,
-            isPublic: false, // private by default
+            isPublic: true, // public by default
             status: "completed",
             generationType: "generate",
         }).returning();
@@ -129,7 +129,7 @@ aiRouter.post("/generate-image", requireAuth, async (req: any, res: Response) =>
         await db.update(users).set({ credits: newCredits }).where(eq(users.id, user.id));
 
         res.json({
-            message: "Image generated successfully and saved to private collection",
+            message: "Image generated successfully and saved to public gallery",
             url: storageResult.original.presignedUrl,
             image: savedImage,
             creditsRemaining: newCredits,
@@ -165,7 +165,7 @@ aiRouter.post("/upscale-image", requireAuth, async (req: any, res: Response) => 
             r2Key: storageResult.original.key,
             watermarkedR2Url: storageResult.watermarked.presignedUrl,
             watermarkedR2Key: storageResult.watermarked.key,
-            isPublic: false,
+            isPublic: true, // public by default
             status: "completed",
             generationType: "upscale",
         }).returning();
@@ -215,7 +215,7 @@ aiRouter.post("/remove-bg", requireAuth, async (req: any, res: Response) => {
             r2Key: storageResult.original.key,
             watermarkedR2Url: storageResult.watermarked.presignedUrl,
             watermarkedR2Key: storageResult.watermarked.key,
-            isPublic: false,
+            isPublic: true, // public by default
             status: "completed",
             generationType: "remove-bg",
         }).returning();
@@ -261,12 +261,60 @@ aiRouter.post("/generate-video", requireAuth, async (req: any, res: Response) =>
 
         const videoUrl = await generateVideoWithFalAI(prompt);
 
+        let finalUrl = videoUrl;
+        let savedVideo: any = null;
+        try {
+            const filename = `vid_${user.id}_${Date.now()}.mp4`;
+            const storageResult = await uploadFromFalToR2(videoUrl, `users/${user.id}/videos`, filename);
+            finalUrl = storageResult.presignedUrl;
+
+            const [videoRecord] = await db.insert(images).values({
+                userId: user.id,
+                prompt,
+                aspectRatio: "16:9",
+                model: "Kling Video",
+                r2Url: storageResult.presignedUrl,
+                r2Key: storageResult.key,
+                isPublic: true, // public by default
+                status: "completed",
+                generationType: "video",
+            }).returning();
+
+            savedVideo = videoRecord;
+
+            await db.insert(collections).values({
+                userId: user.id,
+                imageId: videoRecord.id,
+            }).onConflictDoNothing();
+        } catch (storageErr) {
+            console.warn("Could not upload video to R2, saving direct fal url:", storageErr);
+            const [videoRecord] = await db.insert(images).values({
+                userId: user.id,
+                prompt,
+                aspectRatio: "16:9",
+                model: "Kling Video",
+                r2Url: videoUrl,
+                r2Key: `direct_${Date.now()}`,
+                isPublic: true, // public by default
+                status: "completed",
+                generationType: "video",
+            }).returning();
+            savedVideo = videoRecord;
+
+            await db.insert(collections).values({
+                userId: user.id,
+                imageId: videoRecord.id,
+            }).onConflictDoNothing();
+        }
+
         const newCredits = user.credits - VIDEO_TOKEN_COST;
         await db.update(users).set({ credits: newCredits }).where(eq(users.id, user.id));
 
         res.json({
-            message: "Video generated successfully",
-            url: videoUrl,
+            message: "Video generated successfully and published to public gallery",
+            url: finalUrl,
+            image: savedVideo,
+            video: savedVideo,
             creditsRemaining: newCredits,
             tokensDeducted: VIDEO_TOKEN_COST,
         });
@@ -286,7 +334,7 @@ aiRouter.get("/user-history", requireAuth, async (req: any, res: Response) => {
             .where(eq(images.userId, user.id))
             .orderBy(desc(images.createdAt));
 
-        res.json({ images: userImages });
+        res.json({ images: userImages, history: userImages });
     } catch (error: any) {
         res.status(500).json({ error: error.message || "Failed to fetch user history" });
     }
