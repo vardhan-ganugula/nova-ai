@@ -32,9 +32,12 @@ export default function SettingsPage() {
   const [changePasswordApi, { isLoading: isChangingPassword }] = useChangePasswordMutation();
 
   const user = userData?.user;
-  const credits = user?.credits ?? tokenUsageData?.credits ?? 100;
+  const credits = user?.credits ?? tokenUsageData?.credits ?? 0;
+  const dailyCredits = user?.dailyCredits ?? tokenUsageData?.dailyCredits ?? 50;
+  const purchasedCredits = user?.purchasedCredits ?? tokenUsageData?.purchasedCredits ?? 0;
 
   const [activeTab, setActiveTab] = useState<"profile" | "security" | "tokens">("profile");
+
 
   // Profile form state
   const [displayName, setDisplayName] = useState(user?.displayName || "Nova Creator");
@@ -306,29 +309,61 @@ export default function SettingsPage() {
         {/* TAB 3: Token Usage & History */}
         {activeTab === "tokens" && (
           <div className="space-y-6">
-            {/* Realtime Balance */}
-            <div className="rounded-xl border border-white/[0.08] bg-[#121215] p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
-              <div className="space-y-1">
+            {/* Realtime Balance & Token Breakdown */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* Total Active Balance */}
+              <div className="rounded-xl border border-white/[0.08] bg-[#121215] p-5 space-y-2">
                 <span className="font-mono text-[10px] uppercase tracking-wider text-orange-400 font-bold">
-                  [ REALTIME TOKEN BALANCE ]
+                  [ TOTAL ACTIVE BALANCE ]
                 </span>
                 <div className="flex items-baseline gap-2">
-                  <span className="text-4xl font-bold text-white">{credits}</span>
-                  <span className="text-xs font-mono text-zinc-400">Tokens available</span>
+                  <span className="text-3xl font-bold text-white">{credits}</span>
+                  <span className="text-xs font-mono text-zinc-400">Tokens</span>
                 </div>
-                <p className="text-xs text-zinc-400">
-                  Tokens are deducted dynamically as you synthesize images and upscale assets.
+                <p className="text-[11px] text-zinc-400 leading-relaxed">
+                  Total usable tokens available for image, video, and text generation.
                 </p>
               </div>
 
-              <div className="flex items-center gap-2 rounded-lg bg-orange-500/10 border border-orange-500/20 px-3.5 py-2.5">
-                <Zap className="h-4 w-4 text-orange-400" />
-                <div>
-                  <div className="text-xs font-bold text-white">Standard Tier Active</div>
-                  <div className="text-[10px] text-orange-400 font-mono">100 Starter Tokens Included</div>
+              {/* Daily Free Tokens */}
+              <div className="rounded-xl border border-orange-500/20 bg-orange-500/[0.04] p-5 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="font-mono text-[10px] uppercase tracking-wider text-orange-400 font-bold">
+                    [ TODAY'S FREE TOKENS ]
+                  </span>
+                  <span className="text-[9px] font-mono uppercase px-1.5 py-0.5 rounded bg-orange-500/20 text-orange-300">
+                    Expires Daily
+                  </span>
                 </div>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-3xl font-bold text-orange-400">{dailyCredits}</span>
+                  <span className="text-xs font-mono text-zinc-400">/ 50 daily</span>
+                </div>
+                <p className="text-[11px] text-zinc-400 leading-relaxed">
+                  Used first during generation. Expire tomorrow and replenish every midnight (00:00 UTC).
+                </p>
+              </div>
+
+              {/* Purchased Tokens */}
+              <div className="rounded-xl border border-white/[0.08] bg-[#121215] p-5 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="font-mono text-[10px] uppercase tracking-wider text-zinc-400 font-bold">
+                    [ PURCHASED TOKENS ]
+                  </span>
+                  <span className="text-[9px] font-mono uppercase px-1.5 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
+                    Long-term (1 Year)
+                  </span>
+                </div>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-3xl font-bold text-white">{purchasedCredits}</span>
+                  <span className="text-xs font-mono text-zinc-400">Tokens</span>
+                </div>
+                <p className="text-[11px] text-zinc-400 leading-relaxed">
+                  Do not expire daily. Preserved safely and consumed only after daily free tokens are exhausted.
+                </p>
               </div>
             </div>
+
 
             {/* Modality Rates Card */}
             <div className="rounded-xl border border-white/[0.08] bg-[#121215] p-6 space-y-4">

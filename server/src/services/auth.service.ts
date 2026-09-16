@@ -5,6 +5,8 @@ import bcrypt from 'bcrypt';
 import { Redis } from 'ioredis';
 import { v4 as uuidv4 } from 'uuid';
 import { REDIS_URL } from '@/utils/config.util.js';
+import { getNextUtcMidnight, calculateActiveUserTokens, PURCHASED_TOKENS_EXPIRY_DAYS } from '@/utils/credit.util.js';
+
 import {MailService} from './mail.service.js';
 
 
@@ -30,12 +32,20 @@ export class AuthService {
 
     const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
 
+    const tomorrowMidnight = getNextUtcMidnight();
+    const purchasedExpiry = new Date(Date.now() + PURCHASED_TOKENS_EXPIRY_DAYS * 24 * 60 * 60 * 1000);
+
     const [newUser] = await db.insert(users).values({
       email,
       username: username || generateDefaultUsername(),
       isVerified: false,
       credits: 100,
+      dailyCredits: 50,
+      dailyCreditsExpiresAt: tomorrowMidnight,
+      purchasedCredits: 50,
+      purchasedCreditsExpiresAt: purchasedExpiry,
     }).returning();
+
 
     await db.insert(accounts).values({
       userId: newUser.id,
@@ -115,6 +125,10 @@ export class AuthService {
 
     // 3. If user still does not exist, create new user and link account
     if (!user) {
+      const tomorrowMidnight = getNextUtcMidnight();
+
+      const purchasedExpiry = new Date(Date.now() + PURCHASED_TOKENS_EXPIRY_DAYS * 24 * 60 * 60 * 1000);
+
       const [newUser] = await db
         .insert(users)
         .values({
@@ -124,8 +138,13 @@ export class AuthService {
           profilePicture: picture || null,
           isVerified: true,
           credits: 100,
+          dailyCredits: 50,
+          dailyCreditsExpiresAt: tomorrowMidnight,
+          purchasedCredits: 50,
+          purchasedCreditsExpiresAt: purchasedExpiry,
         })
         .returning();
+
 
       user = newUser;
 
@@ -196,6 +215,10 @@ export class AuthService {
 
     // 3. If user still does not exist, create new user and link account
     if (!user) {
+      const tomorrowMidnight = getNextUtcMidnight();
+
+      const purchasedExpiry = new Date(Date.now() + PURCHASED_TOKENS_EXPIRY_DAYS * 24 * 60 * 60 * 1000);
+
       const [newUser] = await db
         .insert(users)
         .values({
@@ -205,8 +228,13 @@ export class AuthService {
           profilePicture: picture || null,
           isVerified: true,
           credits: 100,
+          dailyCredits: 50,
+          dailyCreditsExpiresAt: tomorrowMidnight,
+          purchasedCredits: 50,
+          purchasedCreditsExpiresAt: purchasedExpiry,
         })
         .returning();
+
 
       user = newUser;
 
@@ -303,6 +331,7 @@ export class AuthService {
   }
 
   private sanitizeUser(user: any) {
+    const active = calculateActiveUserTokens(user);
     return {
       id: user.id,
       email: user.email,
@@ -310,10 +339,15 @@ export class AuthService {
       displayName: user.displayName,
       profilePicture: user.profilePicture,
       isVerified: user.isVerified,
-      credits: user.credits,
+      credits: active.totalActive,
+      dailyCredits: active.activeDaily,
+      dailyCreditsExpiresAt: user.dailyCreditsExpiresAt,
+      purchasedCredits: active.activePurchased,
+      purchasedCreditsExpiresAt: user.purchasedCreditsExpiresAt,
       createdAt: user.createdAt,
     };
   }
 }
+
 
 export const authService = new AuthService();

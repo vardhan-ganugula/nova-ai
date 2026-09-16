@@ -14,6 +14,8 @@ import { uploadFromFalToR2, uploadFromFalToR2WithWatermark } from "@/utils/stora
 import { inngest } from "@/inngest/client.js";
 import { aiImageModels, aiChatModels, aiAudioModels, aiVideoModels } from "@/utils/ai.util.js";
 import { DOWNLOAD_WATERMARK_FREE_TOKEN_COST } from "@/utils/config.util.js";
+import { deductUserTokens, calculateActiveUserTokens } from "@/utils/credit.util.js";
+
 
 const aiRouter = Router(); 
 
@@ -38,22 +40,20 @@ aiRouter.post("/generate-text", requireAuth, async (req: any, res: Response) => 
     const { prompt, model } = req.body;
     const user = req.user;
 
-    if (user.credits < TEXT_TOKEN_COST) {
+    const deduction = await deductUserTokens(user.id, TEXT_TOKEN_COST);
+    if (!deduction.success) {
         return res.status(403).json({
-            error: `Insufficient tokens. Text generation requires ${TEXT_TOKEN_COST} tokens, but you only have ${user.credits} tokens.`,
-            credits: user.credits,
+            error: deduction.error,
+            credits: deduction.creditsRemaining,
         });
     }
 
     try {
         const generatedText = await generateTextWithOpenRouter(prompt, model);
 
-        const newCredits = user.credits - TEXT_TOKEN_COST;
-        await db.update(users).set({ credits: newCredits }).where(eq(users.id, user.id));
-
         res.json({
             text: generatedText,
-            creditsRemaining: newCredits,
+            creditsRemaining: deduction.creditsRemaining,
             tokensDeducted: TEXT_TOKEN_COST,
         });
     } catch (error: any) {
@@ -62,6 +62,7 @@ aiRouter.post("/generate-text", requireAuth, async (req: any, res: Response) => 
     }
 });
 
+
 // Generate Image (Inngest async event + direct Fal AI & R2 persistence)
 aiRouter.post("/generate-image", requireAuth, async (req: any, res: Response) => {
     const { prompt, negativePrompt, style, aspectRatio, model } = req.body;
@@ -69,10 +70,11 @@ aiRouter.post("/generate-image", requireAuth, async (req: any, res: Response) =>
     const modelConfig = model ? (aiImageModels as any)[model] : null;
     const tokenCost = modelConfig?.price || IMAGE_TOKEN_COST;
 
-    if (user.credits < tokenCost) {
+    const deduction = await deductUserTokens(user.id, tokenCost);
+    if (!deduction.success) {
         return res.status(403).json({
-            error: `Insufficient tokens. Generating with ${model || "default model"} requires ${tokenCost} tokens, but you only have ${user.credits} tokens.`,
-            credits: user.credits,
+            error: deduction.error,
+            credits: deduction.creditsRemaining,
         });
     }
 
@@ -125,15 +127,11 @@ aiRouter.post("/generate-image", requireAuth, async (req: any, res: Response) =>
             imageId: savedImage.id,
         }).onConflictDoNothing();
 
-        // Deduct user tokens
-        const newCredits = user.credits - tokenCost;
-        await db.update(users).set({ credits: newCredits }).where(eq(users.id, user.id));
-
         res.json({
             message: "Image generated successfully and saved to public gallery",
             url: storageResult.original.presignedUrl,
             image: savedImage,
-            creditsRemaining: newCredits,
+            creditsRemaining: deduction.creditsRemaining,
             tokensDeducted: tokenCost,
         });
     } catch (error: any) {
@@ -142,15 +140,18 @@ aiRouter.post("/generate-image", requireAuth, async (req: any, res: Response) =>
     }   
 });
 
+
+// Upscale Image (Fal AI clarity upscaler + Cloudflare R2)
 // Upscale Image (Fal AI clarity upscaler + Cloudflare R2)
 aiRouter.post("/upscale-image", requireAuth, async (req: any, res: Response) => {
     const { imageUrl, prompt } = req.body;
     const user = req.user;
 
-    if (user.credits < UPSCALE_TOKEN_COST) {
+    const deduction = await deductUserTokens(user.id, UPSCALE_TOKEN_COST);
+    if (!deduction.success) {
         return res.status(403).json({
-            error: `Insufficient tokens. Upscaling requires ${UPSCALE_TOKEN_COST} tokens, but you only have ${user.credits} tokens.`,
-            credits: user.credits,
+            error: deduction.error,
+            credits: deduction.creditsRemaining,
         });
     }
 
@@ -176,14 +177,11 @@ aiRouter.post("/upscale-image", requireAuth, async (req: any, res: Response) => 
             imageId: savedImage.id,
         }).onConflictDoNothing();
 
-        const newCredits = user.credits - UPSCALE_TOKEN_COST;
-        await db.update(users).set({ credits: newCredits }).where(eq(users.id, user.id));
-
         res.json({
             message: "Image upscaled to 8K UHD successfully",
             url: storageResult.original.presignedUrl,
             image: savedImage,
-            creditsRemaining: newCredits,
+            creditsRemaining: deduction.creditsRemaining,
             tokensDeducted: UPSCALE_TOKEN_COST,
         });
     } catch (error: any) {
@@ -197,10 +195,11 @@ aiRouter.post("/remove-bg", requireAuth, async (req: any, res: Response) => {
     const { imageUrl, prompt } = req.body;
     const user = req.user;
 
-    if (user.credits < REMOVE_BG_TOKEN_COST) {
+    const deduction = await deductUserTokens(user.id, REMOVE_BG_TOKEN_COST);
+    if (!deduction.success) {
         return res.status(403).json({
-            error: `Insufficient tokens. Background removal requires ${REMOVE_BG_TOKEN_COST} tokens, but you only have ${user.credits} tokens.`,
-            credits: user.credits,
+            error: deduction.error,
+            credits: deduction.creditsRemaining,
         });
     }
 
@@ -226,14 +225,11 @@ aiRouter.post("/remove-bg", requireAuth, async (req: any, res: Response) => {
             imageId: savedImage.id,
         }).onConflictDoNothing();
 
-        const newCredits = user.credits - REMOVE_BG_TOKEN_COST;
-        await db.update(users).set({ credits: newCredits }).where(eq(users.id, user.id));
-
         res.json({
             message: "Background removed with high-fidelity alpha",
             url: storageResult.original.presignedUrl,
             image: savedImage,
-            creditsRemaining: newCredits,
+            creditsRemaining: deduction.creditsRemaining,
             tokensDeducted: REMOVE_BG_TOKEN_COST,
         });
     } catch (error: any) {
@@ -247,10 +243,11 @@ aiRouter.post("/generate-video", requireAuth, async (req: any, res: Response) =>
     const { prompt } = req.body;
     const user = req.user;
 
-    if (user.credits < VIDEO_TOKEN_COST) {
+    const deduction = await deductUserTokens(user.id, VIDEO_TOKEN_COST);
+    if (!deduction.success) {
         return res.status(403).json({
-            error: `Insufficient tokens. Video generation requires ${VIDEO_TOKEN_COST} tokens, but you only have ${user.credits} tokens.`,
-            credits: user.credits,
+            error: deduction.error,
+            credits: deduction.creditsRemaining,
         });
     }
 
@@ -308,15 +305,12 @@ aiRouter.post("/generate-video", requireAuth, async (req: any, res: Response) =>
             }).onConflictDoNothing();
         }
 
-        const newCredits = user.credits - VIDEO_TOKEN_COST;
-        await db.update(users).set({ credits: newCredits }).where(eq(users.id, user.id));
-
         res.json({
             message: "Video generated successfully and published to public gallery",
             url: finalUrl,
             image: savedVideo,
             video: savedVideo,
-            creditsRemaining: newCredits,
+            creditsRemaining: deduction.creditsRemaining,
             tokensDeducted: VIDEO_TOKEN_COST,
         });
     } catch (error: any) {
@@ -324,6 +318,7 @@ aiRouter.post("/generate-video", requireAuth, async (req: any, res: Response) =>
         res.status(500).json({ error: error.message || "Failed to generate video" });
     }   
 });
+
 
 // Get User History
 aiRouter.get("/user-history", requireAuth, async (req: any, res: Response) => {
@@ -462,17 +457,17 @@ aiRouter.post("/images/:id/download-clean", requireAuth, async (req: any, res: R
         const alreadyInGenerations = isOwner || existingCopy.length > 0;
         const tokensDeducted = alreadyInGenerations ? 0 : DOWNLOAD_WATERMARK_FREE_TOKEN_COST;
 
-        if (!alreadyInGenerations && user.credits < tokensDeducted) {
-            return res.status(403).json({
-                error: `Insufficient tokens. Downloading clean original artwork requires ${tokensDeducted} token, but you only have ${user.credits} tokens.`,
-                credits: user.credits,
-            });
-        }
-
         let newCredits = user.credits;
         if (!alreadyInGenerations && tokensDeducted > 0) {
-            newCredits = user.credits - tokensDeducted;
-            await db.update(users).set({ credits: newCredits }).where(eq(users.id, user.id));
+            const deduction = await deductUserTokens(user.id, tokensDeducted);
+            if (!deduction.success) {
+                return res.status(403).json({
+                    error: deduction.error,
+                    credits: deduction.creditsRemaining,
+                });
+            }
+            newCredits = deduction.creditsRemaining;
+
 
             // Move/copy this image to user's generations without re-uploading (same R2 storage address)
             // isPublic is FALSE so it belongs to the user's personal generations/library and never duplicates on Explore
@@ -546,8 +541,14 @@ aiRouter.get("/token-usage", requireAuth, async (req: any, res: Response) => {
             };
         });
 
+        const active = calculateActiveUserTokens(user);
+
         res.json({
-            credits: user.credits,
+            credits: active.totalActive,
+            dailyCredits: active.activeDaily,
+            dailyCreditsExpiresAt: active.dailyExpiresAt,
+            purchasedCredits: active.activePurchased,
+            purchasedCreditsExpiresAt: active.purchasedExpiresAt,
             tokenCosts: {
                 image: IMAGE_TOKEN_COST,
                 upscale: UPSCALE_TOKEN_COST,
@@ -557,6 +558,7 @@ aiRouter.get("/token-usage", requireAuth, async (req: any, res: Response) => {
             },
             history: historyWithTokens,
         });
+
     } catch (error: any) {
         res.status(500).json({ error: error.message || "Failed to fetch token usage" });
     }

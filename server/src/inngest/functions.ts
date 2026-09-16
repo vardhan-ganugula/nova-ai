@@ -3,7 +3,9 @@ import { falAI } from "@/services/ai.service.js";
 import { uploadFromFalToR2, uploadFromFalToR2WithWatermark } from "@/utils/storage.util.js";
 import { db } from "@/db/index.js";
 import { images, collections, users } from "@/db/schema.js";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
+import { DAILY_FREE_TOKENS } from "@/utils/config.util.js";
+
 
 // 1. Asynchronous Image Generation
 export const generateImageFn = inngest.createFunction(
@@ -125,4 +127,103 @@ export const generateAudioFn = inngest.createFunction(
   }
 );
 
-export const inngestFunctions = [generateImageFn, generateVideoFn, generateAudioFn];
+// 4. Daily Free Tokens Distribution & Expiration Cron Schedule
+export const dailyTokenGrantFn = inngest.createFunction(
+  {
+    id: "daily-tokens-distribution",
+    name: "Daily 50 Tokens Distribution & Expiration",
+    triggers: [
+      { cron: "0 0 * * *" }, // Cron schedule: Every day at 00:00 UTC (Midnight)
+      { event: "cron/daily-tokens.trigger" }, // Event trigger: allows manual invocation or testing
+    ],
+  },
+  async ({ event, step }: any) => {
+    const tokensToGrant = Number(event?.data?.tokens) || DAILY_FREE_TOKENS || 50;
+    const targetUserId = event?.data?.userId;
+
+    const distributionResult = await step.run("grant-daily-tokens", async () => {
+      // Today's daily tokens expire by tomorrow midnight UTC
+      const tomorrowMidnight = new Date();
+      tomorrowMidnight.setUTCHours(24, 0, 0, 0);
+
+      if (targetUserId) {
+        // Targeted distribution for a single user (e.g. testing)
+        const updatedUsers = await db
+          .update(users)
+          .set({
+            dailyCredits: tokensToGrant,
+            dailyCreditsExpiresAt: tomorrowMidnight,
+            credits: sql`${tokensToGrant} + CASE 
+              WHEN ${users.purchasedCreditsExpiresAt} IS NULL OR ${users.purchasedCreditsExpiresAt} > NOW() 
+              THEN ${users.purchasedCredits} 
+              ELSE 0 
+            END`,
+            updatedAt: new Date(),
+          })
+          .where(eq(users.id, targetUserId))
+          .returning({
+            id: users.id,
+            email: users.email,
+            dailyCredits: users.dailyCredits,
+            dailyCreditsExpiresAt: users.dailyCreditsExpiresAt,
+            purchasedCredits: users.purchasedCredits,
+            purchasedCreditsExpiresAt: users.purchasedCreditsExpiresAt,
+            newCredits: users.credits,
+          });
+
+        return {
+          mode: "single_user",
+          tokensGranted: tokensToGrant,
+          dailyExpiresAt: tomorrowMidnight.toISOString(),
+          affectedCount: updatedUsers.length,
+          users: updatedUsers,
+        };
+      } else {
+        // Universal distribution: reset today's daily tokens to 50, expire old unused daily tokens, preserve unexpired purchased tokens
+        const updatedUsers = await db
+          .update(users)
+          .set({
+            dailyCredits: tokensToGrant,
+            dailyCreditsExpiresAt: tomorrowMidnight,
+            credits: sql`${tokensToGrant} + CASE 
+              WHEN ${users.purchasedCreditsExpiresAt} IS NULL OR ${users.purchasedCreditsExpiresAt} > NOW() 
+              THEN ${users.purchasedCredits} 
+              ELSE 0 
+            END`,
+            updatedAt: new Date(),
+          })
+          .returning({
+            id: users.id,
+            email: users.email,
+            dailyCredits: users.dailyCredits,
+            dailyCreditsExpiresAt: users.dailyCreditsExpiresAt,
+            purchasedCredits: users.purchasedCredits,
+            purchasedCreditsExpiresAt: users.purchasedCreditsExpiresAt,
+            newCredits: users.credits,
+          });
+
+        return {
+          mode: "all_users",
+          tokensGranted: tokensToGrant,
+          dailyExpiresAt: tomorrowMidnight.toISOString(),
+          affectedCount: updatedUsers.length,
+          timestamp: new Date().toISOString(),
+        };
+      }
+    });
+
+    return {
+      success: true,
+      message: `Successfully refreshed ${tokensToGrant} daily tokens (expires tomorrow) for ${distributionResult.affectedCount} user(s).`,
+      summary: distributionResult,
+    };
+  }
+);
+
+
+export const inngestFunctions = [
+  generateImageFn,
+  generateVideoFn,
+  generateAudioFn,
+  dailyTokenGrantFn,
+];

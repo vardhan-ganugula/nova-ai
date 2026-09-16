@@ -8,9 +8,14 @@ export const users = pgTable('users', {
   profilePicture: text('profile_picture'),
   isVerified: boolean('is_verified').default(false).notNull(),
   credits: integer('credits').default(0).notNull(), 
+  dailyCredits: integer('daily_credits').default(50).notNull(),
+  dailyCreditsExpiresAt: timestamp('daily_credits_expires_at'),
+  purchasedCredits: integer('purchased_credits').default(0).notNull(),
+  purchasedCreditsExpiresAt: timestamp('purchased_credits_expires_at'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
+
 
 export const accounts = pgTable('accounts', {
   id: uuid('id').defaultRandom().primaryKey(),

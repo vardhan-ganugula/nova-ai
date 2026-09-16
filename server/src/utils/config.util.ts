@@ -44,5 +44,6 @@ if(!CLOUDFLARE_R2_ENDPOINT || !CLOUDFLARE_ACCESS_KEY_ID || !CLOUDFLARE_SECRET_AC
     throw new Error('Cloudflare R2 configuration is missing. Please check your environment variables.');
 }
 
-// Token Deduction Configuration
+// Token Deduction & Allocation Configuration
 export const DOWNLOAD_WATERMARK_FREE_TOKEN_COST = Number(process.env.DOWNLOAD_WATERMARK_FREE_TOKEN_COST) || 1;
+export const DAILY_FREE_TOKENS = Number(process.env.DAILY_FREE_TOKENS) || 50;

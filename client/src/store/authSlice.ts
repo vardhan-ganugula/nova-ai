@@ -237,9 +237,14 @@ const apiSlice = createApi({
 
     getTokenUsage: builder.query<{
       credits: number;
+      dailyCredits?: number;
+      dailyCreditsExpiresAt?: string | null;
+      purchasedCredits?: number;
+      purchasedCreditsExpiresAt?: string | null;
       tokenCosts: { image: number; upscale: number; removeBg: number; video: number; text: number };
       history: Array<{ id: string; prompt: string; type: string; r2Url: string; status: string; tokensDeducted: number; createdAt: string }>;
     }, void>({
+
       query: () => ({
         url: '/ai/token-usage',
         method: 'GET',

@@ -130,9 +130,10 @@ export const AppTopBar: React.FC<AppTopBarProps> = ({
             {/* Tokens Badge */}
             <Link
               to="/settings"
-              title="Manage generation credits"
+              title={`Total Credits: ${credits} (${user?.dailyCredits ?? 50} Daily Free [resets daily] + ${user?.purchasedCredits ?? 0} Purchased [1 Year])`}
               className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-orange-500/25 bg-orange-500/10 font-mono text-[11px] font-bold text-orange-400 hover:bg-orange-500/15 transition-all"
             >
+
               <Zap className="h-3.5 w-3.5 fill-orange-400 text-orange-400" />
               <span>{credits}</span>
               <span className="hidden sm:inline text-orange-400/70 font-normal text-[10px]">
