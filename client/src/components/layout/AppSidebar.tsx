@@ -17,19 +17,24 @@ import {
 } from "lucide-react";
 import { useGetUserQuery, useLogoutMutation } from "@/store/authSlice";
 import { Tooltip } from "@/components/ui/tooltip";
+import toast from "react-hot-toast";
 
 interface AppSidebarProps {
   collapsed?: boolean;
   onToggleCollapse?: () => void;
 }
 
-export const AppSidebar: React.FC<AppSidebarProps> = () => {
+export const AppSidebar: React.FC<AppSidebarProps> = ({
+  collapsed: externalCollapsed,
+  onToggleCollapse,
+}) => {
   const location = useLocation();
   const navigate = useNavigate();
   const { data: userData } = useGetUserQuery();
   const [handleLogout] = useLogoutMutation();
 
-  const [isCollapsed, setIsCollapsed] = useState<boolean>(() => {
+  const [isCollapsed, setIsCollapsed] = useState(() => {
+    if (externalCollapsed !== undefined) return externalCollapsed;
     return localStorage.getItem("nova_sidebar_collapsed") === "true";
   });
 
@@ -44,10 +49,11 @@ export const AppSidebar: React.FC<AppSidebarProps> = () => {
   const onLogout = async () => {
     try {
       await handleLogout({}).unwrap();
+      toast.success("Logged out successfully");
     } catch {
       // ignore
     }
-    navigate("/login");
+    navigate("/");
   };
 
   const primaryNav = [

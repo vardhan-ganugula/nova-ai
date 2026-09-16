@@ -297,7 +297,45 @@ export default function ImageGalleryPage() {
     const toastId = toast.loading("Downloading watermarked image...");
     try {
       await triggerBrowserDownload(targetUrl, `nova-ai-${img.id || "creation"}-watermarked.png`);
-      toast.success("Downloaded watermarked preview!", { id: toastId });
+      toast.dismiss(toastId);
+
+      // Render custom theme-aligned image toast
+      toast.custom(
+        (t) => (
+          <div
+            className={`${
+              t.visible ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-2 scale-95'
+            } transition-all duration-200 max-w-sm w-full bg-[#141419]/95 border border-emerald-500/30 rounded-2xl p-3 shadow-[0_20px_50px_rgba(0,0,0,0.9)] backdrop-blur-xl flex items-center gap-3`}
+          >
+            <img
+              src={targetUrl}
+              alt="Artwork preview"
+              className="h-12 w-12 rounded-xl object-cover border border-white/10 shrink-0 bg-black"
+            />
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-1.5">
+                <span className="font-mono text-[9px] uppercase font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-1.5 py-0.5 rounded">
+                  WATERMARKED
+                </span>
+                <span className="font-mono text-[9px] text-zinc-400 font-semibold">FREE</span>
+              </div>
+              <p className="text-xs font-semibold text-white truncate mt-1">
+                Preview Downloaded
+              </p>
+              <p className="text-[11px] text-zinc-400 truncate">
+                Saved to your device
+              </p>
+            </div>
+            <button
+              onClick={() => toast.dismiss(t.id)}
+              className="p-1.5 rounded-lg text-zinc-500 hover:text-white hover:bg-white/10 transition-colors shrink-0 cursor-pointer"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+        ),
+        { duration: 3500 }
+      );
     } catch {
       toast.error("Download failed. Please try again.", { id: toastId });
     }
@@ -324,6 +362,7 @@ export default function ImageGalleryPage() {
     }
 
     const alreadyAcquired = isImageOwnedOrAcquired(img);
+    const targetUrl = img.watermarkedR2Url || img.displayUrl || img.r2Url;
 
     setIsDownloading(true);
     const toastId = toast.loading(
@@ -335,15 +374,59 @@ export default function ImageGalleryPage() {
     try {
       const res = await downloadCleanImageApi({ id: img.id }).unwrap();
       await triggerBrowserDownload(res.downloadUrl, `nova-ai-${img.id}-clean-hd.png`);
+      toast.dismiss(toastId);
 
-      if (res.tokensDeducted === 0) {
-        toast.success("Downloaded original HD master! (0 tokens - In your generations)", { id: toastId });
-      } else {
-        toast.success(
-          `Downloaded clean HD master & saved to your generations! (${res.tokensDeducted} token deducted, ${res.creditsRemaining} remaining)`,
-          { id: toastId }
-        );
-      }
+      const isFree = res.tokensDeducted === 0;
+
+      // Render custom theme-aligned HD image toast
+      toast.custom(
+        (t) => (
+          <div
+            className={`${
+              t.visible ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-2 scale-95'
+            } transition-all duration-200 max-w-md w-full bg-[#141419]/95 border ${
+              isFree ? 'border-emerald-500/30' : 'border-orange-500/30'
+            } rounded-2xl p-3 shadow-[0_20px_50px_rgba(0,0,0,0.9)] backdrop-blur-xl flex items-center gap-3`}
+          >
+            <img
+              src={res.downloadUrl || targetUrl}
+              alt="Artwork preview"
+              className="h-12 w-12 rounded-xl object-cover border border-white/10 shrink-0 bg-black"
+            />
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-1.5">
+                <span
+                  className={`font-mono text-[9px] uppercase font-bold px-1.5 py-0.5 rounded border ${
+                    isFree
+                      ? 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20'
+                      : 'text-orange-400 bg-orange-500/10 border-orange-500/20'
+                  }`}
+                >
+                  CLEAN HD MASTER
+                </span>
+                <span className="font-mono text-[9px] text-zinc-400 font-semibold">
+                  {isFree ? '0 TOKENS' : `${res.tokensDeducted} TOKEN`}
+                </span>
+              </div>
+              <p className="text-xs font-semibold text-white truncate mt-1">
+                Download Complete
+              </p>
+              <p className="text-[11px] text-zinc-400 truncate">
+                {isFree
+                  ? 'Re-downloaded from your generations (Free)'
+                  : `Added to your generations (${res.creditsRemaining} credits left)`}
+              </p>
+            </div>
+            <button
+              onClick={() => toast.dismiss(t.id)}
+              className="p-1.5 rounded-lg text-zinc-500 hover:text-white hover:bg-white/10 transition-colors shrink-0 cursor-pointer"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+        ),
+        { duration: 4500 }
+      );
     } catch (err: any) {
       const errMsg =
         err?.data?.error ||

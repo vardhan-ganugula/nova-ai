@@ -12,6 +12,7 @@ import {
   LogOut,
 } from "lucide-react";
 import { useGetUserQuery, useLogoutMutation } from "@/store/authSlice";
+import toast from "react-hot-toast";
 
 interface SidebarProps {
   activeItem?: string;
@@ -30,10 +31,11 @@ export function DashboardSidebar({ activeItem }: SidebarProps) {
   const onLogout = async () => {
     try {
       await handleLogout({}).unwrap();
+      toast.success("Logged out successfully");
     } catch {
       // ignore
     }
-    navigate("/login");
+    navigate("/");
   };
 
   const navItems = [
