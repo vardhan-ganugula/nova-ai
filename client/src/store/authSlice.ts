@@ -4,7 +4,9 @@ import toast from 'react-hot-toast';
 import { setModels } from '@/store/modelsSlice.ts';
 
 
-const API_URL = (import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000') + '/api';
+const API_URL = import.meta.env.VITE_BACKEND_URL
+  ? `${import.meta.env.VITE_BACKEND_URL}/api`
+  : (import.meta.env.PROD ? '/api' : 'http://localhost:8000/api');
 
 const apiSlice = createApi({
 

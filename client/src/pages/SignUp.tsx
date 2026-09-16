@@ -35,13 +35,13 @@ export default function Signup() {
         signUp(values);
     };
 
+    const backendUrl = import.meta.env.VITE_BACKEND_URL || (import.meta.env.PROD ? "" : "http://localhost:8000");
+
     const handleGoogle = () => {
-        const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
         window.location.href = `${backendUrl}/api/auth/google`;
     };
 
     const handleGithub = () => {
-        const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
         window.location.href = `${backendUrl}/api/auth/github`;
     };
 

@@ -36,7 +36,7 @@ export function CanvasView({ image, prompt, onImageUpdate, isPublic, onToggleVis
       setIsProcessing(null);
       if (res.url) {
         setInternalImage(res.url);
-        onImageUpdate?.(res.url, res.image);
+        onImageUpdate?.(res.url, (res as any).image);
       }
       toast.success("Image upscaled to 8K UHD!", { id: toastId });
     } catch (err: any) {
@@ -55,7 +55,7 @@ export function CanvasView({ image, prompt, onImageUpdate, isPublic, onToggleVis
       setIsProcessing(null);
       if (res.url) {
         setInternalImage(res.url);
-        onImageUpdate?.(res.url, res.image);
+        onImageUpdate?.(res.url, (res as any).image);
       }
       toast.success("Background removed with high fidelity alpha!", { id: toastId });
     } catch (err: any) {

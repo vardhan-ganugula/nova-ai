@@ -46,13 +46,13 @@ export default function Login() {
         }
     }, [user, navigate]);
 
+    const backendUrl = import.meta.env.VITE_BACKEND_URL || (import.meta.env.PROD ? "" : "http://localhost:8000");
+
     const signInWithGoogle = () => { 
-        const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
         window.location.href = `${backendUrl}/api/auth/google`;
     };
 
     const signInWithGithub = () => {
-        const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
         window.location.href = `${backendUrl}/api/auth/github`;
     };
 
