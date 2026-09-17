@@ -462,7 +462,7 @@ export default function ImageGalleryPage() {
               </p>
             </div>
 
-            <div className="flex items-center gap-3">
+            <div className="flex w-full flex-wrap items-center gap-3 md:w-auto">
               {!user && (
                 <Link
                   to="/login"
@@ -653,7 +653,7 @@ export default function ImageGalleryPage() {
             onClick={closeImageModal}
           >
             <div
-              className="relative w-full max-w-5xl xl:max-w-6xl h-auto max-h-[92vh] md:h-[86vh] bg-[#0e0e12] rounded-2xl border border-white/10 shadow-[0_25px_70px_rgba(0,0,0,0.95)] overflow-hidden flex flex-col md:flex-row"
+              className="relative w-full max-w-5xl xl:max-w-6xl h-auto max-h-[92vh] md:h-[86vh] bg-[#0e0e12] rounded-2xl border border-white/10 shadow-[0_25px_70px_rgba(0,0,0,0.95)] overflow-y-auto md:overflow-hidden flex flex-col md:flex-row"
               onClick={(e) => e.stopPropagation()}
             >
               {/* Left Column: Generous Image Canvas Preview */}
@@ -690,9 +690,9 @@ export default function ImageGalleryPage() {
                 {/* Floating Bottom Preview Notice */}
                 <div className="absolute bottom-4 left-4 right-4 md:right-auto flex items-center gap-2 rounded-xl bg-black/80 backdrop-blur-md px-3 py-1.5 border border-white/10 text-[10px] font-mono text-zinc-300 shadow-lg">
                   <Zap className="h-3 w-3 text-orange-400 fill-orange-400 shrink-0" />
-                  <span className="font-semibold text-white">NOVA AI PUBLIC PREVIEW</span>
+                  <span className="font-semibold text-white truncate">NOVA AI PUBLIC PREVIEW</span>
                   <span className="text-zinc-500">•</span>
-                  <span className="text-zinc-400">Watermarked for Free Public Viewing</span>
+                  <span className="hidden sm:inline text-zinc-400">Watermarked for Free Public Viewing</span>
                 </div>
               </div>
 
@@ -700,7 +700,7 @@ export default function ImageGalleryPage() {
               <div className="w-full md:w-[440px] lg:w-[480px] shrink-0 bg-[#121216] border-t md:border-t-0 md:border-l border-white/[0.08] flex flex-col justify-between overflow-y-auto">
                 <div className="p-5 sm:p-6 space-y-5">
                   {/* Header Row: Badges, Like, Share & Close Button (No Overlap) */}
-                  <div className="flex items-center justify-between gap-2 pb-3 border-b border-white/[0.06]">
+                  <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-white/[0.06]">
                     <div className="flex items-center gap-1.5 flex-wrap min-w-0">
                       <span className="font-mono text-[10px] uppercase tracking-wider text-zinc-400 bg-white/[0.04] border border-white/10 px-2 py-0.5 rounded-md font-medium">
                         PUBLIC EXHIBIT

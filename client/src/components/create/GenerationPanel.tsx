@@ -101,7 +101,7 @@ export const GenerationPanel: React.FC<GenerationPanelProps> = ({
   };
 
   return (
-    <aside className="w-80 lg:w-96 flex-shrink-0 h-full border-r border-white/[0.08] bg-[#0c0c0e] flex flex-col z-20 select-none">
+    <aside className="h-[46%] w-full shrink-0 border-b border-white/[0.08] bg-[#0c0c0e] flex flex-col z-20 select-none md:h-full md:w-80 md:border-b-0 md:border-r lg:w-96">
       {/* Panel Header */}
       <div className="h-12 px-4 border-b border-white/[0.08] flex items-center justify-between">
         <div className="flex items-center gap-2">

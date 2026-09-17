@@ -13,13 +13,31 @@ import {
 import { AppShell } from "@/components/layout/AppShell";
 import { useGetUserCollectionsQuery } from "@/store/authSlice";
 
+export interface CollectionItem {
+  id?: string;
+  _id?: string;
+  name?: string;
+  title?: string;
+  prompt?: string;
+  cover?: string;
+  coverImage?: string;
+  r2Url?: string;
+  images?: string[];
+  count?: number;
+  items?: any[];
+  createdAt?: string;
+  style?: string;
+  aspectRatio?: string;
+  isPublic?: boolean;
+}
+
 export default function CollectionsPage() {
   const navigate = useNavigate();
   const { data: collectionsData, isLoading } = useGetUserCollectionsQuery();
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [newCollectionName, setNewCollectionName] = useState("");
 
-  const sampleCollections = [
+  const sampleCollections: CollectionItem[] = [
     {
       id: "col-1",
       name: "Cyberpunk Characters",
@@ -88,40 +106,54 @@ export default function CollectionsPage() {
 
         {/* Collections Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
-          {collections.map((col: any) => (
-            <div
-              key={col.id}
-              onClick={() => {
-                toast(`Opened collection: ${col.name}`);
-                navigate("/library");
-              }}
-              className="group rounded-xl border border-white/[0.08] bg-[#121215] hover:border-orange-500/40 transition-all cursor-pointer overflow-hidden flex flex-col"
-            >
-              <div className="relative aspect-[4/3] w-full overflow-hidden bg-black">
-                <img
-                  src={col.cover}
-                  alt={col.name}
-                  className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-300"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
-                <div className="absolute top-2.5 right-2.5 bg-black/70 px-2 py-0.5 rounded text-[10px] font-mono text-zinc-300 border border-white/10">
-                  {col.count} items
-                </div>
-              </div>
+          {collections.map((col: CollectionItem, idx: number) => {
+            const colId = col._id ?? col.id ?? `col-${idx}`;
+            const colTitle = col.title || col.name || col.prompt || "Untitled Collection";
+            const colCover = col.cover || col.coverImage || col.r2Url || (Array.isArray(col.images) && col.images[0]) || "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&auto=format&fit=crop&q=80";
+            const colCount = col.count ?? (Array.isArray(col.items) ? col.items.length : Array.isArray(col.images) ? col.images.length : 1);
+            const formattedDate = col.createdAt ? (col.createdAt.includes("T") ? col.createdAt.split("T")[0] : col.createdAt) : "Recent";
 
-              <div className="p-4 flex items-center justify-between">
-                <div>
-                  <h3 className="font-semibold text-sm text-zinc-100 group-hover:text-orange-400 transition-colors">
-                    {col.name}
-                  </h3>
-                  <span className="text-[10px] text-zinc-500 font-mono">
-                    Created {col.createdAt}
-                  </span>
+            const handleOpenCollection = (id?: string) => {
+              if (!id) {
+                console.warn("Attempted to open collection with undefined ID", col);
+                return;
+              }
+              toast(`Opened collection: ${colTitle}`);
+              navigate(`/library`);
+            };
+
+            return (
+              <div
+                key={colId}
+                onClick={() => handleOpenCollection(colId)}
+                className="group rounded-xl border border-white/[0.08] bg-[#121215] hover:border-orange-500/40 transition-all cursor-pointer overflow-hidden flex flex-col"
+              >
+                <div className="relative aspect-[4/3] w-full overflow-hidden bg-black">
+                  <img
+                    src={colCover}
+                    alt={colTitle}
+                    className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-300"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
+                  <div className="absolute top-2.5 right-2.5 bg-black/70 px-2 py-0.5 rounded text-[10px] font-mono text-zinc-300 border border-white/10">
+                    {colCount} {colCount === 1 ? "item" : "items"}
+                  </div>
                 </div>
-                <ArrowRight className="h-4 w-4 text-zinc-500 group-hover:text-orange-400 transition-colors" />
+
+                <div className="p-4 flex items-center justify-between">
+                  <div className="min-w-0 flex-1 pr-2">
+                    <h3 className="font-semibold text-sm text-zinc-100 group-hover:text-orange-400 transition-colors truncate">
+                      {colTitle}
+                    </h3>
+                    <span className="text-[10px] text-zinc-500 font-mono">
+                      Created {formattedDate}
+                    </span>
+                  </div>
+                  <ArrowRight className="h-4 w-4 shrink-0 text-zinc-500 group-hover:text-orange-400 transition-colors" />
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
 
         {/* Modal for creating collection */}

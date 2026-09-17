@@ -123,7 +123,7 @@ export const AppShell: React.FC<AppShellProps> = ({
 
       {/* Main Content Area */}
       <div
-        className={`flex-1 flex flex-col transition-all duration-300 ${
+        className={`min-w-0 flex-1 flex flex-col transition-all duration-300 ${
           isCollapsed ? "md:pl-[68px]" : "md:pl-[240px]"
         }`}
       >
@@ -133,7 +133,7 @@ export const AppShell: React.FC<AppShellProps> = ({
           onOpenMobileMenu={() => setMobileMenuOpen(true)}
         />
 
-        <main className={`flex-1 ${noPadding ? "p-0 overflow-hidden" : "p-4 sm:p-6 lg:p-8"}`}>
+        <main className={`min-w-0 flex-1 ${noPadding ? "p-0 overflow-hidden" : "p-4 sm:p-6 lg:p-8"}`}>
           {children}
         </main>
       </div>

@@ -137,8 +137,8 @@ export default function ImageGenPage() {
             <span>Dashboard</span>
           </Link>
           <div className="h-4 w-[1px] bg-white/10" />
-          <div className="flex items-center gap-2">
-            <div className="w-2.5 h-2.5 rounded-full bg-[#FF7A00] shadow-[0_0_8px_#FF7A00]" />
+          <div className="flex items-center gap-3">
+            <div className="w-2.5 h-2.5 shrink-0 rounded-full bg-[#FF7A00] shadow-[0_0_8px_#FF7A00]" />
             <h1 className="text-xs font-bold uppercase tracking-wider text-white">
               Studio AI <span className="text-[#FF7A00]">/ Generate</span>
             </h1>

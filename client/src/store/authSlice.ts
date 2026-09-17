@@ -192,7 +192,23 @@ const apiSlice = createApi({
       providesTags: ['History'],
     }),
 
-    getUserCollections: builder.query<{ collections: any[] }, void>({
+    getUserCollections: builder.query<{ collections: Array<{
+      id?: string;
+      _id?: string;
+      name?: string;
+      title?: string;
+      cover?: string;
+      coverImage?: string;
+      r2Url?: string;
+      images?: string[];
+      count?: number;
+      items?: any[];
+      createdAt?: string;
+      prompt?: string;
+      style?: string;
+      aspectRatio?: string;
+      isPublic?: boolean;
+    }> }, void>({
       query: () => ({
         url: '/ai/user-collections',
         method: 'GET',

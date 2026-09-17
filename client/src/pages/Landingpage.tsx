@@ -148,7 +148,7 @@ function Navbar({ onLogin, onSignup }: { onLogin: () => void; onSignup: () => vo
         scrolled ? "bg-background/70 backdrop-blur-xl border-b border-border" : "bg-transparent"
       }`}
     >
-      <nav className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6">
+      <nav className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6">
         <a href="#" className="flex items-center gap-2.5">
           <div className="relative flex h-9 w-9 items-center justify-center rounded-xl overflow-hidden shadow-elegant">
             <img src="/logo.webp" alt="Nova AI Logo" className="h-full w-full object-contain" />
@@ -208,7 +208,7 @@ function Hero({ onSignup }: { onSignup: () => void }) {
   }, []);
 
   return (
-    <section ref={heroRef} className="relative overflow-hidden pt-36 pb-24 sm:pt-44 sm:pb-32">
+    <section ref={heroRef} className="relative overflow-hidden pt-28 pb-20 sm:pt-40 sm:pb-28 md:pt-44 md:pb-32">
       {/* Mouse-follow glow */}
       <div
         className="pointer-events-none absolute inset-0 opacity-70 transition-opacity duration-500"
@@ -217,8 +217,8 @@ function Hero({ onSignup }: { onSignup: () => void }) {
         }}
       />
 
-      <div className="relative mx-auto max-w-7xl px-6">
-        <div className="grid items-center gap-16 lg:grid-cols-[1.05fr_1fr]">
+      <div className="relative mx-auto w-full max-w-7xl px-4 sm:px-6">
+        <div className="grid items-center gap-10 lg:gap-16 lg:grid-cols-[1.05fr_1fr]">
           {/* Copy */}
           <div className="animate-fade-in text-center lg:text-left">
             <div className="mb-6 flex justify-center lg:justify-start">
@@ -228,7 +228,7 @@ function Hero({ onSignup }: { onSignup: () => void }) {
               </SectionLabel>
             </div>
 
-            <h1 className="text-balance text-5xl font-bold leading-[1.02] tracking-tight text-foreground sm:text-6xl lg:text-[76px]">
+            <h1 className="text-balance text-3xl font-bold leading-[1.08] tracking-tight text-foreground sm:text-5xl md:text-6xl lg:text-[76px]">
               One Platform.
               <br />
               <span className="text-gradient bg-size-200 animate-gradient-shift bg-clip-text">
@@ -236,31 +236,35 @@ function Hero({ onSignup }: { onSignup: () => void }) {
               </span>
             </h1>
 
-            <p className="mx-auto mt-6 max-w-xl text-lg leading-relaxed text-muted-foreground lg:mx-0">
+            <p className="mx-auto mt-6 max-w-xl text-base leading-relaxed text-muted-foreground sm:text-lg lg:mx-0">
               Generate images, videos, music, voices, code, presentations, logos, and content
               in seconds with the power of AI.
             </p>
 
-            <div className="mt-10 flex flex-col items-center gap-3 sm:flex-row lg:justify-start">
-              <GradientButton onClick={onSignup}>
+            <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row sm:justify-center lg:justify-start">
+              <GradientButton onClick={onSignup} className="w-full sm:w-auto">
                 Start Creating Free
                 <ArrowRight className="h-4 w-4" />
               </GradientButton>
-              <GhostButton>
+              <GhostButton className="w-full sm:w-auto">
                 <Play className="h-4 w-4" />
                 Watch Demo
               </GhostButton>
             </div>
 
-            <div className="mt-10 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs text-muted-foreground lg:justify-start">
-              <span className="flex items-center gap-1.5"><Check className="h-3.5 w-3.5 text-accent" /> No credit card required</span>
-              <span className="flex items-center gap-1.5"><Check className="h-3.5 w-3.5 text-accent" /> Free 100 credits</span>
-              <span className="flex items-center gap-1.5"><Check className="h-3.5 w-3.5 text-accent" /> Cancel anytime</span>
+            <div className="mt-8 flex flex-wrap items-center justify-center gap-x-4 gap-y-1.5 px-2 text-xs text-muted-foreground lg:justify-start">
+              <span className="flex items-center gap-1.5"><Check className="h-3.5 w-3.5 text-accent shrink-0" /> No credit card required</span>
+              <span className="hidden sm:inline text-border">•</span>
+              <span className="flex items-center gap-1.5"><Check className="h-3.5 w-3.5 text-accent shrink-0" /> Free 100 credits</span>
+              <span className="hidden sm:inline text-border">•</span>
+              <span className="flex items-center gap-1.5"><Check className="h-3.5 w-3.5 text-accent shrink-0" /> Cancel anytime</span>
             </div>
           </div>
 
           {/* Right — dashboard preview */}
-          <HeroPreview />
+          <div className="w-full max-w-lg mx-auto min-w-0 px-0 sm:px-2">
+            <HeroPreview />
+          </div>
         </div>
       </div>
     </section>
@@ -269,59 +273,59 @@ function Hero({ onSignup }: { onSignup: () => void }) {
 
 function HeroPreview() {
   return (
-    <div className="relative animate-scale-in [animation-delay:200ms]">
+    <div className="relative w-full max-w-full min-w-0 animate-scale-in [animation-delay:200ms]">
       {/* Glow */}
-      <div className="pointer-events-none absolute -inset-8 -z-10 rounded-[3rem] bg-gradient-primary opacity-20 blur-3xl" />
+      <div className="pointer-events-none absolute -inset-4 -z-10 rounded-[3rem] bg-gradient-primary opacity-20 blur-3xl sm:-inset-8" />
 
-      <div className="relative rounded-3xl border border-border bg-card/80 p-3 shadow-elegant backdrop-blur-xl">
-        <div className="rounded-2xl bg-background/70 p-5">
+      <div className="relative w-full max-w-full min-w-0 overflow-hidden rounded-2xl sm:rounded-3xl border border-border bg-card/80 p-2 sm:p-4 md:p-6 shadow-elegant backdrop-blur-xl">
+        <div className="rounded-xl sm:rounded-2xl bg-background/70 p-2.5 sm:p-4 md:p-5 w-full min-w-0">
           {/* Fake window chrome */}
-          <div className="mb-5 flex items-center justify-between">
-            <div className="flex gap-1.5">
-              <span className="h-2.5 w-2.5 rounded-full bg-muted-foreground/30" />
-              <span className="h-2.5 w-2.5 rounded-full bg-muted-foreground/30" />
-              <span className="h-2.5 w-2.5 rounded-full bg-muted-foreground/30" />
+          <div className="mb-3 flex items-center justify-between sm:mb-4">
+            <div className="flex gap-1.5 shrink-0">
+              <span className="h-2 w-2 rounded-full bg-muted-foreground/30 sm:h-2.5 sm:w-2.5" />
+              <span className="h-2 w-2 rounded-full bg-muted-foreground/30 sm:h-2.5 sm:w-2.5" />
+              <span className="h-2 w-2 rounded-full bg-muted-foreground/30 sm:h-2.5 sm:w-2.5" />
             </div>
-            <div className="rounded-full bg-muted/60 px-3 py-1 text-[10px] font-medium text-muted-foreground">
+            <div className="truncate rounded-full bg-muted/60 px-2.5 py-0.5 text-[9px] font-medium text-muted-foreground sm:px-3 sm:py-1 sm:text-[10px]">
               nova.ai / studio
             </div>
-            <div className="h-2.5 w-2.5" />
+            <div className="h-2.5 w-2.5 shrink-0" />
           </div>
 
           {/* Prompt row */}
-          <div className="mb-4 flex items-center gap-2 rounded-2xl border border-border bg-card px-4 py-3">
-            <Sparkles className="h-4 w-4 text-primary" />
-            <span className="truncate text-sm text-muted-foreground">
+          <div className="mb-3 flex w-full min-w-0 items-center justify-between gap-2 rounded-xl border border-border bg-card px-2.5 py-2 sm:mb-4 sm:rounded-2xl sm:px-4 sm:py-3">
+            <Sparkles className="h-3.5 w-3.5 shrink-0 text-primary sm:h-4 sm:w-4" />
+            <span className="min-w-0 flex-1 truncate text-xs text-muted-foreground sm:text-sm">
               a futuristic city at golden hour, cinematic lighting…
             </span>
-            <span className="ml-auto rounded-full bg-gradient-primary px-3 py-1 text-[10px] font-semibold text-white">
+            <button className="shrink-0 rounded-full bg-gradient-primary px-2.5 py-1 text-[10px] font-semibold text-white transition-transform hover:scale-105 sm:px-3 sm:py-1 sm:text-xs">
               Generate
-            </span>
+            </button>
           </div>
 
           {/* Tool tabs */}
-          <div className="mb-4 flex gap-2 overflow-x-auto no-scrollbar">
+          <div className="mb-3 flex w-full min-w-0 items-center gap-1.5 overflow-x-auto no-scrollbar py-1 sm:mb-4 sm:gap-2">
             {[
               { icon: ImageIcon, label: "Image", active: true },
               { icon: Video, label: "Video" },
               { icon: Music, label: "Music" },
               { icon: FileText, label: "Text" },
             ].map((t) => (
-              <div
+              <button
                 key={t.label}
-                className={`flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-xs ${
+                className={`flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] sm:px-3 sm:py-1.5 sm:text-xs ${
                   t.active
                     ? "bg-gradient-primary text-white shadow-elegant"
-                    : "bg-muted/50 text-muted-foreground"
+                    : "bg-muted/50 text-muted-foreground hover:text-foreground"
                 }`}
               >
-                <t.icon className="h-3 w-3" /> {t.label}
-              </div>
+                <t.icon className="h-3 w-3 shrink-0" /> {t.label}
+              </button>
             ))}
           </div>
 
-          {/* Generated grid */}
-          <div className="grid grid-cols-2 gap-2.5">
+          {/* Generated grid: Constrained, auto-fit, no overflow */}
+          <div className="grid grid-cols-2 gap-2 sm:gap-3 w-full max-w-md mx-auto">
             {[
               "linear-gradient(135deg, #7C3AED, #3B82F6)",
               "linear-gradient(135deg, #06B6D4, #7C3AED)",
@@ -330,29 +334,30 @@ function HeroPreview() {
             ].map((bg, i) => (
               <div
                 key={i}
-                className="group relative aspect-square overflow-hidden rounded-xl"
+                className="group relative aspect-square w-full min-w-0 overflow-hidden rounded-lg sm:rounded-xl"
                 style={{ background: bg }}
               >
                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_30%,rgba(255,255,255,0.4),transparent_50%)]" />
-                <div className="absolute bottom-2 left-2 rounded-md bg-black/40 px-1.5 py-0.5 text-[9px] font-medium text-white backdrop-blur">
+                <div className="absolute bottom-1.5 left-1.5 rounded-md bg-black/50 px-1.5 py-0.5 text-[8px] font-medium text-white backdrop-blur sm:bottom-2 sm:left-2 sm:text-[9px]">
                   4K · v{i + 1}
                 </div>
               </div>
             ))}
           </div>
 
-          {/* Analytics row */}
-          <div className="mt-4 grid grid-cols-3 gap-2">
+          {/* Analytics row: Responsive grid with flexible columns */}
+          <div className="mt-3 grid grid-cols-3 gap-1.5 sm:mt-4 sm:gap-2 w-full text-center">
             {[
               { l: "Generations", v: "1,284", icon: Zap },
               { l: "Credits", v: "8.2K", icon: Sparkles },
               { l: "Queue", v: "Priority", icon: Cpu },
             ].map((s) => (
-              <div key={s.l} className="rounded-xl border border-border bg-card/60 p-3">
-                <div className="mb-1 flex items-center gap-1 text-[10px] text-muted-foreground">
-                  <s.icon className="h-2.5 w-2.5" /> {s.l}
+              <div key={s.l} className="min-w-0 rounded-lg sm:rounded-xl border border-border bg-card/60 p-2 sm:p-3">
+                <div className="mb-0.5 flex items-center justify-center gap-1 text-[9px] text-muted-foreground sm:text-[10px]">
+                  <s.icon className="h-2.5 w-2.5 shrink-0" />
+                  <span className="truncate">{s.l}</span>
                 </div>
-                <div className="text-sm font-semibold text-foreground">{s.v}</div>
+                <div className="truncate text-xs font-semibold text-foreground sm:text-sm">{s.v}</div>
               </div>
             ))}
           </div>

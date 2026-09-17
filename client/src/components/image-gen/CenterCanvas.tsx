@@ -109,54 +109,57 @@ export const CenterCanvas: React.FC<CenterCanvasProps> = ({
       </header>
 
       {/* Main Canvas Viewport Area */}
-      <div className="flex-1 relative flex items-center justify-center p-6 overflow-hidden bg-[radial-gradient(#1f1f23_1px,transparent_1px)] [background-size:24px_24px]">
+      <div className="flex-1 min-h-0 relative flex flex-col items-center justify-between p-2 sm:p-4 md:py-3 md:px-6 overflow-hidden bg-[radial-gradient(#1f1f23_1px,transparent_1px)] [background-size:24px_24px]">
         {/* Subtle grid background vignette */}
         <div className="absolute inset-0 bg-gradient-to-t from-[#0F0F11] via-transparent to-[#0F0F11]/60 pointer-events-none" />
 
-        {/* Active Render Display / Processing State */}
-        <div
-          className={`relative transition-all duration-300 rounded-2xl overflow-hidden border border-white/15 shadow-[0_20px_60px_rgba(0,0,0,0.8)] max-h-[82vh] max-w-[90%] flex items-center justify-center bg-[#18181B]`}
-          style={{ transform: `scale(${zoomLevel / 100})` }}
-        >
-          <img
-            src={activeImage}
-            alt="AI Render Viewport"
-            className={`w-auto h-auto max-h-[75vh] object-contain transition-opacity duration-500 ${
-              currentStep === "synthesizing" ? "opacity-30 blur-sm" : "opacity-100 blur-0"
-            }`}
-          />
+        {/* Image Canvas Container - flex-1 min-h-0 so it resizes dynamically to fit remaining space */}
+        <div className="relative flex items-center justify-center w-full max-w-5xl flex-1 min-h-0 my-1 sm:my-2 z-10">
+          {/* Active Render Display / Processing State */}
+          <div
+            className={`relative transition-all duration-300 rounded-2xl overflow-hidden border border-white/15 shadow-[0_20px_60px_rgba(0,0,0,0.8)] max-h-full max-w-full flex items-center justify-center bg-[#18181B]`}
+            style={{ transform: `scale(${zoomLevel / 100})` }}
+          >
+            <img
+              src={activeImage}
+              alt="AI Render Viewport"
+              className={`w-auto h-auto max-h-[calc(100vh-230px)] object-contain transition-opacity duration-500 ${
+                currentStep === "synthesizing" ? "opacity-30 blur-sm" : "opacity-100 blur-0"
+              }`}
+            />
 
-          {/* Processing Overlay when Active */}
-          {currentStep !== "complete" && currentStep !== "idle" && (
-            <div className="absolute inset-0 bg-black/60 backdrop-blur-xs flex flex-col items-center justify-center p-6 text-center">
-              <div className="relative mb-4">
-                <div className="w-16 h-16 rounded-full border-4 border-[#FF7A00]/20 border-t-[#FF7A00] animate-spin" />
-                <Sparkles className="w-6 h-6 text-[#FF7A00] absolute inset-0 m-auto animate-pulse" />
+            {/* Processing Overlay when Active */}
+            {currentStep !== "complete" && currentStep !== "idle" && (
+              <div className="absolute inset-0 bg-black/60 backdrop-blur-xs flex flex-col items-center justify-center p-6 text-center">
+                <div className="relative mb-4">
+                  <div className="w-16 h-16 rounded-full border-4 border-[#FF7A00]/20 border-t-[#FF7A00] animate-spin" />
+                  <Sparkles className="w-6 h-6 text-[#FF7A00] absolute inset-0 m-auto animate-pulse" />
+                </div>
+                <p className="text-white font-semibold text-sm tracking-wide mb-1">
+                  {currentStep === "queued" && "Dispatching to GPU Cluster..."}
+                  {currentStep === "synthesizing" && "Calculating Latent Diffusion Tensors..."}
+                  {currentStep === "upscaling" && "Applying AI Optical Super-Resolution..."}
+                </p>
+                <p className="text-xs text-zinc-400 font-mono">
+                  {currentStep === "synthesizing" ? "Step 28 / 40 • 4.2 it/s" : "Please hold..."}
+                </p>
               </div>
-              <p className="text-white font-semibold text-sm tracking-wide mb-1">
-                {currentStep === "queued" && "Dispatching to GPU Cluster..."}
-                {currentStep === "synthesizing" && "Calculating Latent Diffusion Tensors..."}
-                {currentStep === "upscaling" && "Applying AI Optical Super-Resolution..."}
-              </p>
-              <p className="text-xs text-zinc-400 font-mono">
-                {currentStep === "synthesizing" ? "Step 28 / 40 • 4.2 it/s" : "Please hold..."}
-              </p>
-            </div>
-          )}
+            )}
 
-          {/* Canvas HUD Overlay Badge */}
-          <div className="absolute bottom-3 left-3 bg-black/70 backdrop-blur-md px-3 py-1.5 rounded-lg border border-white/10 flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-            <span className="text-[11px] font-mono text-zinc-300">8K MASTER RENDER • DCI-P3</span>
+            {/* Canvas HUD Overlay Badge */}
+            <div className="absolute bottom-3 left-3 bg-black/70 backdrop-blur-md px-3 py-1.5 rounded-lg border border-white/10 flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              <span className="text-[11px] font-mono text-zinc-300">8K MASTER RENDER • DCI-P3</span>
+            </div>
           </div>
         </div>
 
-        {/* Floating Controls: Bottom Center Floating Tools Dock */}
-        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 bg-[#18181B]/95 backdrop-blur-md border border-white/15 rounded-2xl px-3 py-2 shadow-[0_10px_30px_rgba(0,0,0,0.6)] flex items-center gap-1 sm:gap-2 z-20">
+        {/* Action Toolbar: Placed directly below image canvas in normal flow with dedicated vertical space */}
+        <div className="w-auto max-w-[calc(100%-1rem)] flex items-center justify-center gap-1.5 sm:gap-2 bg-[#18181B]/95 backdrop-blur-md border border-white/15 rounded-2xl px-3 py-1.5 sm:px-4 sm:py-2 shadow-[0_10px_30px_rgba(0,0,0,0.6)] overflow-x-auto custom-scrollbar my-1 sm:my-2 shrink-0 z-10">
           <button
             onClick={onUpscale}
             title="Upscale 4X"
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/5 hover:bg-[#FF7A00]/20 hover:text-[#FF7A00] text-zinc-200 text-xs font-medium border border-white/5 transition cursor-pointer"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/5 hover:bg-[#FF7A00]/20 hover:text-[#FF7A00] text-zinc-200 text-xs font-medium border border-white/5 transition cursor-pointer shrink-0"
           >
             <Sparkles className="w-3.5 h-3.5 text-[#FF7A00]" />
             <span>Upscale 4x</span>
@@ -165,7 +168,7 @@ export const CenterCanvas: React.FC<CenterCanvasProps> = ({
           <button
             onClick={onInpaint}
             title="Inpaint / Edit Mask"
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-zinc-200 text-xs font-medium border border-white/5 transition cursor-pointer"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-zinc-200 text-xs font-medium border border-white/5 transition cursor-pointer shrink-0"
           >
             <Wand2 className="w-3.5 h-3.5 text-cyan-400" />
             <span>Inpaint</span>
@@ -174,13 +177,13 @@ export const CenterCanvas: React.FC<CenterCanvasProps> = ({
           <button
             onClick={onVariation}
             title="Generate Variations"
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-zinc-200 text-xs font-medium border border-white/5 transition cursor-pointer"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-zinc-200 text-xs font-medium border border-white/5 transition cursor-pointer shrink-0"
           >
             <Layers className="w-3.5 h-3.5 text-purple-400" />
             <span>Variations</span>
           </button>
 
-          <div className="h-5 w-[1px] bg-white/15 mx-1" />
+          <div className="h-5 w-[1px] bg-white/15 mx-1 shrink-0" />
 
           {/* Zoom controls */}
           <button

@@ -86,8 +86,8 @@ export const LeftSidebar: React.FC<LeftSidebarProps> = ({
     <aside className="w-80 sm:w-96 flex-shrink-0 h-full border-r border-white/10 bg-[#141417] flex flex-col z-20 select-none">
       {/* Sidebar Header */}
       <div className="p-4 border-b border-white/10 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <div className="h-8 w-8 rounded-lg bg-[#FF7A00]/10 border border-[#FF7A00]/30 flex items-center justify-center text-[#FF7A00]">
+        <div className="flex items-center gap-3">
+          <div className="h-8 w-8 shrink-0 rounded-lg bg-[#FF7A00]/10 border border-[#FF7A00]/30 flex items-center justify-center text-[#FF7A00]">
             <Sparkles className="w-4 h-4" />
           </div>
           <div>

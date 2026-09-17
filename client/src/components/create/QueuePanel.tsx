@@ -327,10 +327,10 @@ export const QueuePanel: React.FC<QueuePanelProps> = ({
     <aside className="w-80 flex-shrink-0 h-full border-l border-white/[0.08] bg-[#0c0c0e] flex flex-col z-20 select-none">
       {/* Header with Tabs & Close button */}
       <div className="h-12 border-b border-white/[0.08] px-2.5 flex items-center justify-between bg-[#0c0c0e]">
-        <div className="flex items-center gap-1 flex-1 min-w-0 mr-1">
+        <div className="flex items-center gap-1.5 flex-1 min-w-0 mr-1">
           <button
             onClick={() => setActiveTab("history")}
-            className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md text-xs font-medium transition-all ${
+            className={`flex-1 h-8 flex items-center justify-center gap-1.5 px-2 rounded-md text-xs font-medium transition-all ${
               activeTab === "history"
                 ? "bg-white/[0.08] text-white shadow-xs"
                 : "text-zinc-500 hover:text-zinc-300 hover:bg-white/[0.03]"
@@ -345,7 +345,7 @@ export const QueuePanel: React.FC<QueuePanelProps> = ({
 
           <button
             onClick={() => setActiveTab("presets")}
-            className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md text-xs font-medium transition-all ${
+            className={`flex-1 h-8 flex items-center justify-center gap-1.5 px-2 rounded-md text-xs font-medium transition-all ${
               activeTab === "presets"
                 ? "bg-white/[0.08] text-white shadow-xs"
                 : "text-zinc-500 hover:text-zinc-300 hover:bg-white/[0.03]"
@@ -357,7 +357,7 @@ export const QueuePanel: React.FC<QueuePanelProps> = ({
 
           <button
             onClick={() => setActiveTab("queue")}
-            className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md text-xs font-medium transition-all ${
+            className={`flex-1 h-8 flex items-center justify-center gap-1.5 px-2 rounded-md text-xs font-medium transition-all ${
               activeTab === "queue"
                 ? "bg-white/[0.08] text-white shadow-xs"
                 : "text-zinc-500 hover:text-zinc-300 hover:bg-white/[0.03]"

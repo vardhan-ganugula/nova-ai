@@ -334,7 +334,7 @@ export default function CreatePage() {
       subtitleBadge="[ INFERENCE ENGINE ]"
       noPadding={true}
     >
-      <div className="h-[calc(100vh-56px)] w-full flex flex-col md:flex-row overflow-hidden relative">
+      <div className="h-[calc(100vh-56px)] w-full min-w-0 flex flex-col md:flex-row overflow-hidden relative">
         {/* 1. Left Sidebar: Prompt, Model, Settings */}
         <GenerationPanel
           prompt={prompt}

@@ -86,12 +86,14 @@
     --card-foreground: #f4f4f5;
     --popover: #121215;
     --popover-foreground: #f4f4f5;
+    overflow-x: hidden;
     --primary: #f97316;
     --primary-foreground: #09090b;
     --secondary: #1e1e24;
     --secondary-foreground: #f4f4f5;
     --muted: #1e1e24;
     --muted-foreground: #a1a1aa;
+    overflow-x: hidden;
     --accent: #27272a;
     --accent-foreground: #fafafa;
     --destructive: #ef4444;

@@ -97,8 +97,8 @@ export const RightSidebar: React.FC<RightSidebarProps> = ({ onSelectPreset }) =>
     <aside className="w-80 flex-shrink-0 h-full border-l border-white/10 bg-[#141417] flex flex-col z-20 select-none">
       {/* Header */}
       <div className="p-4 border-b border-white/10 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <div className="h-8 w-8 rounded-lg bg-[#FF7A00]/10 border border-[#FF7A00]/30 flex items-center justify-center text-[#FF7A00]">
+        <div className="flex items-center gap-3">
+          <div className="h-8 w-8 shrink-0 rounded-lg bg-[#FF7A00]/10 border border-[#FF7A00]/30 flex items-center justify-center text-[#FF7A00]">
             <Bookmark className="w-4 h-4" />
           </div>
           <div>
@@ -112,14 +112,14 @@ export const RightSidebar: React.FC<RightSidebarProps> = ({ onSelectPreset }) =>
       </div>
 
       {/* Categories Switcher */}
-      <div className="p-3 border-b border-white/10 flex gap-1 bg-[#111114]">
+      <div className="px-3 py-2 border-b border-white/10 flex items-center gap-1.5 bg-[#111114]">
         {(["All", "Sci-Fi Characters", "Urban Environments"] as const).map((tab) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
-            className={`px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer whitespace-nowrap ${
+            className={`h-8 px-3 rounded-lg text-xs font-medium transition-all cursor-pointer whitespace-nowrap flex items-center justify-center ${
               activeTab === tab
-                ? "bg-[#FF7A00] text-black font-semibold"
+                ? "bg-[#FF7A00] text-black font-semibold shadow-xs"
                 : "text-zinc-400 hover:text-white hover:bg-white/5"
             }`}
           >

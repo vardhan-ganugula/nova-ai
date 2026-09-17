@@ -126,10 +126,10 @@ export default function SettingsPage() {
     <AppShell title="Account & Settings" subtitleBadge="[ CONFIGURATION ]">
       <div className="max-w-6xl mx-auto space-y-6 pb-16">
         {/* Navigation Tabs Bar */}
-        <div className="flex items-center gap-2 border-b border-white/[0.08] pb-3">
+        <div className="flex items-center gap-2 overflow-x-auto border-b border-white/[0.08] pb-3 custom-scrollbar">
           <button
             onClick={() => setActiveTab("profile")}
-            className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-semibold transition-all ${
+            className={`shrink-0 flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-semibold transition-all ${
               activeTab === "profile"
                 ? "bg-orange-500 text-black shadow-xs"
                 : "bg-[#121215] text-zinc-400 border border-white/5 hover:border-white/15 hover:text-white"
@@ -141,7 +141,7 @@ export default function SettingsPage() {
 
           <button
             onClick={() => setActiveTab("security")}
-            className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-semibold transition-all ${
+            className={`shrink-0 flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-semibold transition-all ${
               activeTab === "security"
                 ? "bg-orange-500 text-black shadow-xs"
                 : "bg-[#121215] text-zinc-400 border border-white/5 hover:border-white/15 hover:text-white"
@@ -153,7 +153,7 @@ export default function SettingsPage() {
 
           <button
             onClick={() => setActiveTab("tokens")}
-            className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-semibold transition-all ${
+            className={`shrink-0 flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-semibold transition-all ${
               activeTab === "tokens"
                 ? "bg-orange-500 text-black shadow-xs"
                 : "bg-[#121215] text-zinc-400 border border-white/5 hover:border-white/15 hover:text-white"
@@ -211,7 +211,7 @@ export default function SettingsPage() {
                   <label className="block text-xs font-medium text-zinc-300 mb-1.5">
                     Email Address
                   </label>
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
                     <input
                       type="email"
                       disabled

@@ -150,10 +150,10 @@ export const CanvasPanel: React.FC<CanvasPanelProps> = ({
   };
 
   return (
-    <main className="flex-1 h-full bg-[#09090b] flex flex-col relative overflow-hidden select-none">
+    <main className="min-h-0 min-w-0 flex-1 bg-[#09090b] flex flex-col relative overflow-hidden select-none">
       {/* Top Bar: Telemetry & Stepper */}
-      <header className="h-12 border-b border-white/[0.08] bg-[#0c0c0e]/90 backdrop-blur-md px-4 sm:px-6 flex items-center justify-between z-10">
-        <div className="flex items-center gap-1.5 sm:gap-2">
+      <header className="h-12 min-w-0 border-b border-white/[0.08] bg-[#0c0c0e]/90 backdrop-blur-md px-2 sm:px-4 md:px-6 flex items-center justify-between gap-2 z-10">
+        <div className="flex min-w-0 items-center gap-1 sm:gap-2 overflow-x-auto custom-scrollbar">
           {STEPPERS.map((step, idx) => {
             const status = getStepStatus(step.id);
             const Icon = step.icon;
@@ -190,12 +190,12 @@ export const CanvasPanel: React.FC<CanvasPanelProps> = ({
         </div>
 
         {/* Viewport Meta, History Toggle & Zoom indicator */}
-        <div className="flex items-center gap-2 text-xs font-mono">
+        <div className="flex shrink-0 items-center gap-1 sm:gap-2 text-xs font-mono">
           {onToggleHistoryPanel && (
             <button
               type="button"
               onClick={onToggleHistoryPanel}
-              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium border transition-all ${
+              className={`h-8 flex items-center gap-1.5 px-2.5 rounded-lg text-xs font-medium border transition-all ${
                 isHistoryPanelOpen
                   ? "bg-orange-500/20 text-orange-400 border-orange-500/40 shadow-[0_0_10px_rgba(249,115,22,0.15)]"
                   : "bg-[#141417] hover:bg-white/10 text-zinc-300 border-white/10"
@@ -239,116 +239,119 @@ export const CanvasPanel: React.FC<CanvasPanelProps> = ({
       </header>
 
       {/* Main Canvas Viewport Area */}
-      <div className="flex-1 relative flex items-center justify-center p-4 sm:p-8 overflow-hidden bg-[radial-gradient(#1f1f23_1px,transparent_1px)] [background-size:24px_24px]">
+      <div className="flex-1 min-h-0 relative flex flex-col items-center justify-between p-2 sm:p-4 md:py-3 md:px-6 overflow-hidden bg-[radial-gradient(#1f1f23_1px,transparent_1px)] [background-size:24px_24px]">
         {/* Subtle grid background vignette */}
         <div className="absolute inset-0 bg-gradient-to-t from-[#09090b] via-transparent to-[#09090b]/60 pointer-events-none" />
 
-        {/* Generated Image Display */}
-        {activeImage ? (
-          <div
-            className="relative transition-all duration-300 rounded-xl overflow-hidden border border-white/15 shadow-[0_20px_50px_rgba(0,0,0,0.9)] max-h-[80vh] max-w-[94%] flex items-center justify-center bg-[#121215]"
-            style={{ transform: `scale(${zoomLevel / 100})` }}
-          >
-            <img
-              src={activeImage}
-              alt="Nova AI Render"
-              className={`w-auto h-auto max-h-[72vh] object-contain transition-all duration-500 ${
-                currentStep === "synthesizing"
-                  ? "opacity-25 blur-sm"
-                  : "opacity-100 blur-0"
-              }`}
-            />
+        {/* Image Canvas Container - flex-1 min-h-0 so it resizes dynamically to fit remaining space */}
+        <div className="relative flex items-center justify-center w-full max-w-5xl flex-1 min-h-0 my-1 sm:my-2 z-10">
+          {/* Generated Image Display */}
+          {activeImage ? (
+            <div
+              className="relative transition-all duration-300 rounded-xl overflow-hidden border border-white/15 shadow-[0_20px_50px_rgba(0,0,0,0.9)] max-h-full max-w-full flex items-center justify-center bg-[#121215]"
+              style={{ transform: `scale(${zoomLevel / 100})` }}
+            >
+              <img
+                src={activeImage}
+                alt="Nova AI Render"
+                className={`w-auto h-auto max-h-[calc(100vh-230px)] object-contain transition-all duration-500 ${
+                  currentStep === "synthesizing"
+                    ? "opacity-25 blur-sm"
+                    : "opacity-100 blur-0"
+                }`}
+              />
 
-            {/* Processing Overlay */}
-            {currentStep !== "complete" && currentStep !== "idle" && (
-              <div className="absolute inset-0 bg-black/70 backdrop-blur-xs flex flex-col items-center justify-center p-6 text-center z-10">
-                <div className="relative mb-3">
-                  <div className="w-14 h-14 rounded-full border-3 border-orange-500/20 border-t-orange-500 animate-spin" />
-                  <Sparkles className="w-5 h-5 text-orange-400 absolute inset-0 m-auto animate-pulse" />
+              {/* Processing Overlay */}
+              {currentStep !== "complete" && currentStep !== "idle" && (
+                <div className="absolute inset-0 bg-black/70 backdrop-blur-xs flex flex-col items-center justify-center p-6 text-center z-10">
+                  <div className="relative mb-3">
+                    <div className="w-14 h-14 rounded-full border-3 border-orange-500/20 border-t-orange-500 animate-spin" />
+                    <Sparkles className="w-5 h-5 text-orange-400 absolute inset-0 m-auto animate-pulse" />
+                  </div>
+                  <p className="text-white font-semibold text-xs tracking-wider uppercase mb-1">
+                    {currentStep === "queued" && "Dispatching to GPU Cluster..."}
+                    {currentStep === "synthesizing" && "Calculating Latent Diffusion Tensors..."}
+                    {currentStep === "upscaling" && "Applying AI Optical Super-Resolution..."}
+                  </p>
+                  <p className="text-[11px] text-zinc-400 font-mono">
+                    {currentStep === "synthesizing"
+                      ? "Inference active • 4.8 it/s"
+                      : "Preparing latent representation..."}
+                  </p>
                 </div>
-                <p className="text-white font-semibold text-xs tracking-wider uppercase mb-1">
-                  {currentStep === "queued" && "Dispatching to GPU Cluster..."}
-                  {currentStep === "synthesizing" && "Calculating Latent Diffusion Tensors..."}
-                  {currentStep === "upscaling" && "Applying AI Optical Super-Resolution..."}
-                </p>
-                <p className="text-[11px] text-zinc-400 font-mono">
-                  {currentStep === "synthesizing"
-                    ? "Inference active • 4.8 it/s"
-                    : "Preparing latent representation..."}
-                </p>
-              </div>
-            )}
+              )}
 
-            {/* Canvas HUD Badge */}
-            <div className="absolute bottom-3 left-3 bg-black/80 backdrop-blur-md px-2.5 py-1 rounded-md border border-white/10 flex items-center gap-2 z-10 pointer-events-none">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-              <span className="text-[10px] font-mono text-zinc-300">
-                MASTER RENDER • {selectedModel.toUpperCase()}
-              </span>
-            </div>
-
-            {/* Inspect Fullscreen Button */}
-            {onOpenDetailModal && (
-              <button
-                onClick={onOpenDetailModal}
-                title="Inspect Artwork Details"
-                className="absolute top-3 right-3 bg-black/70 hover:bg-black/90 p-2 rounded-lg border border-white/10 text-zinc-300 hover:text-white transition-colors z-10"
-              >
-                <Maximize2 className="w-3.5 h-3.5" />
-              </button>
-            )}
-          </div>
-        ) : (
-          /* Empty state */
-          <div className="text-center max-w-md p-8 rounded-2xl border border-white/10 bg-[#121215]/80 backdrop-blur-md">
-            <div className="h-12 w-12 rounded-xl bg-orange-500/10 border border-orange-500/20 text-orange-400 flex items-center justify-center mx-auto mb-4">
-              <Sparkles className="h-6 w-6" />
-            </div>
-            <h3 className="text-base font-bold text-white mb-1">
-              Your Artwork Canvas
-            </h3>
-            <p className="text-xs text-zinc-400 mb-4">
-              Enter a prompt in the left panel and click Generate to synthesize a high-resolution masterpiece.
-            </p>
-            {onSelectPrompt && (
-              <div className="space-y-1.5 text-left">
-                <span className="text-[10px] font-mono text-zinc-500 uppercase tracking-wider block">
-                  Quick Prompt Starters:
+              {/* Canvas HUD Badge */}
+              <div className="absolute bottom-3 left-3 bg-black/80 backdrop-blur-md px-2.5 py-1 rounded-md border border-white/10 flex items-center gap-2 z-10 pointer-events-none">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                <span className="text-[10px] font-mono text-zinc-300">
+                  MASTER RENDER • {selectedModel.toUpperCase()}
                 </span>
-                <button
-                  type="button"
-                  onClick={() =>
-                    onSelectPrompt(
-                      "Cyberpunk samurai in neon-soaked Tokyo alley with pink and cyan hologram reflections, 8k cinematic"
-                    )
-                  }
-                  className="w-full p-2 rounded-lg bg-white/[0.03] hover:bg-white/[0.06] text-[11px] text-zinc-300 text-left border border-white/5 transition-colors truncate"
-                >
-                  ⚡ Cyberpunk samurai in neon Tokyo alley...
-                </button>
-                <button
-                  type="button"
-                  onClick={() =>
-                    onSelectPrompt(
-                      "Celestial goddess formed of nebula clouds and starlight, cosmic filigree armor, hyper-detailed"
-                    )
-                  }
-                  className="w-full p-2 rounded-lg bg-white/[0.03] hover:bg-white/[0.06] text-[11px] text-zinc-300 text-left border border-white/5 transition-colors truncate"
-                >
-                  ⚡ Celestial goddess formed of nebula clouds...
-                </button>
               </div>
-            )}
-          </div>
-        )}
 
-        {/* Floating Controls: Bottom Center Floating Tools Dock */}
-        <div className="absolute bottom-5 left-1/2 -translate-x-1/2 bg-[#121215]/95 backdrop-blur-md border border-white/15 rounded-xl px-2.5 py-1.5 shadow-[0_10px_30px_rgba(0,0,0,0.8)] flex items-center gap-1 sm:gap-2 z-20">
+              {/* Inspect Fullscreen Button */}
+              {onOpenDetailModal && (
+                <button
+                  onClick={onOpenDetailModal}
+                  title="Inspect Artwork Details"
+                  className="absolute top-3 right-3 bg-black/70 hover:bg-black/90 p-2 rounded-lg border border-white/10 text-zinc-300 hover:text-white transition-colors z-10"
+                >
+                  <Maximize2 className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
+          ) : (
+            /* Empty state */
+            <div className="text-center max-w-md p-6 sm:p-8 rounded-2xl border border-white/10 bg-[#121215]/80 backdrop-blur-md">
+              <div className="h-12 w-12 rounded-xl bg-orange-500/10 border border-orange-500/20 text-orange-400 flex items-center justify-center mx-auto mb-4">
+                <Sparkles className="h-6 w-6" />
+              </div>
+              <h3 className="text-base font-bold text-white mb-1">
+                Your Artwork Canvas
+              </h3>
+              <p className="text-xs text-zinc-400 mb-4">
+                Enter a prompt in the left panel and click Generate to synthesize a high-resolution masterpiece.
+              </p>
+              {onSelectPrompt && (
+                <div className="space-y-1.5 text-left">
+                  <span className="text-[10px] font-mono text-zinc-500 uppercase tracking-wider block">
+                    Quick Prompt Starters:
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      onSelectPrompt(
+                        "Cyberpunk samurai in neon-soaked Tokyo alley with pink and cyan hologram reflections, 8k cinematic"
+                      )
+                    }
+                    className="w-full p-2 rounded-lg bg-white/[0.03] hover:bg-white/[0.06] text-[11px] text-zinc-300 text-left border border-white/5 transition-colors truncate"
+                  >
+                    ⚡ Cyberpunk samurai in neon Tokyo alley...
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      onSelectPrompt(
+                        "Celestial goddess formed of nebula clouds and starlight, cosmic filigree armor, hyper-detailed"
+                      )
+                    }
+                    className="w-full p-2 rounded-lg bg-white/[0.03] hover:bg-white/[0.06] text-[11px] text-zinc-300 text-left border border-white/5 transition-colors truncate"
+                  >
+                    ⚡ Celestial goddess formed of nebula clouds...
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Action Toolbar: Placed directly below image canvas in normal flow with dedicated vertical space */}
+        <div className="w-auto max-w-[calc(100%-1rem)] flex items-center justify-center gap-1.5 sm:gap-2 bg-[#121215]/95 backdrop-blur-md border border-white/15 rounded-xl px-3 py-1.5 sm:px-4 sm:py-2 shadow-[0_10px_30px_rgba(0,0,0,0.8)] overflow-x-auto custom-scrollbar my-1 sm:my-2 shrink-0 z-10">
           <button
             onClick={handleUpscale}
             disabled={!activeImage || isProcessing !== null}
             title="Upscale 8K UHD"
-            className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/5 hover:bg-orange-500/20 hover:text-orange-400 text-zinc-200 text-xs font-medium border border-white/5 transition disabled:opacity-40"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/5 hover:bg-orange-500/20 hover:text-orange-400 text-zinc-200 text-xs font-medium border border-white/5 transition disabled:opacity-40 shrink-0"
           >
             <Wand2 className="w-3.5 h-3.5 text-orange-400" />
             <span className="hidden sm:inline">Upscale 8K</span>
@@ -358,7 +361,7 @@ export const CanvasPanel: React.FC<CanvasPanelProps> = ({
             onClick={handleRemoveBg}
             disabled={!activeImage || isProcessing !== null}
             title="Remove Background"
-            className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/5 hover:bg-white/10 text-zinc-200 text-xs font-medium border border-white/5 transition disabled:opacity-40"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-zinc-200 text-xs font-medium border border-white/5 transition disabled:opacity-40 shrink-0"
           >
             <Scissors className="w-3.5 h-3.5 text-cyan-400" />
             <span className="hidden sm:inline">Remove BG</span>
@@ -369,7 +372,7 @@ export const CanvasPanel: React.FC<CanvasPanelProps> = ({
               onClick={onVariation}
               disabled={!activeImage || isProcessing !== null}
               title="Generate Variations"
-              className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/5 hover:bg-white/10 text-zinc-200 text-xs font-medium border border-white/5 transition disabled:opacity-40"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-zinc-200 text-xs font-medium border border-white/5 transition disabled:opacity-40 shrink-0"
             >
               <Layers className="w-3.5 h-3.5 text-purple-400" />
               <span className="hidden sm:inline">Variations</span>

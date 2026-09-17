@@ -124,8 +124,8 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
     >
       {/* Brand Header */}
       <div className="h-14 flex items-center justify-between px-4 border-b border-white/[0.08]">
-        <Link to="/dashboard" className="flex items-center gap-2.5 overflow-hidden">
-          <div className="h-8 w-8 min-w-8 rounded-lg overflow-hidden flex items-center justify-center">
+        <Link to="/dashboard" className="flex items-center gap-3">
+          <div className="h-8 w-8 min-w-8 shrink-0 rounded-lg flex items-center justify-center">
             <img src="/logo.webp" alt="Nova AI Logo" className="h-full w-full object-contain" />
           </div>
           {!isCollapsed && (

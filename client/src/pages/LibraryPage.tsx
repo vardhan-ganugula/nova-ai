@@ -120,7 +120,7 @@ export default function LibraryPage() {
             </p>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
             <button
               onClick={handleSelectAll}
               className="px-3 py-1.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] text-zinc-300 text-xs font-medium border border-white/10 transition flex items-center gap-1.5"
@@ -156,7 +156,7 @@ export default function LibraryPage() {
             />
           </div>
 
-          <div className="flex items-center gap-1.5">
+          <div className="flex w-full items-center gap-1.5 overflow-x-auto pb-1 sm:w-auto sm:pb-0">
             {["All", "Upscaled", "Cutouts"].map((tab) => (
               <button
                 key={tab}
@@ -268,7 +268,7 @@ export default function LibraryPage() {
 
         {/* Floating Bulk Action Dock */}
         {selectedIds.length > 0 && (
-          <div className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-[#141418] border border-orange-500/40 rounded-xl px-4 py-2.5 shadow-2xl flex items-center gap-3 z-30 animate-in slide-in-from-bottom-3 duration-200">
+          <div className="fixed bottom-3 left-3 right-3 sm:left-1/2 sm:right-auto sm:bottom-6 sm:-translate-x-1/2 bg-[#141418] border border-orange-500/40 rounded-xl px-3 sm:px-4 py-2.5 shadow-2xl flex flex-wrap items-center justify-center gap-2 sm:gap-3 z-30 animate-in slide-in-from-bottom-3 duration-200">
             <span className="font-mono text-xs text-orange-400 font-bold">
               {selectedIds.length} Selected
             </span>

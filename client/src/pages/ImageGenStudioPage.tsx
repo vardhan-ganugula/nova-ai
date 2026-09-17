@@ -301,27 +301,31 @@ export default function ImageGenStudioPage() {
                 </div>
 
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
-                  {(activeTab === "history" ? (historyData?.images || []) : (collectionsData?.collections || [])).slice(0, 12).map((item: any) => (
-                    <div
-                      key={item.id}
-                      onClick={() => {
-                        setGeneratedImageUrl(item.r2Url);
-                        setPrompt(item.prompt);
-                        setCurrentImageRecord(item);
-                        toast.success("Loaded image onto canvas!");
-                      }}
-                      className="group cursor-pointer relative aspect-square rounded-2xl overflow-hidden border border-white/[0.07] bg-white/[0.04] hover:border-[#FF7A00]/40 transition-all hover:scale-102"
-                    >
-                      <img src={item.r2Url} alt={item.prompt} className="h-full w-full object-cover" />
-                      <div className="absolute inset-0 bg-gradient-to-t from-slate-900/90 via-slate-900/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity p-2.5 flex flex-col justify-end">
-                        <div className="flex items-center justify-between">
-                          <span className={`text-[9px] font-mono uppercase px-1.5 py-0.5 rounded font-bold ${
-                            item.isPublic 
-                              ? "bg-emerald-500/30 text-emerald-200 border border-emerald-400/50" 
-                              : "bg-amber-500/30 text-amber-200 border border-amber-400/50"
-                          }`}>
-                            {item.isPublic ? "PUBLIC" : "PRIVATE"}
-                          </span>
+                  {(activeTab === "history" ? (historyData?.images || []) : (collectionsData?.collections || [])).slice(0, 12).map((item: any, idx: number) => {
+                    const itemId = item._id ?? item.id ?? `vault-${idx}`;
+                    const itemUrl = item.r2Url || item.coverImage || item.cover || (Array.isArray(item.images) && item.images[0]) || "";
+                    const itemPrompt = item.prompt || item.title || item.name || "AI Artwork";
+                    return (
+                      <div
+                        key={itemId}
+                        onClick={() => {
+                          if (itemUrl) setGeneratedImageUrl(itemUrl);
+                          if (itemPrompt) setPrompt(itemPrompt);
+                          setCurrentImageRecord(item);
+                          toast.success("Loaded image onto canvas!");
+                        }}
+                        className="group cursor-pointer relative aspect-square rounded-2xl overflow-hidden border border-white/[0.07] bg-white/[0.04] hover:border-[#FF7A00]/40 transition-all hover:scale-102"
+                      >
+                        <img src={itemUrl} alt={itemPrompt} className="h-full w-full object-cover" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-slate-900/90 via-slate-900/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity p-2.5 flex flex-col justify-end">
+                          <div className="flex items-center justify-between">
+                            <span className={`text-[9px] font-mono uppercase px-1.5 py-0.5 rounded font-bold ${
+                              item.isPublic 
+                                ? "bg-emerald-500/30 text-emerald-200 border border-emerald-400/50" 
+                                : "bg-amber-500/30 text-amber-200 border border-amber-400/50"
+                            }`}>
+                              {item.isPublic ? "PUBLIC" : "PRIVATE"}
+                            </span>
                           <span className="text-[9px] font-mono text-slate-300">
                             {item.generationType || "flux"}
                           </span>

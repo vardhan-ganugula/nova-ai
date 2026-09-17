@@ -65,9 +65,9 @@ export const AppTopBar: React.FC<AppTopBarProps> = ({
   }, []);
 
   return (
-    <header className="sticky top-0 z-30 h-14 w-full flex items-center justify-between border-b border-white/[0.08] bg-[#0c0c0e]/95 px-4 md:px-6 backdrop-blur-md">
+    <header className="sticky top-0 z-30 h-14 w-full min-w-0 flex items-center justify-between border-b border-white/[0.08] bg-[#0c0c0e]/95 px-3 sm:px-4 md:px-6 backdrop-blur-md">
       {/* Left: Mobile menu toggle + Breadcrumbs */}
-      <div className="flex items-center gap-3">
+      <div className="flex min-w-0 items-center gap-3">
         {onOpenMobileMenu && (
           <button
             onClick={onOpenMobileMenu}
@@ -77,12 +77,12 @@ export const AppTopBar: React.FC<AppTopBarProps> = ({
           </button>
         )}
 
-        <div className="flex items-center gap-2 text-xs">
+        <div className="flex min-w-0 items-center gap-2 text-xs">
           <span className="text-zinc-500 font-medium hidden sm:inline">
             {breadcrumb.section}
           </span>
           <ChevronRight className="h-3.5 w-3.5 text-zinc-600 hidden sm:inline" />
-          <span className="text-zinc-100 font-semibold tracking-tight text-sm sm:text-xs">
+          <span className="truncate text-zinc-100 font-semibold tracking-tight text-sm sm:text-xs">
             {title || breadcrumb.page}
           </span>
 
@@ -113,7 +113,7 @@ export const AppTopBar: React.FC<AppTopBarProps> = ({
       </div>
 
       {/* Right Controls */}
-      <div className="flex items-center gap-2 sm:gap-3">
+      <div className="ml-2 flex shrink-0 items-center gap-1.5 sm:gap-3">
         {/* Quick Create CTA (if not already on /create) */}
         {location.pathname !== "/create" && (
           <Link
@@ -169,10 +169,10 @@ export const AppTopBar: React.FC<AppTopBarProps> = ({
             </Link>
           </>
         ) : (
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2">
             <Link
               to="/login"
-              className="px-3 py-1.5 rounded-lg border border-white/10 text-xs font-medium text-zinc-300 hover:text-white hover:bg-white/5 transition-colors"
+              className="hidden sm:inline-flex px-3 py-1.5 rounded-lg border border-white/10 text-xs font-medium text-zinc-300 hover:text-white hover:bg-white/5 transition-colors"
             >
               Sign In
             </Link>

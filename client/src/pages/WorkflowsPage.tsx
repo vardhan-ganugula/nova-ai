@@ -134,8 +134,8 @@ export default function WorkflowsPage() {
     >
       <div className="h-[calc(100vh-56px)] w-full flex flex-col bg-[#09090b] relative overflow-hidden select-none">
         {/* Top Control Bar */}
-        <div className="h-12 border-b border-white/[0.08] bg-[#0c0c0e] px-4 flex items-center justify-between z-20">
-          <div className="flex items-center gap-2">
+        <div className="min-h-12 border-b border-white/[0.08] bg-[#0c0c0e] px-3 py-2 sm:px-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between z-20">
+          <div className="flex min-w-0 items-center gap-2 overflow-x-auto">
             <Workflow className="h-4 w-4 text-orange-400" />
             <span className="text-xs font-semibold text-white">
               Flux Production Pipeline (v2.4)
@@ -145,10 +145,10 @@ export default function WorkflowsPage() {
             </span>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 self-end sm:self-auto">
             <button
               onClick={() => toast("Graph configuration saved.")}
-              className="px-2.5 py-1 rounded bg-white/[0.04] hover:bg-white/[0.08] text-zinc-300 text-xs font-medium border border-white/5 transition"
+              className="hidden sm:inline-flex px-2.5 py-1 rounded bg-white/[0.04] hover:bg-white/[0.08] text-zinc-300 text-xs font-medium border border-white/5 transition"
             >
               Save Graph
             </button>
@@ -167,7 +167,7 @@ export default function WorkflowsPage() {
               className="px-4 py-1.5 rounded-lg bg-orange-500 hover:bg-orange-600 text-black font-semibold text-xs transition flex items-center gap-1.5 shadow-[0_0_12px_rgba(249,115,22,0.3)] disabled:opacity-50 cursor-pointer"
             >
               <Play className="h-3.5 w-3.5 fill-black" />
-              <span>{isRunning ? "Running Pipeline..." : "Execute Graph"}</span>
+              <span>{isRunning ? "Running..." : "Execute"}</span>
             </button>
           </div>
         </div>
@@ -272,17 +272,17 @@ export default function WorkflowsPage() {
         </div>
 
         {/* Bottom Status Bar */}
-        <div className="h-8 border-t border-white/[0.08] bg-[#0c0c0e] px-4 flex items-center justify-between text-[11px] text-zinc-500 font-mono">
+        <div className="h-8 border-t border-white/[0.08] bg-[#0c0c0e] px-3 sm:px-4 flex items-center justify-between gap-3 overflow-x-auto text-[11px] text-zinc-500 font-mono">
           <div className="flex items-center gap-4">
             <span className="flex items-center gap-1.5">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
               Graph Engine: Ready
             </span>
-            <span>Zoom: 100%</span>
-            <span>Active Target: GPU A100 (80GB)</span>
+            <span className="hidden sm:inline">Zoom: 100%</span>
+            <span className="hidden md:inline">Active Target: GPU A100 (80GB)</span>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="hidden sm:flex items-center gap-3">
             <span>Estimated Cost: 15 Tokens</span>
             <span>Latency: ~2.4s</span>
           </div>
