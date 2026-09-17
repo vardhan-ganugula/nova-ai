@@ -59,6 +59,7 @@ export default function CreatePage() {
     "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=1600&auto=format&fit=crop&q=85"
   );
   const [activeImageId, setActiveImageId] = useState<string | null>(null);
+  const [activePresetId, setActivePresetId] = useState<string | null>(null);
   const [isPublic, setIsPublic] = useState<boolean>(true);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState<boolean>(false);
 
@@ -123,17 +124,19 @@ export default function CreatePage() {
       setCurrentStep("upscaling");
     }, 1800);
 
-    const fullPrompt =
-      selectedStyle && selectedStyle !== "None"
-        ? `${prompt}, in ${selectedStyle} style`
-        : prompt;
+    const parsedSeed = params.seed && params.seed !== "-1" ? parseInt(params.seed, 10) : undefined;
 
     try {
       const response = await generateImageApi({
-        prompt: fullPrompt,
+        prompt: prompt.trim(),
+        style: selectedStyle && selectedStyle !== "None" ? selectedStyle : undefined,
         model: selectedModel,
         aspectRatio: params.aspectRatio,
-        negativePrompt,
+        negativePrompt: negativePrompt.trim() ? negativePrompt.trim() : undefined,
+        guidanceScale: params.guidanceScale,
+        steps: params.samplingSteps,
+        seed: !isNaN(Number(parsedSeed)) ? Number(parsedSeed) : undefined,
+        sampler: params.sampler,
       }).unwrap();
 
       clearTimeout(queuedTimer);
@@ -151,12 +154,17 @@ export default function CreatePage() {
       // Add to session history immediately so it appears in History & Filmstrip without reload
       const newCreation = {
         id: response.image?.id || `gen-${Date.now()}`,
-        prompt: fullPrompt,
-        negativePrompt,
+        prompt: prompt.trim(),
+        style: selectedStyle !== "None" ? selectedStyle : undefined,
+        negativePrompt: negativePrompt.trim() || undefined,
         r2Url: generatedUrl,
         displayUrl: generatedUrl,
         model: selectedModel,
         aspectRatio: params.aspectRatio,
+        guidanceScale: params.guidanceScale,
+        samplingSteps: params.samplingSteps,
+        seed: params.seed,
+        sampler: params.sampler,
         tokensDeducted: response.tokensDeducted || modelCost,
         createdAt: new Date().toISOString(),
         isPublic: Boolean(response.image?.isPublic),
@@ -173,7 +181,7 @@ export default function CreatePage() {
         const sampleImages = [
           "https://images.unsplash.com/photo-1578632767115-351597cf2477?w=1600&auto=format&fit=crop&q=85",
           "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=1600&auto=format&fit=crop&q=85",
-          "https://images.unsplash.com/photo-1618005184564-96696b96e001?w=1600&auto=format&fit=crop&q=85",
+          "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=1600&auto=format&fit=crop&q=85",
           "https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?w=1600&auto=format&fit=crop&q=85",
         ];
         const nextImage = sampleImages[Math.floor(Math.random() * sampleImages.length)];
@@ -184,12 +192,17 @@ export default function CreatePage() {
         // Add simulated generation to history
         const simCreation = {
           id: simId,
-          prompt: fullPrompt,
-          negativePrompt,
+          prompt: prompt.trim(),
+          style: selectedStyle !== "None" ? selectedStyle : undefined,
+          negativePrompt: negativePrompt.trim() || undefined,
           r2Url: nextImage,
           displayUrl: nextImage,
           model: selectedModel,
           aspectRatio: params.aspectRatio,
+          guidanceScale: params.guidanceScale,
+          samplingSteps: params.samplingSteps,
+          seed: params.seed,
+          sampler: params.sampler,
           tokensDeducted: modelCost,
           createdAt: new Date().toISOString(),
           isPublic: true,
@@ -218,27 +231,58 @@ export default function CreatePage() {
   }, [isGenerating, prompt, selectedModel, params, selectedStyle]);
 
   const handleSelectPreset = (preset: PresetItem) => {
+    setActivePresetId(preset.id);
     setPrompt(preset.prompt);
-    if (preset.negativePrompt) {
-      setNegativePrompt(preset.negativePrompt);
+    setNegativePrompt(preset.negativePrompt || "");
+    if (preset.model && imageModels[preset.model]) {
+      dispatch(setSelectedImageModel(preset.model));
+    }
+    if (preset.style) {
+      setSelectedStyle(preset.style);
     }
     setParams((prev) => ({
       ...prev,
-      guidanceScale: preset.cfg,
+      aspectRatio: preset.aspectRatio || prev.aspectRatio,
+      guidanceScale: preset.cfg ?? prev.guidanceScale,
+      samplingSteps: preset.steps ?? prev.samplingSteps,
     }));
     setActiveImage(preset.image);
+    setActiveImageId(null);
     setCurrentStep("complete");
   };
 
   const handleSelectHistoryItem = (item: any) => {
+    setActivePresetId(null);
     if (item.prompt) setPrompt(item.prompt);
-    if (item.negativePrompt) setNegativePrompt(item.negativePrompt);
+    setNegativePrompt(item.negativePrompt || "");
     if (item.r2Url || item.displayUrl || item.url) {
       setActiveImage(item.r2Url || item.displayUrl || item.url);
     }
-    if (item.model) dispatch(setSelectedImageModel(item.model));
+    if (item.model) {
+      let modelKey = item.model;
+      if (!imageModels[modelKey]) {
+        const lower = String(item.model).toLowerCase();
+        if (lower.includes("pro") || lower.includes("v1.1")) modelKey = "Flux Pro v1.1";
+        else if (lower.includes("schnell") || lower.includes("turbo")) modelKey = "Flux Schnell";
+        else if (lower.includes("dev") || lower.includes("anime") || lower.includes("photoreal")) modelKey = "Flux Dev";
+        else if (lower.includes("recraft") || lower.includes("vector")) modelKey = "Recraft V3";
+        else if (lower.includes("sdxl") || lower.includes("stable")) modelKey = "Stable Diffusion 3.5 Large";
+        else if (lower.includes("ideogram")) modelKey = "Ideogram v2";
+        else modelKey = "Flux Schnell";
+      }
+      dispatch(setSelectedImageModel(modelKey));
+    }
+    if (item.style) {
+      setSelectedStyle(item.style);
+    }
     if (item.aspectRatio) {
       setParams((prev) => ({ ...prev, aspectRatio: item.aspectRatio }));
+    }
+    if (item.guidanceScale) {
+      setParams((prev) => ({ ...prev, guidanceScale: Number(item.guidanceScale) }));
+    }
+    if (item.samplingSteps) {
+      setParams((prev) => ({ ...prev, samplingSteps: Number(item.samplingSteps) }));
     }
     if (item.id) {
       setActiveImageId(item.id);
@@ -337,6 +381,7 @@ export default function CreatePage() {
               activePrompt={prompt}
               sessionHistory={sessionHistory}
               onClose={() => setIsRightSidebarOpen(false)}
+              activePresetId={activePresetId}
             />
           </div>
         )}
@@ -363,6 +408,7 @@ export default function CreatePage() {
                 sessionHistory={sessionHistory}
                 onClose={() => setIsRightSidebarOpen(false)}
                 isDrawer={true}
+                activePresetId={activePresetId}
               />
             </div>
           </div>
@@ -383,7 +429,20 @@ export default function CreatePage() {
             isPublic={isPublic}
             onClose={() => setIsDetailModalOpen(false)}
             onApplySettings={() => {
-              // already applied in state
+              if (prompt) setPrompt(prompt);
+              if (negativePrompt) setNegativePrompt(negativePrompt);
+              if (selectedModel && imageModels[selectedModel]) {
+                dispatch(setSelectedImageModel(selectedModel));
+              }
+              setParams((prev) => ({
+                ...prev,
+                aspectRatio: params.aspectRatio,
+                guidanceScale: params.guidanceScale,
+                samplingSteps: params.samplingSteps,
+                seed: params.seed,
+                sampler: params.sampler,
+              }));
+              setIsDetailModalOpen(false);
             }}
             onToggleVisibility={handleToggleVisibility}
           />

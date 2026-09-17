@@ -65,7 +65,7 @@ aiRouter.post("/generate-text", requireAuth, async (req: any, res: Response) => 
 
 // Generate Image (Inngest async event + direct Fal AI & R2 persistence)
 aiRouter.post("/generate-image", requireAuth, async (req: any, res: Response) => {
-    const { prompt, negativePrompt, style, aspectRatio, model } = req.body;
+    const { prompt, negativePrompt, style, aspectRatio, model, guidanceScale, steps, seed, sampler } = req.body;
     const user = req.user;
     const modelConfig = model ? (aiImageModels as any)[model] : null;
     const tokenCost = modelConfig?.price || IMAGE_TOKEN_COST;
@@ -89,6 +89,9 @@ aiRouter.post("/generate-image", requireAuth, async (req: any, res: Response) =>
                 style,
                 aspectRatio,
                 model: model || "Flux Schnell",
+                guidanceScale,
+                steps,
+                seed,
             },
         });
 
@@ -98,6 +101,10 @@ aiRouter.post("/generate-image", requireAuth, async (req: any, res: Response) =>
             style,
             negativePrompt,
             model,
+            guidanceScale: guidanceScale ? Number(guidanceScale) : undefined,
+            steps: steps ? Number(steps) : undefined,
+            seed: seed ? Number(seed) : undefined,
+            sampler,
         });
 
         // Upload to Cloudflare R2 (Original Master + Watermarked Copy)

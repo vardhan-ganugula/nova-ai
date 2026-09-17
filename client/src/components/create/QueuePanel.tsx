@@ -23,7 +23,11 @@ export interface PresetItem {
   image: string;
   prompt: string;
   negativePrompt?: string;
+  model: string;
+  aspectRatio: string;
   cfg: number;
+  steps: number;
+  style?: string;
 }
 
 export const PRESETS: PresetItem[] = [
@@ -36,7 +40,13 @@ export const PRESETS: PresetItem[] = [
       "https://images.unsplash.com/photo-1578632767115-351597cf2477?w=500&auto=format&fit=crop&q=80",
     prompt:
       "Female cyber netrunner with glowing ocular implants, sleek obsidian tactical bodysuit with fiber-optic wiring, chrome katana, standing in misty neon alley, 8k raytraced render",
+    negativePrompt:
+      "blurry, distorted anatomy, poor lighting, low resolution, bad hands, cartoon, flat",
+    model: "Flux Dev",
+    aspectRatio: "9:16",
     cfg: 7.5,
+    steps: 35,
+    style: "Cyberpunk",
   },
   {
     id: "preset-2",
@@ -47,7 +57,13 @@ export const PRESETS: PresetItem[] = [
       "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=500&auto=format&fit=crop&q=80",
     prompt:
       "Armored space mech pilot in high-tech carbon-fiber suit, gold reflective visor, zero gravity particle aura, cinematic sci-fi concept art, volumetric rim lighting",
+    negativePrompt:
+      "2d, flat drawing, low quality, oversaturated, deformed proportions, text",
+    model: "Flux Pro v1.1",
+    aspectRatio: "9:16",
     cfg: 8.0,
+    steps: 40,
+    style: "Concept Art",
   },
   {
     id: "preset-3",
@@ -58,7 +74,13 @@ export const PRESETS: PresetItem[] = [
       "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=500&auto=format&fit=crop&q=80",
     prompt:
       "Drenched high-tech Shinjuku avenue at midnight, towering holographic kanji billboards, flying taxi trails, wet asphalt neon reflections, photorealistic 8k octane render",
+    negativePrompt:
+      "daytime, sunny, rural, blurry, low resolution, bad perspective, washed out",
+    model: "Flux Schnell",
+    aspectRatio: "16:9",
     cfg: 8.5,
+    steps: 28,
+    style: "Cinematic",
   },
   {
     id: "preset-4",
@@ -69,7 +91,13 @@ export const PRESETS: PresetItem[] = [
       "https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=500&auto=format&fit=crop&q=80",
     prompt:
       "Lush Solarpunk floating city towers covered in vertical hydroponic gardens, glistening glass domes, clean solar monorails, clear golden sunrise sky",
+    negativePrompt:
+      "gloomy, dystopian, pollution, smog, dark, dreary, ruins, apocalyptic",
+    model: "Recraft V3",
+    aspectRatio: "16:9",
     cfg: 7.0,
+    steps: 30,
+    style: "Concept Art",
   },
   {
     id: "preset-5",
@@ -80,7 +108,13 @@ export const PRESETS: PresetItem[] = [
       "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=500&auto=format&fit=crop&q=80",
     prompt:
       "Cosmic entity weaving constellations from liquid starlight in deep interstellar void, iridescent nebulae ribbons, hyper-detailed fantasy illustration",
+    negativePrompt:
+      "pixelated, noisy, bad composition, terrestrial, earth, low fidelity",
+    model: "Stable Diffusion 3.5 Large",
+    aspectRatio: "1:1",
     cfg: 9.0,
+    steps: 35,
+    style: "Photorealistic",
   },
 ];
 
@@ -91,8 +125,8 @@ export const DEFAULT_SAMPLE_HISTORY = [
       "Futuristic cybernetic operative on rooftop overlooking neon-lit metropolis, rain reflections, volumetric dust motes, cinematic 8k octane render",
     r2Url:
       "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=1200&auto=format&fit=crop&q=85",
-    model: "flux-1-pro",
-    tokensDeducted: 10,
+    model: "Flux Dev",
+    tokensDeducted: 15,
     aspectRatio: "16:9",
     createdAt: new Date().toISOString(),
     isSample: true,
@@ -103,8 +137,8 @@ export const DEFAULT_SAMPLE_HISTORY = [
       "Neo-Tokyo cyber samurai reflected on rain drenched asphalt with pink neon signs, hyper-detailed raytracing",
     r2Url:
       "https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?w=1200&auto=format&fit=crop&q=80",
-    model: "photoreal-cine",
-    tokensDeducted: 12,
+    model: "Flux Pro v1.1",
+    tokensDeducted: 20,
     aspectRatio: "16:9",
     createdAt: new Date(Date.now() - 3600000).toISOString(),
     isSample: true,
@@ -115,8 +149,8 @@ export const DEFAULT_SAMPLE_HISTORY = [
       "Porcelain android geisha with holographic origami butterflies, ambient gold glow, intricate filigree",
     r2Url:
       "https://images.unsplash.com/photo-1578632767115-351597cf2477?w=1200&auto=format&fit=crop&q=80",
-    model: "cyber-anime-v4",
-    tokensDeducted: 10,
+    model: "Stable Diffusion 3.5 Large",
+    tokensDeducted: 15,
     aspectRatio: "1:1",
     createdAt: new Date(Date.now() - 7200000).toISOString(),
     isSample: true,
@@ -127,8 +161,8 @@ export const DEFAULT_SAMPLE_HISTORY = [
       "Ancient overgrown solarpunk sky towers with vertical hydroponic gardens at dawn, clean solar monorails",
     r2Url:
       "https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=1200&auto=format&fit=crop&q=80",
-    model: "sdxl-turbo",
-    tokensDeducted: 8,
+    model: "Flux Schnell",
+    tokensDeducted: 10,
     aspectRatio: "16:9",
     createdAt: new Date(Date.now() - 86400000).toISOString(),
     isSample: true,
@@ -139,8 +173,8 @@ export const DEFAULT_SAMPLE_HISTORY = [
       "Cosmic astral entity weaving starlight constellations in deep interstellar void, iridescent nebulae ribbons",
     r2Url:
       "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=1200&auto=format&fit=crop&q=80",
-    model: "flux-1-pro",
-    tokensDeducted: 10,
+    model: "Recraft V3",
+    tokensDeducted: 15,
     aspectRatio: "16:9",
     createdAt: new Date(Date.now() - 172800000).toISOString(),
     isSample: true,
@@ -151,7 +185,7 @@ export const DEFAULT_SAMPLE_HISTORY = [
       "Armored space mech vanguard in high-tech carbon-fiber suit, gold reflective visor, cinematic sci-fi concept art",
     r2Url:
       "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=1200&auto=format&fit=crop&q=80",
-    model: "midjourney-v6",
+    model: "Flux Dev",
     tokensDeducted: 15,
     aspectRatio: "16:9",
     createdAt: new Date(Date.now() - 259200000).toISOString(),
@@ -183,6 +217,7 @@ export interface QueuePanelProps {
   sessionHistory?: any[];
   onClose?: () => void;
   isDrawer?: boolean;
+  activePresetId?: string | null;
 }
 
 export const QueuePanel: React.FC<QueuePanelProps> = ({
@@ -193,10 +228,12 @@ export const QueuePanel: React.FC<QueuePanelProps> = ({
   sessionHistory = [],
   onClose,
   isDrawer = false,
+  activePresetId = null,
 }) => {
   const [activeTab, setActiveTab] = useState<"history" | "presets" | "queue">("history");
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [filterType, setFilterType] = useState<"all" | "mine" | "samples">("all");
+  const [presetCategory, setPresetCategory] = useState<"all" | "Characters" | "Environments" | "Artistic">("all");
   const [currentPage, setCurrentPage] = useState<number>(1);
   const PAGE_SIZE = 10;
 
@@ -247,6 +284,26 @@ export const QueuePanel: React.FC<QueuePanelProps> = ({
 
     return list;
   }, [allHistoryItems, filterType, searchQuery]);
+
+  // Filter presets by category and search query
+  const filteredPresets = useMemo(() => {
+    let list = PRESETS;
+    if (presetCategory !== "all") {
+      list = list.filter((p) => p.category === presetCategory);
+    }
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      list = list.filter(
+        (p) =>
+          p.name.toLowerCase().includes(q) ||
+          p.tag.toLowerCase().includes(q) ||
+          p.prompt.toLowerCase().includes(q) ||
+          p.model.toLowerCase().includes(q) ||
+          (p.style && p.style.toLowerCase().includes(q))
+      );
+    }
+    return list;
+  }, [presetCategory, searchQuery]);
 
   // Reset page when search or filter changes
   useEffect(() => {
@@ -505,41 +562,135 @@ export const QueuePanel: React.FC<QueuePanelProps> = ({
 
         {/* TAB 2: PRESETS */}
         {activeTab === "presets" && (
-          <div className="space-y-3">
-            {PRESETS.map((preset) => (
-              <div
-                key={preset.id}
-                onClick={() => {
-                  onSelectPreset(preset);
-                  toast.success(`Loaded preset: ${preset.name}`);
-                }}
-                className="group rounded-lg border border-white/5 bg-[#121215] hover:border-orange-500/40 hover:bg-[#16161a] transition-all cursor-pointer overflow-hidden p-2 flex flex-col gap-2"
-              >
-                <div className="relative h-24 w-full rounded overflow-hidden bg-black">
-                  <img
-                    src={preset.image}
-                    alt={preset.name}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
-                  <div className="absolute top-1.5 left-1.5 bg-black/70 px-1.5 py-0.5 rounded text-[9px] font-mono text-zinc-300 border border-white/10">
-                    {preset.tag}
-                  </div>
-                  <div className="absolute bottom-1.5 right-1.5 opacity-0 group-hover:opacity-100 transition-opacity bg-orange-500 text-black text-[10px] font-bold px-1.5 py-0.5 rounded flex items-center gap-0.5">
-                    <span>Use</span>
-                    <ChevronRight className="w-3 h-3" />
-                  </div>
-                </div>
-                <div>
-                  <h4 className="text-xs font-semibold text-zinc-200 group-hover:text-orange-400 transition-colors truncate">
-                    {preset.name}
-                  </h4>
-                  <p className="text-[11px] text-zinc-500 line-clamp-2 mt-0.5 leading-snug">
-                    {preset.prompt}
-                  </p>
-                </div>
+          <div className="flex-1 flex flex-col space-y-2.5">
+            {/* Search Input */}
+            <div className="relative">
+              <Search className="w-3.5 h-3.5 text-zinc-500 absolute left-2.5 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search presets, styles, models..."
+                className="w-full bg-[#141417] border border-white/10 rounded-lg pl-8 pr-7 py-1.5 text-xs text-zinc-200 placeholder-zinc-500 focus:outline-none focus:border-orange-500/50"
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery("")}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-white"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              )}
+            </div>
+
+            {/* Category Filter Pills */}
+            <div className="flex items-center gap-1 bg-white/[0.03] p-0.5 rounded-lg border border-white/5 text-[11px]">
+              {(["all", "Characters", "Environments", "Artistic"] as const).map((cat) => (
+                <button
+                  key={cat}
+                  onClick={() => setPresetCategory(cat)}
+                  className={`flex-1 py-1 rounded text-center font-medium transition ${
+                    presetCategory === cat
+                      ? "bg-white/10 text-white shadow-xs"
+                      : "text-zinc-500 hover:text-zinc-300"
+                  }`}
+                >
+                  {cat === "all" ? "All" : cat}
+                </button>
+              ))}
+            </div>
+
+            {filteredPresets.length === 0 ? (
+              <div className="py-10 text-center text-zinc-500 space-y-2">
+                <Bookmark className="h-8 w-8 mx-auto opacity-30 text-zinc-400" />
+                <p className="font-medium text-zinc-400">No presets matched</p>
+                <p className="text-[11px] text-zinc-600">
+                  Try adjusting your search query or category filter.
+                </p>
+                {searchQuery && (
+                  <button
+                    onClick={() => setSearchQuery("")}
+                    className="text-[11px] text-orange-400 hover:underline pt-1"
+                  >
+                    Clear search
+                  </button>
+                )}
               </div>
-            ))}
+            ) : (
+              <div className="space-y-3 flex-1">
+                {filteredPresets.map((preset) => {
+                  const isSelected = activePresetId === preset.id;
+                  return (
+                    <div
+                      key={preset.id}
+                      onClick={() => {
+                        onSelectPreset(preset);
+                        toast.success(`Loaded preset: ${preset.name}`);
+                      }}
+                      className={`group rounded-lg border transition-all cursor-pointer overflow-hidden p-2 flex flex-col gap-2 ${
+                        isSelected
+                          ? "border-orange-500 bg-orange-500/[0.07] ring-1 ring-orange-500/50 shadow-[0_0_15px_rgba(249,115,22,0.15)]"
+                          : "border-white/5 bg-[#121215] hover:border-orange-500/40 hover:bg-[#16161a]"
+                      }`}
+                    >
+                      <div className="relative h-24 w-full rounded overflow-hidden bg-black">
+                        <img
+                          src={preset.image}
+                          alt={preset.name}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
+                        <div className="absolute top-1.5 left-1.5 bg-black/70 px-1.5 py-0.5 rounded text-[9px] font-mono text-zinc-300 border border-white/10 flex items-center gap-1">
+                          <span className="w-1.5 h-1.5 rounded-full bg-orange-400" />
+                          <span>{preset.tag}</span>
+                        </div>
+                        {isSelected && (
+                          <div className="absolute top-1.5 right-1.5 bg-orange-500 text-black text-[9px] font-bold px-1.5 py-0.5 rounded font-mono">
+                            ACTIVE
+                          </div>
+                        )}
+                        <div className="absolute bottom-1.5 right-1.5 opacity-0 group-hover:opacity-100 transition-opacity bg-orange-500 text-black text-[10px] font-bold px-1.5 py-0.5 rounded flex items-center gap-0.5">
+                          <span>Apply</span>
+                          <ChevronRight className="w-3 h-3" />
+                        </div>
+                      </div>
+
+                      <div>
+                        <div className="flex items-center justify-between gap-1">
+                          <h4 className="text-xs font-semibold text-zinc-200 group-hover:text-orange-400 transition-colors truncate">
+                            {preset.name}
+                          </h4>
+                          <span className="font-mono text-[9px] text-zinc-500 shrink-0">
+                            {preset.aspectRatio}
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-zinc-500 line-clamp-2 mt-0.5 leading-snug">
+                          {preset.prompt}
+                        </p>
+                      </div>
+
+                      {/* Technical Attributes Chips */}
+                      <div className="flex flex-wrap items-center gap-1 pt-0.5 border-t border-white/[0.04] text-[9px] font-mono text-zinc-400">
+                        <span className="px-1.5 py-0.5 rounded bg-white/[0.04] text-zinc-300">
+                          {preset.model}
+                        </span>
+                        {preset.style && (
+                          <span className="px-1.5 py-0.5 rounded bg-white/[0.04] text-orange-400/90">
+                            {preset.style}
+                          </span>
+                        )}
+                        <span className="px-1.5 py-0.5 rounded bg-white/[0.04] text-zinc-400">
+                          CFG {preset.cfg}
+                        </span>
+                        <span className="px-1.5 py-0.5 rounded bg-white/[0.04] text-zinc-400">
+                          {preset.steps}s
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         )}
 

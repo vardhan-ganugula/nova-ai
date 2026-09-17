@@ -38,7 +38,16 @@ class FalAI {
 
     async generateImage(
         prompt: string,
-        options?: { aspectRatio?: string; style?: string; negativePrompt?: string; model?: string }
+        options?: { 
+            aspectRatio?: string; 
+            style?: string; 
+            negativePrompt?: string; 
+            model?: string;
+            guidanceScale?: number;
+            steps?: number;
+            seed?: number;
+            sampler?: string;
+        }
     ): Promise<string> {
         // Resolve Fal.ai model endpoint first
         let endpoint = "fal-ai/flux/schnell";
@@ -69,13 +78,23 @@ class FalAI {
         if (options?.aspectRatio === "1:1") imageSize = "square_hd";
         else if (options?.aspectRatio === "9:16") imageSize = "portrait_16_9";
         else if (options?.aspectRatio === "4:3") imageSize = "landscape_4_3";
-        else if (options?.aspectRatio === "16:9") imageSize = "landscape_16_9";
+        else if (options?.aspectRatio === "16:9" || options?.aspectRatio === "21:9") imageSize = "landscape_16_9";
 
         const inputPayload: Record<string, any> = {
             prompt: styledPrompt || "A futuristic cyberpunk city at night, cinematic lighting, highly detailed",
             image_size: imageSize,
             num_images: 1,
         };
+
+        if (typeof options?.guidanceScale === "number" && !isNaN(options.guidanceScale)) {
+            inputPayload.guidance_scale = options.guidanceScale;
+        }
+        if (typeof options?.steps === "number" && !isNaN(options.steps)) {
+            inputPayload.num_inference_steps = options.steps;
+        }
+        if (typeof options?.seed === "number" && !isNaN(options.seed) && options.seed > 0) {
+            inputPayload.seed = options.seed;
+        }
 
         const isFlux = endpoint.toLowerCase().includes("flux");
         if (finalNegativePrompt && !isFlux) {

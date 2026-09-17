@@ -4,9 +4,17 @@ import toast from 'react-hot-toast';
 import { setModels } from '@/store/modelsSlice.ts';
 
 
-const API_URL = import.meta.env.VITE_BACKEND_URL
-  ? `${import.meta.env.VITE_BACKEND_URL}/api`
-  : (import.meta.env.PROD ? '/api' : 'http://localhost:8000/api');
+const getApiUrl = () => {
+  const customBackend = import.meta.env.VITE_BACKEND_URL;
+  if (customBackend) {
+    const trimmed = customBackend.trim().replace(/\/+$/, '');
+    if (!trimmed || trimmed === '/') return '/api';
+    return `${trimmed}/api`;
+  }
+  return import.meta.env.PROD ? '/api' : 'http://localhost:8000/api';
+};
+
+const API_URL = getApiUrl();
 
 const apiSlice = createApi({
 
@@ -120,7 +128,17 @@ const apiSlice = createApi({
 
     generateImage: builder.mutation<
       { message: string; url: string; image?: any; creditsRemaining: number; tokensDeducted: number },
-      { prompt: string; style?: string; aspectRatio?: string; model?: string; negativePrompt?: string }
+      {
+        prompt: string;
+        style?: string;
+        aspectRatio?: string;
+        model?: string;
+        negativePrompt?: string;
+        guidanceScale?: number;
+        steps?: number;
+        seed?: number;
+        sampler?: string;
+      }
     >({
       query: (body) => ({
         url: '/ai/generate-image',
