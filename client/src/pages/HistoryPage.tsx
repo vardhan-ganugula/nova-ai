@@ -80,7 +80,7 @@ export default function HistoryPage() {
     e.stopPropagation();
     const link = document.createElement("a");
     link.href = url;
-    link.download = `nova-${Date.now()}.png`;
+    link.download = `vimitron-${Date.now()}.png`;
     link.target = "_blank";
     link.click();
     toast.success("Downloading master render...");

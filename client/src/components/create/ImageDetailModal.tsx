@@ -54,7 +54,7 @@ export const ImageDetailModal: React.FC<ImageDetailModalProps> = ({
   const handleDownload = () => {
     const link = document.createElement("a");
     link.href = image;
-    link.download = `nova-artwork-${Date.now()}.png`;
+    link.download = `vimitron-artwork-${Date.now()}.png`;
     link.target = "_blank";
     link.click();
     toast.success("Downloading master render...");
@@ -88,7 +88,7 @@ export const ImageDetailModal: React.FC<ImageDetailModalProps> = ({
           {/* Watermark badge */}
           <div className="absolute bottom-4 left-4 flex items-center gap-1.5 rounded-md bg-black/80 px-2.5 py-1 border border-white/15 text-[10px] font-mono font-bold uppercase tracking-wider text-zinc-300">
             <Zap className="h-3 w-3 text-orange-400 fill-orange-400" />
-            <span>NOVA AI • 8K RESOLUTION</span>
+            <span>VIMITRON • 8K RESOLUTION</span>
           </div>
         </div>
 

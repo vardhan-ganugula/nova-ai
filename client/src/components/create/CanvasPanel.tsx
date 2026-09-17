@@ -98,7 +98,7 @@ export const CanvasPanel: React.FC<CanvasPanelProps> = ({
   const handleDownload = () => {
     const link = document.createElement("a");
     link.href = activeImage;
-    link.download = `nova-ai-${Date.now()}.png`;
+    link.download = `vimitron-${Date.now()}.png`;
     link.target = "_blank";
     link.click();
     toast.success("Downloading image in full resolution...");
@@ -253,7 +253,7 @@ export const CanvasPanel: React.FC<CanvasPanelProps> = ({
             >
               <img
                 src={activeImage}
-                alt="Nova AI Render"
+                alt="Vimitron Render"
                 className={`w-auto h-auto max-h-[calc(100vh-230px)] object-contain transition-all duration-500 ${
                   currentStep === "synthesizing"
                     ? "opacity-25 blur-sm"

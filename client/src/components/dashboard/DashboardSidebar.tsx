@@ -87,11 +87,11 @@ export function DashboardSidebar({ activeItem }: SidebarProps) {
       <div className="flex h-16 items-center gap-3 px-6 border-b border-white/[0.06]">
         <Link to="/dashboard" className="flex items-center gap-3 group">
           <div className="relative flex h-8 w-8 items-center justify-center rounded-xl overflow-hidden shadow-lg group-hover:scale-105 transition-transform duration-300 group-hover:shadow-[0_0_20px_rgba(255,122,0,0.4)]">
-            <img src="/logo.webp" alt="Nova AI Logo" className="h-full w-full object-contain" />
+            <img src="/logo.webp" alt="Vimitron Logo" className="h-full w-full object-contain" />
           </div>
           <div className="flex flex-col">
             <span className="font-serif-heading text-lg font-bold tracking-wide text-white flex items-center gap-2">
-              Nova AI
+              Vimitron
               <span className="font-mono text-[9px] uppercase tracking-wider text-[#FF7A00] border border-[#FF7A00]/30 px-1.5 rounded-full bg-[#FF7A00]/10">
                 [ STUDIO ]
               </span>
@@ -187,7 +187,7 @@ export function DashboardSidebar({ activeItem }: SidebarProps) {
               {user?.displayName || user?.username || "Creative Artist"}
             </span>
             <span className="font-mono text-[9px] text-white/30 truncate uppercase">
-              {user?.email || "user@nova.ai"}
+              {user?.email || "creator@vimitron.ai"}
             </span>
           </div>
           <button

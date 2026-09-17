@@ -82,9 +82,9 @@ export const AppShell: React.FC<AppShellProps> = ({
               <div className="flex items-center justify-between pb-4 border-b border-white/10">
                 <div className="flex items-center gap-2">
                   <div className="h-7 w-7 rounded-lg overflow-hidden flex items-center justify-center">
-                    <img src="/logo.webp" alt="Nova AI Logo" className="h-full w-full object-contain" />
+                    <img src="/logo.webp" alt="Vimitron Logo" className="h-full w-full object-contain" />
                   </div>
-                  <span className="font-bold text-sm text-white">Nova AI</span>
+                  <span className="font-bold text-sm text-white">Vimitron</span>
                 </div>
                 <button
                   onClick={() => setMobileMenuOpen(false)}

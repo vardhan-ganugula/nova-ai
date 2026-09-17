@@ -7,9 +7,9 @@ import { CanvasView } from "@/components/dashboard/CanvasView";
 import { PopularCreations, type CreationItem } from "@/components/dashboard/PopularCreations";
 import { TemplatesGallery, type TemplateCard } from "@/components/dashboard/TemplatesGallery";
 import { FilmGrainOverlay } from "@/components/dashboard/FilmGrainOverlay";
-import { 
-  useGetUserQuery, 
-  useGenerateImageMutation, 
+import {
+  useGetUserQuery,
+  useGenerateImageMutation,
   useGetUserHistoryQuery,
   useGetUserCollectionsQuery,
   useGetPublicGalleryQuery,
@@ -82,16 +82,16 @@ export default function ImageGenStudioPage() {
   // Map public gallery images to community cards
   const displayCreations: CreationItem[] = galleryData?.images?.length
     ? galleryData.images.map((img: any) => ({
-        id: img.id,
-        title: img.prompt,
-        author: img.author || "Nova Artist",
-        authorAvatar: img.authorAvatar || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80",
-        tag: img.style || "AI Visual",
-        likes: String(img.likesCount || 0),
-        aspect: "16:9",
-        image: img.r2Url,
-        isLiked: false,
-      }))
+      id: img.id,
+      title: img.prompt,
+      author: img.author || "Vimitron Artist",
+      authorAvatar: img.authorAvatar || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80",
+      tag: img.style || "AI Visual",
+      likes: String(img.likesCount || 0),
+      aspect: "16:9",
+      image: img.r2Url,
+      isLiked: false,
+    }))
     : defaultCreations;
 
   const templates: TemplateCard[] = [
@@ -173,12 +173,12 @@ export default function ImageGenStudioPage() {
     const toastId = toast.loading(`Synthesizing with ${selectedImageModel} & Inngest [${modelCost} Tokens]...`);
 
     try {
-      const response = await generateImageApi({ 
+      const response = await generateImageApi({
         prompt,
         negativePrompt,
         style: selectedStyle,
         aspectRatio,
-        model: selectedImageModel 
+        model: selectedImageModel
       }).unwrap();
 
       if (response.url) {
@@ -252,8 +252,8 @@ export default function ImageGenStudioPage() {
             />
 
             {/* Canvas View with Real Upscaling, Alpha Mask Removal & Visibility Controls */}
-            <CanvasView 
-              image={generatedImageUrl} 
+            <CanvasView
+              image={generatedImageUrl}
               prompt={prompt}
               onImageUpdate={(url, record) => {
                 setGeneratedImageUrl(url);
@@ -274,21 +274,19 @@ export default function ImageGenStudioPage() {
                     <div className="flex items-center rounded-xl border border-white/[0.08] bg-white/[0.04] p-0.5">
                       <button
                         onClick={() => setActiveTab("history")}
-                        className={`cursor-pointer px-3 py-1 rounded-lg text-xs font-semibold transition-all ${
-                          activeTab === "history" 
-                            ? "bg-[#FF7A00] text-white shadow-xs" 
+                        className={`cursor-pointer px-3 py-1 rounded-lg text-xs font-semibold transition-all ${activeTab === "history"
+                            ? "bg-[#FF7A00] text-white shadow-xs"
                             : "text-white/50 hover:text-white"
-                        }`}
+                          }`}
                       >
                         History ({historyData?.images?.length || 0})
                       </button>
                       <button
                         onClick={() => setActiveTab("collections")}
-                        className={`cursor-pointer px-3 py-1 rounded-lg text-xs font-semibold transition-all ${
-                          activeTab === "collections" 
-                            ? "bg-[#FF7A00] text-white shadow-xs" 
+                        className={`cursor-pointer px-3 py-1 rounded-lg text-xs font-semibold transition-all ${activeTab === "collections"
+                            ? "bg-[#FF7A00] text-white shadow-xs"
                             : "text-white/50 hover:text-white"
-                        }`}
+                          }`}
                       >
                         Collections ({collectionsData?.collections?.length || 0})
                       </button>
@@ -319,21 +317,21 @@ export default function ImageGenStudioPage() {
                         <img src={itemUrl} alt={itemPrompt} className="h-full w-full object-cover" />
                         <div className="absolute inset-0 bg-gradient-to-t from-slate-900/90 via-slate-900/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity p-2.5 flex flex-col justify-end">
                           <div className="flex items-center justify-between">
-                            <span className={`text-[9px] font-mono uppercase px-1.5 py-0.5 rounded font-bold ${
-                              item.isPublic 
-                                ? "bg-emerald-500/30 text-emerald-200 border border-emerald-400/50" 
+                            <span className={`text-[9px] font-mono uppercase px-1.5 py-0.5 rounded font-bold ${item.isPublic
+                                ? "bg-emerald-500/30 text-emerald-200 border border-emerald-400/50"
                                 : "bg-amber-500/30 text-amber-200 border border-amber-400/50"
-                            }`}>
+                              }`}>
                               {item.isPublic ? "PUBLIC" : "PRIVATE"}
                             </span>
-                          <span className="text-[9px] font-mono text-slate-300">
-                            {item.generationType || "flux"}
-                          </span>
+                            <span className="text-[9px] font-mono text-slate-300">
+                              {item.generationType || "flux"}
+                            </span>
+                          </div>
+                          <p className="text-[10px] text-white line-clamp-2 mt-1">{itemPrompt}</p>
                         </div>
-                        <p className="text-[10px] text-white line-clamp-2 mt-1">{item.prompt}</p>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </section>
             )}

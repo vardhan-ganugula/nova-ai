@@ -485,7 +485,7 @@ export default function Dashboard() {
                   type="text"
                   value={audioPrompt}
                   onChange={(e) => setAudioPrompt(e.target.value)}
-                  placeholder="Welcome to Nova AI. Experience the next era of generative art..."
+                  placeholder="Welcome to Vimitron. Experience the next era of generative art..."
                   className="flex-1 bg-[#18181b] border border-white/10 rounded-lg px-3 py-2 text-xs text-zinc-200 placeholder-zinc-500 focus:outline-none focus:border-orange-500/50"
                 />
                 <button

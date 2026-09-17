@@ -62,7 +62,7 @@ export default function ImageGalleryPage() {
       displayUrl: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=1200&auto=format&fit=crop&q=80",
       watermarkedR2Url: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=1200&auto=format&fit=crop&q=80",
       likesCount: 142,
-      author: "Nova Creator",
+      author: "Vimitron Creator",
       authorAvatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80",
       createdAt: new Date().toISOString(),
     },
@@ -182,7 +182,7 @@ export default function ImageGalleryPage() {
   // Google Image Search SEO: JSON-LD Schema injection
   // Strictly exposes watermarkedR2Url / displayUrl to search crawlers, protecting clean master assets
   useEffect(() => {
-    document.title = "Explore AI Art & Generations | Nova AI Public Gallery";
+    document.title = "Explore AI Art Gallery — Free AI Generated Images | Vimitron";
 
     let metaDesc = document.querySelector('meta[name="description"]');
     if (!metaDesc) {
@@ -192,10 +192,10 @@ export default function ImageGalleryPage() {
     }
     metaDesc.setAttribute(
       "content",
-      "Discover community-generated AI art synthesized on Nova AI. Browse watermarked previews, examine prompt formulas, and download watermark-free HD creations."
+      "Discover community-generated AI art on Vimitron. Browse watermarked previews, examine prompt formulas, and download watermark-free HD creations."
     );
 
-    const schemaId = "nova-gallery-ld-json";
+    const schemaId = "vimitron-gallery-ld-json";
     let scriptTag = document.getElementById(schemaId) as HTMLScriptElement | null;
     if (!scriptTag) {
       scriptTag = document.createElement("script");
@@ -208,11 +208,11 @@ export default function ImageGalleryPage() {
     const structuredData = {
       "@context": "https://schema.org",
       "@type": "ImageGallery",
-      "name": "Nova AI Public Art Exhibition",
-      "description": "Public exhibition of fine-tuned latent renders synthesized on Nova AI",
+      "name": "Vimitron Public Art Gallery",
+      "description": "Public gallery of AI-generated art created on Vimitron",
       "publisher": {
         "@type": "Organization",
-        "name": "Nova AI",
+        "name": "Vimitron",
         "url": window.location.origin,
       },
       "image": itemsToExpose.map((img: any) => ({
@@ -223,7 +223,7 @@ export default function ImageGalleryPage() {
         "description": img.prompt,
         "author": {
           "@type": "Person",
-          "name": img.author || "Nova Artist",
+          "name": img.author || "Vimitron Artist",
         },
         "datePublished": img.createdAt || new Date().toISOString(),
         "acquireLicensePage": `${window.location.origin}/explore`,
@@ -296,7 +296,7 @@ export default function ImageGalleryPage() {
 
     const toastId = toast.loading("Downloading watermarked image...");
     try {
-      await triggerBrowserDownload(targetUrl, `nova-ai-${img.id || "creation"}-watermarked.png`);
+      await triggerBrowserDownload(targetUrl, `vimitron-${img.id || "creation"}-watermarked.png`);
       toast.dismiss(toastId);
 
       // Render custom theme-aligned image toast
@@ -373,7 +373,7 @@ export default function ImageGalleryPage() {
 
     try {
       const res = await downloadCleanImageApi({ id: img.id }).unwrap();
-      await triggerBrowserDownload(res.downloadUrl, `nova-ai-${img.id}-clean-hd.png`);
+      await triggerBrowserDownload(res.downloadUrl, `vimitron-${img.id}-clean-hd.png`);
       toast.dismiss(toastId);
 
       const isFree = res.tokensDeducted === 0;
@@ -565,7 +565,7 @@ export default function ImageGalleryPage() {
                   {/* Watermark stamp */}
                   <div className="absolute bottom-2 right-2 pointer-events-none z-10 flex items-center gap-1.5 rounded bg-black/80 px-2 py-0.5 border border-white/10 text-[9px] font-mono font-bold uppercase text-zinc-300">
                     <Zap className="h-2.5 w-2.5 text-orange-400 fill-orange-400" />
-                    <span>NOVA AI</span>
+                    <span>VIMITRON</span>
                   </div>
 
                   {/* Style tag */}
@@ -628,7 +628,7 @@ export default function ImageGalleryPage() {
                         className="h-5 w-5 rounded-full object-cover border border-white/10"
                       />
                       <span className="text-[11px] font-medium text-zinc-400">
-                        {item.author || "Nova Artist"}
+                        {item.author || "Vimitron Artist"}
                       </span>
                     </div>
 
@@ -690,7 +690,7 @@ export default function ImageGalleryPage() {
                 {/* Floating Bottom Preview Notice */}
                 <div className="absolute bottom-4 left-4 right-4 md:right-auto flex items-center gap-2 rounded-xl bg-black/80 backdrop-blur-md px-3 py-1.5 border border-white/10 text-[10px] font-mono text-zinc-300 shadow-lg">
                   <Zap className="h-3 w-3 text-orange-400 fill-orange-400 shrink-0" />
-                  <span className="font-semibold text-white truncate">NOVA AI PUBLIC PREVIEW</span>
+                  <span className="font-semibold text-white truncate">VIMITRON PUBLIC PREVIEW</span>
                   <span className="text-zinc-500">•</span>
                   <span className="hidden sm:inline text-zinc-400">Watermarked for Free Public Viewing</span>
                 </div>
@@ -771,7 +771,7 @@ export default function ImageGalleryPage() {
                     />
                     <div className="min-w-0 flex-1">
                       <div className="text-xs font-bold text-white truncate">
-                        {selectedModalImage.author || "Nova Artist"}
+                        {selectedModalImage.author || "Vimitron Artist"}
                       </div>
                       <div className="text-[11px] text-zinc-400 flex items-center gap-1.5 mt-0.5">
                         <span className="text-emerald-400 text-[9px]">●</span>
@@ -946,9 +946,9 @@ export default function ImageGalleryPage() {
 
               <div className="space-y-2">
                 <div className="inline-flex items-center justify-center w-10 h-10 rounded-xl overflow-hidden shadow-md">
-                  <img src="/logo.webp" alt="Nova AI Logo" className="h-full w-full object-contain" />
+                  <img src="/logo.webp" alt="Vimitron Logo" className="h-full w-full object-contain" />
                 </div>
-                <h3 className="text-lg font-bold text-white">Sign In to Nova AI</h3>
+                <h3 className="text-lg font-bold text-white">Sign In to Vimitron</h3>
                 <p className="text-xs text-zinc-400 leading-relaxed">
                   Watermark-free master downloads require a verified account.
                 </p>

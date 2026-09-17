@@ -1,7 +1,8 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useGetUserQuery } from "@/store/authSlice";
+import { useSEO, VIMITRON_ORG_SCHEMA, VIMITRON_WEBSITE_SCHEMA } from "@/lib/useSEO";
 
 import {
   Accordion,
@@ -151,9 +152,9 @@ function Navbar({ onLogin, onSignup }: { onLogin: () => void; onSignup: () => vo
       <nav className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6">
         <a href="#" className="flex items-center gap-2.5">
           <div className="relative flex h-9 w-9 items-center justify-center rounded-xl overflow-hidden shadow-elegant">
-            <img src="/logo.webp" alt="Nova AI Logo" className="h-full w-full object-contain" />
+            <img src="/logo.webp" alt="Vimitron Logo — AI Image and Content Generator" className="h-full w-full object-contain" />
           </div>
-          <span className="text-lg font-semibold tracking-tight text-foreground">Nova AI</span>
+          <span className="text-lg font-semibold tracking-tight text-foreground">Vimitron</span>
         </a>
 
         <div className="hidden items-center gap-1 md:flex">
@@ -224,21 +225,21 @@ function Hero({ onSignup }: { onSignup: () => void }) {
             <div className="mb-6 flex justify-center lg:justify-start">
               <SectionLabel>
                 <Sparkles className="h-3 w-3 text-primary" />
-                Introducing Nova AI · v2.0
+                Introducing Vimitron · v2.0
               </SectionLabel>
             </div>
 
             <h1 className="text-balance text-3xl font-bold leading-[1.08] tracking-tight text-foreground sm:text-5xl md:text-6xl lg:text-[76px]">
-              One Platform.
+              AI Image Generator
               <br />
               <span className="text-gradient bg-size-200 animate-gradient-shift bg-clip-text">
-                Unlimited AI Creativity.
+                & Content Creation Platform.
               </span>
             </h1>
 
             <p className="mx-auto mt-6 max-w-xl text-base leading-relaxed text-muted-foreground sm:text-lg lg:mx-0">
-              Generate images, videos, music, voices, code, presentations, logos, and content
-              in seconds with the power of AI.
+              Generate stunning AI images, videos, music, voices, code, presentations, logos, and content
+              in seconds. The all-in-one AI creative platform — free to start.
             </p>
 
             <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row sm:justify-center lg:justify-start">
@@ -287,7 +288,7 @@ function HeroPreview() {
               <span className="h-2 w-2 rounded-full bg-muted-foreground/30 sm:h-2.5 sm:w-2.5" />
             </div>
             <div className="truncate rounded-full bg-muted/60 px-2.5 py-0.5 text-[9px] font-medium text-muted-foreground sm:px-3 sm:py-1 sm:text-[10px]">
-              nova.ai / studio
+              vimitron / studio
             </div>
             <div className="h-2.5 w-2.5 shrink-0" />
           </div>
@@ -487,7 +488,7 @@ function Features() {
 
 const steps = [
   { icon: Wand2, title: "Choose an AI Tool", desc: "Pick from 13 specialized generators — image, video, music, voice, code, and more." },
-  { icon: MessageSquare, title: "Describe Your Idea", desc: "Write a prompt in plain English. Add references, tone, style — Nova understands." },
+  { icon: MessageSquare, title: "Describe Your Idea", desc: "Write a prompt in plain English. Add references, tone, style — Vimitron understands." },
   { icon: Sparkles, title: "Generate & Download", desc: "Preview instantly, refine in-context, and export in production-ready formats." },
 ];
 
@@ -535,9 +536,9 @@ function Comparison() {
     <section className="relative py-28">
       <div className="mx-auto max-w-7xl px-6">
         <div className="mx-auto max-w-2xl text-center">
-          <SectionLabel>Why Nova</SectionLabel>
+          <SectionLabel>Why Vimitron</SectionLabel>
           <h2 className="mt-5 text-balance text-4xl font-bold tracking-tight text-foreground sm:text-5xl">
-            The old way vs the <span className="text-gradient">Nova way.</span>
+            The old way vs the <span className="text-gradient">Vimitron way.</span>
           </h2>
         </div>
 
@@ -564,7 +565,7 @@ function Comparison() {
             <div className="pointer-events-none absolute -right-24 -top-24 h-64 w-64 rounded-full bg-primary/20 blur-3xl" />
             <div className="relative">
               <div className="mb-6 inline-flex items-center gap-2 rounded-full bg-gradient-primary px-3.5 py-1.5 text-xs font-semibold text-white shadow-elegant">
-                <Sparkles className="h-3.5 w-3.5" /> Nova AI Platform
+                <Sparkles className="h-3.5 w-3.5" /> Vimitron Platform
               </div>
               <ul className="space-y-4">
                 {platform.map((t) => (
@@ -600,7 +601,7 @@ function Models() {
             Powered by the <span className="text-gradient">best models on Earth.</span>
           </h2>
           <p className="mt-5 text-muted-foreground">
-            Nova routes each request to the strongest model for the job — automatically.
+            Vimitron routes each request to the strongest model for the job — automatically.
           </p>
         </div>
 
@@ -774,10 +775,10 @@ function Pricing() {
 /* -------------------------------------------------------------------------- */
 
 const testimonials = [
-  { name: "Elena Ruiz", role: "Creator, 1.2M followers", quote: "Nova replaced five subscriptions. My content workflow is genuinely 10x faster and looks better than ever.", init: "ER", tint: "from-purple-500 to-pink-500" },
+  { name: "Elena Ruiz", role: "Creator, 1.2M followers", quote: "Vimitron replaced five subscriptions. My content workflow is genuinely 10x faster and looks better than ever.", init: "ER", tint: "from-purple-500 to-pink-500" },
   { name: "Marcus Chen", role: "Founder, Vertex Labs", quote: "We shipped our brand identity, launch site, and pitch deck in a single afternoon. Investors thought we hired an agency.", init: "MC", tint: "from-blue-500 to-cyan-500" },
-  { name: "Priya Kapoor", role: "Marketing Lead, Northwind", quote: "The output quality is quietly astonishing. Our campaign creative is now generated end-to-end inside Nova.", init: "PK", tint: "from-amber-500 to-rose-500" },
-  { name: "David Osei", role: "Product Designer", quote: "Nova feels like tools designed by designers. Every interaction is considered — this is the SaaS I've been waiting for.", init: "DO", tint: "from-emerald-500 to-teal-500" },
+  { name: "Priya Kapoor", role: "Marketing Lead, Northwind", quote: "The output quality is quietly astonishing. Our campaign creative is now generated end-to-end inside Vimitron.", init: "PK", tint: "from-amber-500 to-rose-500" },
+  { name: "David Osei", role: "Product Designer", quote: "Vimitron feels like tools designed by designers. Every interaction is considered — this is the SaaS I've been waiting for.", init: "DO", tint: "from-emerald-500 to-teal-500" },
 ];
 
 function Testimonials() {
@@ -825,9 +826,9 @@ function Testimonials() {
 /* -------------------------------------------------------------------------- */
 
 const faqs = [
-  { q: "What is Nova AI?", a: "Nova AI is an all-in-one creative platform. Generate images, videos, music, voices, code, presentations, and long-form content — all from one workspace, powered by the best models available." },
+  { q: "What is Vimitron?", a: "Vimitron is an all-in-one AI creative platform. Generate images, videos, music, voices, code, presentations, and long-form content — all from one workspace, powered by the best models available." },
   { q: "Do I own what I create?", a: "Yes. On Pro and Enterprise plans, you get full commercial rights to everything you generate. Starter is for personal use only." },
-  { q: "Which AI models does Nova use?", a: "Nova intelligently routes to leading models including GPT-4, Claude, Gemini, Flux, Stable Diffusion, Llama, Whisper, ElevenLabs, Runway, and Ideogram — so you always get the best output for the job." },
+  { q: "Which AI models does Vimitron use?", a: "Vimitron intelligently routes to leading models including GPT-4, Claude, Gemini, Flux, Stable Diffusion, Llama, Whisper, ElevenLabs, Runway, and Ideogram — so you always get the best output for the job." },
   { q: "Is there a free plan?", a: "Yes — Starter gives you 100 credits every month, forever, with no credit card required." },
   { q: "Can I cancel anytime?", a: "Absolutely. Cancel with one click from your dashboard. You keep access until the end of your billing cycle." },
   { q: "Do you offer an API?", a: "Yes. Full REST and streaming APIs are included with Enterprise, and available as an add-on for Pro. Documentation is production-grade and typed end-to-end." },
@@ -883,7 +884,7 @@ function FinalCTA({ onSignup }: { onSignup: () => void }) {
               Start Creating with <span className="text-gradient">AI Today.</span>
             </h2>
             <p className="mx-auto mt-5 max-w-xl text-lg text-muted-foreground">
-              Join a community of creators shipping 10x faster with Nova.
+               Join a community of creators shipping 10x faster with Vimitron.
             </p>
             <div className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row">
               <GradientButton onClick={onSignup} className='bg-zinc-800'>
@@ -917,14 +918,14 @@ function Footer() {
         <div className="grid gap-10 md:grid-cols-6">
           {/* Brand */}
           <div className="md:col-span-2">
-            <a href="#" className="flex items-center gap-2.5">
+            <a href="/" className="flex items-center gap-2.5">
               <div className="flex h-9 w-9 items-center justify-center rounded-xl overflow-hidden shadow-elegant">
-                <img src="/logo.webp" alt="Nova AI Logo" className="h-full w-full object-contain" />
+                <img src="/logo.webp" alt="Vimitron Logo" className="h-full w-full object-contain" />
               </div>
-              <span className="text-lg font-semibold tracking-tight text-foreground">Nova AI</span>
+              <span className="text-lg font-semibold tracking-tight text-foreground">Vimitron</span>
             </a>
             <p className="mt-4 max-w-xs text-sm leading-relaxed text-muted-foreground">
-              The all-in-one AI creative platform. Everything you can imagine, generated in seconds.
+              The all-in-one AI creative platform. Generate images, videos, music, and content with AI in seconds.
             </p>
             <div className="mt-6 flex gap-2">
               {[Twitter, Github, Linkedin, Youtube, Instagram].map((Icon, i) => (
@@ -957,7 +958,7 @@ function Footer() {
         </div>
 
         <div className="mt-14 flex flex-col items-center justify-between gap-4 border-t border-border pt-8 sm:flex-row">
-          <p className="text-xs text-muted-foreground">© {new Date().getFullYear()} Nova AI, Inc. All rights reserved.</p>
+          <p className="text-xs text-muted-foreground">© {new Date().getFullYear()} Vimitron. All rights reserved.</p>
           <div className="flex items-center gap-4 text-xs text-muted-foreground">
             <span className="flex items-center gap-1.5"><Shield className="h-3.5 w-3.5" /> SOC 2 Type II</span>
             <span className="flex items-center gap-1.5"><Cloud className="h-3.5 w-3.5" /> 99.99% Uptime</span>
@@ -983,6 +984,53 @@ export default function Landing() {
       navigate("/dashboard", { replace: true });
     }
   }, [user, isLoading, navigate]);
+
+  // SEO: Structured data for landing page
+  const jsonLd = useMemo(() => [
+    VIMITRON_WEBSITE_SCHEMA,
+    {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      "name": "Vimitron",
+      "applicationCategory": "MultimediaApplication",
+      "operatingSystem": "Web",
+      "description": "All-in-one AI creative platform for generating images, videos, music, voices, code, and content.",
+      "url": "https://vimitron.vercel.app",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "USD",
+        "description": "Free Starter plan with 100 credits per month"
+      },
+      "aggregateRating": {
+        "@type": "AggregateRating",
+        "ratingValue": "4.9",
+        "ratingCount": "2847",
+        "bestRating": "5"
+      }
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": faqs.map(f => ({
+        "@type": "Question",
+        "name": f.q,
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": f.a
+        }
+      }))
+    }
+  ], []);
+
+  useSEO({
+    title: "Vimitron — AI Image, Video & Content Generator | Create with AI",
+    description: "Vimitron is the all-in-one AI creative platform. Generate stunning images, videos, music, voices, and content in seconds. Free to start — no credit card required.",
+    canonical: "https://vimitron.vercel.app/",
+    ogUrl: "https://vimitron.vercel.app/",
+    ogImage: "https://vimitron.vercel.app/logo.png",
+    jsonLd,
+  });
 
   return (
     <div className="relative min-h-screen overflow-x-hidden bg-background text-foreground">

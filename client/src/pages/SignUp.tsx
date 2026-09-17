@@ -9,8 +9,14 @@ import { useRegisterMutation } from "@/store/authSlice";
 import { useForm } from "react-hook-form";
 import {zodResolver} from "@hookform/resolvers/zod"; 
 import {registerSchema, type RegisterSchema} from "@/schema/auth.schema";
+import { useSEO } from "@/lib/useSEO";
 
 export default function Signup() {
+    useSEO({
+        title: "Sign Up Free — Vimitron AI Creative Studio",
+        description: "Create your free Vimitron account today. Experience lightning-fast AI image generation, automated social posting, and creative workflows.",
+        canonical: "https://vimitron.vercel.app/signup",
+    });
 
 
     const { 
@@ -53,7 +59,7 @@ export default function Signup() {
             <Card className="w-full max-w-md">
                 <CardHeader className="text-center">
                     <Link to="/" className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl overflow-hidden shadow-md">
-                        <img src="/logo.webp" alt="Nova AI Logo" className="h-full w-full object-contain" />
+                        <img src="/logo.webp" alt="Vimitron Logo" className="h-full w-full object-contain" />
                     </Link>
                     <CardTitle className="font-display text-2xl">Join your team</CardTitle>
                     <CardDescription>Create an account to start creating with AI</CardDescription>

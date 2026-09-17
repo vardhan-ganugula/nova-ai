@@ -36,7 +36,7 @@ export function StudioInspector() {
     id: "job-1",
     prompt:
       "Futuristic cyberpunk cyber-samurai standing in rain drenched Neo-Tokyo street, glowing violet katana, volumetric neon reflections, ultra-detailed 8k octane render cinematic lighting",
-    engine: "Nova Flux Pro v2.4",
+    engine: "Vimitron Flux Pro v2.4",
     resolution: "1920x1080",
     ratio: "16:9",
     timestamp: "2 mins ago",
@@ -50,7 +50,7 @@ export function StudioInspector() {
       id: "job-1",
       prompt:
         "Futuristic cyberpunk cyber-samurai in rain drenched Neo-Tokyo street, glowing violet katana",
-      engine: "Nova Flux Pro v2.4",
+      engine: "Vimitron Flux Pro v2.4",
       resolution: "1920x1080",
       ratio: "16:9",
       timestamp: "2 mins ago",
@@ -62,7 +62,7 @@ export function StudioInspector() {
       id: "job-2",
       prompt:
         "Astral Nebula Whale soaring through ethereal cosmic galaxies with starlight dust",
-      engine: "Nova Flux Pro v2.4",
+      engine: "Vimitron Flux Pro v2.4",
       resolution: "1024x1024",
       ratio: "1:1",
       timestamp: "18 mins ago",

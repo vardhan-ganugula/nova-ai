@@ -40,7 +40,7 @@ export default function SettingsPage() {
 
 
   // Profile form state
-  const [displayName, setDisplayName] = useState(user?.displayName || "Nova Creator");
+  const [displayName, setDisplayName] = useState(user?.displayName || "Vimitron Creator");
   const [username, setUsername] = useState(user?.username || "");
 
   // Password form state

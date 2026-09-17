@@ -1,14 +1,35 @@
+# Global crawl rules
 User-agent: *
 Allow: /
 Allow: /explore
-Allow: /image-gallery
+Allow: /signup
+Allow: /login
+Disallow: /dashboard
+Disallow: /create
 Disallow: /settings
+Disallow: /library
+Disallow: /collections
+Disallow: /history
+Disallow: /models
+Disallow: /workflows
 Disallow: /billing
 
+# Google
 User-agent: Googlebot
 Allow: /
 Allow: /explore
+Crawl-delay: 1
 
+# Google Images
 User-agent: Googlebot-Image
 Allow: /
 Allow: /explore
+
+# Bing
+User-agent: Bingbot
+Allow: /
+Allow: /explore
+Crawl-delay: 2
+
+# Sitemap reference
+Sitemap: https://vimitron.vercel.app/sitemap.xml

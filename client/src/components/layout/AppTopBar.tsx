@@ -46,7 +46,7 @@ export const AppTopBar: React.FC<AppTopBarProps> = ({
     if (path === "/collections") return { section: "Assets", page: "Collections" };
     if (path === "/history") return { section: "Telemetry", page: "Generation History" };
     if (path === "/settings") return { section: "Account", page: "Settings & Usage" };
-    return { section: "Nova AI", page: title || "Workspace" };
+    return { section: "Vimitron", page: title || "Workspace" };
   };
 
   const breadcrumb = getBreadcrumb();
@@ -180,7 +180,7 @@ export const AppTopBar: React.FC<AppTopBarProps> = ({
               to="/register"
               className="px-3 py-1.5 rounded-lg bg-orange-500 hover:bg-orange-600 text-black text-xs font-semibold shadow-xs transition-colors"
             >
-              Join Nova
+              Join Vimitron
             </Link>
           </div>
         )}

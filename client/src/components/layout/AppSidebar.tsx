@@ -126,11 +126,11 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
       <div className="h-14 flex items-center justify-between px-4 border-b border-white/[0.08]">
         <Link to="/dashboard" className="flex items-center gap-3">
           <div className="h-8 w-8 min-w-8 shrink-0 rounded-lg flex items-center justify-center">
-            <img src="/logo.webp" alt="Nova AI Logo" className="h-full w-full object-contain" />
+            <img src="/logo.webp" alt="Vimitron Logo" className="h-full w-full object-contain" />
           </div>
           {!isCollapsed && (
             <div className="flex items-center gap-1.5 whitespace-nowrap">
-              <span className="font-bold text-sm text-white tracking-tight">Nova</span>
+              <span className="font-bold text-sm text-white tracking-tight">Vimitron</span>
               <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-orange-500/10 text-orange-400 border border-orange-500/20 font-semibold">
                 AI
               </span>
@@ -310,7 +310,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
                   {user?.displayName || user?.username || "Creative Artist"}
                 </span>
                 <span className="font-mono text-[9px] text-zinc-500 truncate">
-                  {user?.email || "user@nova.ai"}
+                  {user?.email || "creator@vimitron.ai"}
                 </span>
               </div>
               <button

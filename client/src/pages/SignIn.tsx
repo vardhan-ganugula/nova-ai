@@ -10,8 +10,14 @@ import { useLoginMutation, useGetUserQuery } from "@/store/authSlice";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { loginSchema, type LoginSchema } from "@/schema/auth.schema";
+import { useSEO } from "@/lib/useSEO";
 
 export default function Login() {
+    useSEO({
+        title: "Sign In — Vimitron AI Creative Studio",
+        description: "Access your Vimitron account to generate AI images, orchestrate multi-model creative workflows, and publish to social channels.",
+        canonical: "https://vimitron.vercel.app/login",
+    });
     const { 
         register, handleSubmit, formState: { errors }
     } = useForm<LoginSchema>({
@@ -81,7 +87,7 @@ export default function Login() {
             <Card className="w-full max-w-md">
                 <CardHeader className="text-center">
                     <Link to="/" className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl overflow-hidden shadow-md">
-                        <img src="/logo.webp" alt="Nova AI Logo" className="h-full w-full object-contain" />
+                        <img src="/logo.webp" alt="Vimitron Logo" className="h-full w-full object-contain" />
                     </Link>
                     <CardTitle className="font-display text-2xl">Sign in to your account</CardTitle>
                     <CardDescription>Access your creative AI studio</CardDescription>
