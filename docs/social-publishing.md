@@ -1,91 +1,240 @@
-# Social publishing: proposed implementation
+# Social Publishing & n8n Automation Engine
 
-## Goal
+Nova AI includes a multi-channel social publishing engine coupled with background task orchestration via Inngest and outward webhook dispatching for n8n workflow integration.
 
-Enable creators to schedule generated images, videos, and eventually audio-derived content to their connected social accounts. This feature is not implemented yet.
+---
 
-## Phase 1: frontend only, pending approval
+## 1. System Architecture
 
-Build the frontend without live OAuth, database writes, or publishing calls.
+The social publishing subsystem operates on a decoupled, asynchronous PERN architecture:
 
-### Screens and entry points
+```mermaid
+flowchart TD
+    subgraph Client ["Client (React + TypeScript)"]
+        UI["Publishing UI / Workflow Canvas"]
+        Drawer["Social Node / Post Modal"]
+    end
 
-- Add a **Publishing** area to the application navigation with Calendar, Queue, Drafts, and Connected accounts views.
-- Add **Schedule post** actions to generated-asset detail views, Library, Collections, and History.
-- Create a post composer with account selector, platform-specific media preview, caption, hashtags, link, schedule date/time/timezone, and approval state.
-- Present a calendar and paginated queue (10 items per page) using local/mock data behind a repository interface.
-- Show deterministic states: draft, pending approval, scheduled, publishing, published, failed, cancelled, and retrying.
-- Validate the composer form with Zod and prevent a schedule time in the past.
+    subgraph Server ["Express API Layer"]
+        SocialRoutes["/api/social routes"]
+        ZodVal["Zod Validation & Auth"]
+        DB[(PostgreSQL Drizzle ORM)]
+        RedisCache[(Redis Cache & Rate Limiting)]
+    end
 
-### Frontend acceptance criteria
+    subgraph Orchestration ["Background Engine"]
+        InngestDev["Inngest Event Bus & Runner"]
+        Scheduler["Scheduled Job Cron (UTC)"]
+    end
 
-- A user can create, edit, duplicate, cancel, and locally mark a scheduled-post draft as approved.
-- Each target has its own caption, account, rendition, and schedule.
-- The UI makes no claim that a provider account is live until backend OAuth exists.
-- List and calendar queries follow the same `page`/`limit` contract, with a default and maximum page size of 10.
-- The client can replace the mock repository with RTK Query endpoints without changing page components.
+    subgraph External ["External Services"]
+        SocialAPIs["Social Platforms (Instagram, X, YouTube, TikTok, LinkedIn)"]
+        n8nWebhook["n8n Webhook Receivers"]
+    end
 
-## Phase 2: backend and API, after frontend approval
-
-### Data model
-
-Introduce a generalized `assets` direction or keep temporary references to `images.id`, then add:
-
-| Table | Key fields |
-| --- | --- |
-| `social_connections` | `id`, `user_id`, `platform`, encrypted OAuth tokens, scopes, provider account ID/name, expiry, status, timestamps. |
-| `social_posts` | `id`, `user_id`, `asset_id`, platform, connection ID, caption, link, scheduled-for UTC, timezone, status, provider post ID, error, timestamps. |
-| `social_post_media` | `id`, post ID, asset/rendition reference, display order, provider media ID. |
-| `social_post_events` | `id`, post ID, event type, actor/system, safe payload, created at. |
-| `workflow_runs` (later) | workflow ID, user ID, input/output asset IDs, status, Inngest run ID, timestamps. |
-
-Store OAuth refresh/access tokens encrypted at rest. Never return tokens to the browser, logs, event payloads, or API response.
-
-### API shape
-
-All request and response payloads must use Zod schemas. List endpoints use cursor/page pagination and return at most 10 records by default.
-
-| Method | Path | Purpose |
-| --- | --- | --- |
-| `GET` | `/api/social/connections` | Paginated connected-account list. |
-| `POST` | `/api/social/connections/:platform/connect` | Begin provider OAuth. |
-| `GET` | `/api/social/connections/:platform/callback` | Complete provider OAuth server-side. |
-| `DELETE` | `/api/social/connections/:id` | Disconnect an owned account. |
-| `GET` | `/api/social/posts` | Paginated queue/calendar list with date and status filters. |
-| `POST` | `/api/social/posts` | Create a validated draft or scheduled post. |
-| `GET` | `/api/social/posts/:id` | Get an owned post and its events. |
-| `PATCH` | `/api/social/posts/:id` | Update only while draft/scheduled rules permit. |
-| `POST` | `/api/social/posts/:id/approve` | Transition an eligible post to scheduled. |
-| `POST` | `/api/social/posts/:id/cancel` | Cancel a post before publishing. |
-| `POST` | `/api/social/posts/:id/retry` | Explicitly retry an eligible failed post. |
-
-### Scheduling and publishing flow
-
-```text
-User schedules post
-  → API validates ownership, platform limits, media, and time
-  → PostgreSQL stores post as scheduled
-  → Inngest schedules or receives an event with post ID
-  → worker fetches/decrypts connection and uploads/publishes media
-  → provider webhook or worker result updates post/event status
-  → Redis publishes invalidation/notification signal
-  → client refreshes the affected paginated queue and post detail
+    UI -->|Create Post / Connect Account| SocialRoutes
+    SocialRoutes --> ZodVal
+    ZodVal --> DB
+    SocialRoutes -->|Dispatch Event| InngestDev
+    Scheduler -->|Trigger at post_time| InngestDev
+    InngestDev -->|Execute Multi-Platform Publish| SocialAPIs
+    InngestDev -->|Trigger Outward Webhook| n8nWebhook
+    SocialAPIs -->|Success / Error Payload| InngestDev
+    InngestDev -->|Update Status & Provider ID| DB
+    InngestDev -->|Invalidate Post Cache| RedisCache
 ```
 
-The worker must be idempotent. Use the post ID as an idempotency key; acquire a short Redis lock before publishing; persist provider request IDs; and treat retry behavior as provider-specific. Provider webhooks must verify signatures before changing any data.
+---
 
-### Security and product constraints
+## 2. Database Schema (Drizzle ORM)
 
-- Limit OAuth scopes to the minimum that supports publishing.
-- Encrypt provider tokens, rotate encryption material carefully, and refresh only server-side.
-- Confirm account ownership and asset ownership on every mutation.
-- Enforce per-user and per-connection Redis rate limits; respect platform API quotas.
-- Validate file type, size, duration, aspect ratio, caption length, hashtag limits, URL rules, and schedule time for each platform.
-- Use UTC for execution and retain the user-selected IANA timezone for display/audit.
-- Provide failure reasons, manual retry, cancellation, and an immutable event trail.
-- Require an explicit approval/publish state; generation alone must never create an externally published post.
+All social publishing entities are modeled in PostgreSQL using Drizzle ORM (`server/src/db/schema.ts`):
 
-## Platform rollout recommendation
+### 2.1 `social_accounts` Table
+Tracks user-connected social media accounts across platforms.
 
-Begin with one provider whose publishing API and review requirements match the product's target users, then add platforms behind a common provider adapter. Do not expose a platform in the UI as connectable until its OAuth flow, media restrictions, webhook verification, retry behavior, and terms-compliance requirements are implemented.
+| Column | Type | Description |
+| --- | --- | --- |
+| `id` | `uuid` (PK) | Unique account identifier (`gen_random_uuid()`) |
+| `user_id` | `uuid` (FK) | References `users.id` (cascade delete) |
+| `platform` | `varchar(32)` | Platform identifier (`instagram`, `twitter`, `youtube`, `tiktok`, `linkedin`) |
+| `account_name` | `varchar(128)` | Display username / handle (e.g. `@novacreator`) |
+| `account_id` | `varchar(128)` | Platform-specific unique user/page ID |
+| `avatar_url` | `text` | Profile avatar URL |
+| `access_token` | `text` | Encrypted OAuth access token |
+| `refresh_token` | `text` | Encrypted OAuth refresh token |
+| `token_expires_at`| `timestamp` | Token expiration timestamp (UTC) |
+| `is_active` | `boolean` | Connection health status (default `true`) |
+| `metadata` | `jsonb` | Platform metadata (page IDs, permissions, verified badge) |
+| `created_at` | `timestamp` | Creation timestamp |
+| `updated_at` | `timestamp` | Last update timestamp |
 
+### 2.2 `social_posts` Table
+Tracks drafts, scheduled jobs, and published posts across all connected channels.
+
+| Column | Type | Description |
+| --- | --- | --- |
+| `id` | `uuid` (PK) | Unique post identifier (`gen_random_uuid()`) |
+| `user_id` | `uuid` (FK) | References `users.id` (cascade delete) |
+| `account_id` | `uuid` (FK) | References `social_accounts.id` (cascade delete) |
+| `image_id` | `uuid` (FK) | Optional reference to generated `images.id` |
+| `caption` | `text` | Post caption and content |
+| `media_url` | `text` | Public Cloudflare R2 URL or external media URL |
+| `media_type` | `varchar(16)` | `image`, `video`, or `carousel` |
+| `platforms` | `jsonb` | Target platforms array (`["instagram", "twitter"]`) |
+| `status` | `varchar(24)` | `draft`, `scheduled`, `publishing`, `published`, `failed` |
+| `scheduled_for` | `timestamp` | Scheduled publication time in UTC |
+| `published_at` | `timestamp` | Actual publication completion timestamp |
+| `provider_post_id`| `varchar(128)`| Platform-returned post ID (e.g. Tweet ID, IG media ID) |
+| `error_message` | `text` | Detailed failure reason if execution failed |
+| `created_at` | `timestamp` | Creation timestamp |
+| `updated_at` | `timestamp` | Last update timestamp |
+
+### 2.3 `social_webhooks` Table
+Configures outward HTTP webhooks dispatched to n8n, Make, or custom automation servers.
+
+| Column | Type | Description |
+| --- | --- | --- |
+| `id` | `uuid` (PK) | Unique webhook identifier |
+| `user_id` | `uuid` (FK) | References `users.id` |
+| `name` | `varchar(64)` | Friendly webhook title (e.g. `n8n Instagram Auto-Reply`) |
+| `url` | `text` | Target endpoint URL (e.g. `https://n8n.myagency.com/webhook/post-event`) |
+| `events` | `jsonb` | Subscribed event types (e.g. `["post.published", "post.failed"]`) |
+| `secret` | `varchar(128)`| HMAC-SHA256 signing secret for payload verification |
+| `is_active` | `boolean` | Toggle active webhook dispatching |
+| `created_at` | `timestamp` | Creation timestamp |
+| `updated_at` | `timestamp` | Last update timestamp |
+
+---
+
+## 3. Inngest Asynchronous Execution Pipeline
+
+Inngest handles fault-tolerant background scheduling, step execution, retries with exponential backoff, and idempotent external publishing.
+
+### 3.1 Publication Lifecycle Sequence
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Creator as User / Workflow Engine
+    participant API as Express API (/api/social)
+    participant DB as PostgreSQL Database
+    participant Inngest as Inngest Engine
+    participant Platform as Social Media API
+    participant n8n as n8n Webhook Runner
+
+    Creator->>API: POST /api/social/posts (scheduled_for: UTC)
+    API->>DB: INSERT INTO social_posts (status: "scheduled")
+    API->>Inngest: Send event "social/post.scheduled" { postId, scheduledFor }
+    API-->>Creator: 201 Created (Post payload)
+
+    Note over Inngest: Sleeps until scheduled_for timestamp
+    Inngest->>Inngest: Trigger Step "publish-to-social"
+    Inngest->>DB: UPDATE social_posts SET status = "publishing"
+    Inngest->>Platform: POST /media/publish (R2 Media + Caption)
+    
+    alt Platform Publish Successful
+        Platform-->>Inngest: 200 OK { providerPostId: "ig_1849204810" }
+        Inngest->>DB: UPDATE social_posts SET status="published", provider_post_id="ig_1849204810", published_at=NOW()
+        Inngest->>n8n: POST to configured webhooks ("post.published", metadata)
+        n8n-->>Inngest: 200 OK (Acknowledge)
+    else Platform Rate Limit or Transient Error
+        Platform-->>Inngest: 429 / 5xx Error
+        Inngest->>Inngest: Step retry with exponential backoff (up to 3 attempts)
+    else Unrecoverable Error
+        Platform-->>Inngest: 400 Bad Request
+        Inngest->>DB: UPDATE social_posts SET status="failed", error_message="..."
+        Inngest->>n8n: POST to configured webhooks ("post.failed", error details)
+    end
+```
+
+### 3.2 Inngest Job Definitions
+
+1. **`publishScheduledPost`**:
+   - Event: `social/post.scheduled`
+   - Steps:
+     - `step.sleepUntil("wait-for-publish-time", event.data.scheduledFor)`
+     - `step.run("verify-post-active", ...)`
+     - `step.run("upload-and-publish", ...)`
+     - `step.run("notify-webhooks", ...)`
+2. **`publishImmediatePost`**:
+   - Event: `social/post.publish`
+   - Bypasses wait step and executes multi-platform upload and webhook notification immediately.
+3. **`refreshSocialTokens`**:
+   - Cron: `0 */6 * * *` (Every 6 hours)
+   - Refreshes OAuth tokens for connected accounts approaching expiration.
+
+---
+
+## 4. n8n Webhook Automation Integration
+
+Nova AI can act as both an origin trigger and an action sink for n8n workflows:
+
+```mermaid
+flowchart LR
+    subgraph Nova ["Nova AI Platform"]
+        Canvas["Workflow Canvas"]
+        PostEngine["Social Publishing Engine"]
+        WebhookSink["Outward Webhook Dispatcher"]
+    end
+
+    subgraph n8n ["n8n Automation Workflows"]
+        n8nTrigger["n8n Webhook Node (Listen)"]
+        n8nRouter["Switch / Filter Nodes"]
+        n8nSlack["Notify Slack / Discord"]
+        n8nAnalytics["Log to Notion / Airtable"]
+        n8nSchedule["Cron Scheduler (n8n Schedule Node)"]
+        n8nNovaAPI["HTTP Request to Nova API"]
+    end
+
+    Canvas -->|Auto-Generated Asset| PostEngine
+    PostEngine -->|Event: post.published| WebhookSink
+    WebhookSink -->|HMAC-SHA256 Signed POST| n8nTrigger
+    n8nTrigger --> n8nRouter
+    n8nRouter --> n8nSlack
+    n8nRouter --> n8nAnalytics
+
+    n8nSchedule -->|Scheduled Campaign Trigger| n8nNovaAPI
+    n8nNovaAPI -->|POST /api/social/posts/publish| PostEngine
+```
+
+### 4.1 Webhook Payload Format
+When a post status changes, Nova AI dispatches an HTTP POST request to all registered n8n endpoints with signature header `X-Nova-Signature: sha256=<HMAC>`:
+
+```json
+{
+  "event": "post.published",
+  "timestamp": "2026-09-21T18:00:00.000Z",
+  "data": {
+    "postId": "7488ecda-e3e9-4e78-98e9-d9f75bf74d75",
+    "platform": "instagram",
+    "accountName": "@novacreator",
+    "caption": "Exploring futuristic neural architectures #novaai #aiart",
+    "mediaUrl": "https://pub-r2.nova-ai.io/images/user-1/gen-9842.webp",
+    "providerPostId": "179920194821039",
+    "status": "published",
+    "publishedAt": "2026-09-21T18:00:02.140Z"
+  }
+}
+```
+
+---
+
+## 5. Supported Social Platforms
+
+| Platform | Media Formats | Max Caption | Aspect Ratios | Publishing Method |
+| --- | --- | --- | --- | --- |
+| **Instagram** | Image (JPEG/PNG/WebP), Reels (MP4) | 2,200 chars, 30 hashtags | 1:1, 4:5, 9:16 | Meta Graph API (Container & Publish) |
+| **X (Twitter)** | Image, MP4 Video, GIF | 280 chars (Free), 25k (Prem) | 16:9, 1:1 | X API v2 Media Upload & Tweets |
+| **YouTube** | Shorts (9:16 MP4), Video | 5,000 chars description | 9:16, 16:9 | YouTube Data API v3 Videos Insert |
+| **TikTok** | Video (MP4/MOV) | 2,200 chars | 9:16 | TikTok Content Posting API |
+| **LinkedIn** | Image, Document, MP4 | 3,000 chars | 1.91:1, 1:1, 4:5 | LinkedIn REST Posts API |
+
+---
+
+## 6. Security and Operational Standards
+
+1. **Token Protection**: OAuth tokens (`access_token`, `refresh_token`) are encrypted at rest using AES-256-GCM. Tokens are never exposed to the frontend or included in JSON responses.
+2. **Rate Limiting**: Redis enforces sliding-window rate limits (max 20 requests per minute per user on publishing endpoints).
+3. **Strict Pagination**: All listing endpoints (`/api/social/posts`, `/api/social/accounts`, `/api/social/webhooks`) return a maximum of 10 items per page with `page`, `limit`, `total`, `totalPages`, and `hasMore` metadata.
+4. **Idempotency**: Inngest functions use `postId` as an idempotency key to prevent accidental duplicate posts to live social feeds.

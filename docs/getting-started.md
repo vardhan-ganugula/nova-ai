@@ -1,95 +1,153 @@
-# Getting started
+# Getting Started
 
-## Prerequisites
+This guide explains how to set up and run the Nova AI PERN stack (PostgreSQL, Express, React, Node.js) with Redis, Inngest, Fal AI, OpenRouter, and Cloudflare R2.
 
-- Node.js compatible with the repository dependencies
-- PostgreSQL
-- Redis locally, or Upstash Redis for deployment
-- An Inngest development server for asynchronous functions
-- Optional provider credentials: Fal AI, OpenRouter, Cloudflare R2, SMTP, Google OAuth, and GitHub OAuth
+---
 
-## Install dependencies
+## 1. Prerequisites
 
-Install dependencies at the workspace root and in both applications:
+- **Node.js**: v18+ or v20+
+- **npm**: v9+
+- **PostgreSQL**: v14+ (local instance or managed instance e.g., Supabase, Neon)
+- **Redis**: v6+ (local server or Upstash Redis)
+- **Inngest CLI**: For local background task processing (`npm run inngest`)
+
+### External API Keys (Optional but recommended for full features)
+- **Fal AI**: API key for Flux.1 Pro, Flux Realism, and SDXL generation.
+- **OpenRouter**: API key for NVIDIA Nemotron, InclusionAI Ling, Llama 3.3, Google Gemma, and OpenRouter text generation models.
+- **Cloudflare R2**: S3-compatible credentials and bucket name for media persistence.
+- **OAuth Providers**: Google & GitHub OAuth client IDs and secrets for social logins.
+
+---
+
+## 2. Repository Installation
+
+Install root and workspace dependencies:
 
 ```powershell
+# Root dependencies
 npm install
+
+# Backend server dependencies
 npm install --prefix server
+
+# Frontend client dependencies
 npm install --prefix client
 ```
 
-## Environment configuration
+---
 
-Create a `server/.env` file. Do not commit secrets. The server reads the following variables:
+## 3. Environment Configuration
+
+### Server Environment (`server/.env`)
+Create `server/.env` with the following configuration:
 
 ```dotenv
+# App Environment
 NODE_ENV=development
 PORT=8000
 CLIENT_URL=http://localhost:5173
 SERVER_URL=http://localhost:8000
-DATABASE_URL=postgresql://postgres:postgres@localhost:5432/postgres
-SESSION_SECRET=replace-with-a-long-random-secret
+SESSION_SECRET=super-secret-session-key-minimum-32-chars
 
+# PostgreSQL Database (Drizzle ORM)
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/postgres
+
+# Redis Cache & Rate Limiting
 REDIS_URL=redis://localhost:6379
 USE_UPSTASH=false
 UPSTASH_REDIS_REST_URL=
 UPSTASH_REDIS_REST_TOKEN=
 
-OPEN_ROUTER_API_KEY=
-FAL_AI_API_KEY=
+# AI Model Providers
+FAL_AI_API_KEY=your_fal_ai_api_key_here
+OPEN_ROUTER_API_KEY=your_openrouter_api_key_here
 
-CLOUDFLARE_R2_ENDPOINT=
-CLOUDFLARE_ACCESS_KEY_ID=
-CLOUDFLARE_SECRET_ACCESS_KEY=
-CLOUDFLARE_R2_BUCKET_NAME=
+# Cloudflare R2 Media Storage (S3-compatible)
+CLOUDFLARE_R2_ENDPOINT=https://<account_id>.r2.cloudflarestorage.com
+CLOUDFLARE_ACCESS_KEY_ID=your_r2_access_key_id
+CLOUDFLARE_SECRET_ACCESS_KEY=your_r2_secret_access_key
+CLOUDFLARE_R2_BUCKET_NAME=nova-ai-assets
 
-SMTP_HOST=
-SMTP_PORT=
+# Inngest Background Engine
+INNGEST_EVENT_KEY=
+INNGEST_SIGNING_KEY=
+
+# Token Credits Configuration
+DAILY_FREE_TOKENS=50
+DOWNLOAD_WATERMARK_FREE_TOKEN_COST=1
+
+# Email / SMTP (Password reset & verification)
+SMTP_HOST=smtp.mailtrap.io
+SMTP_PORT=2525
 SMTP_USER=
 SMTP_PASS=
 
+# Social Authentication
 GOOGLE_CLIENT_ID=
 GOOGLE_CLIENT_SECRET=
 GITHUB_CLIENT_ID=
 GITHUB_CLIENT_SECRET=
-DOWNLOAD_WATERMARK_FREE_TOKEN_COST=1
-DAILY_FREE_TOKENS=50
 ```
 
-For a deployed server, set `USE_UPSTASH=true` and provide both Upstash variables. In production, the Redis adapter also selects Upstash when those credentials are available.
+---
 
-## Database
+## 4. Database Setup (Drizzle ORM)
 
-From `server/`, configure `DATABASE_URL`, then create and apply Drizzle migrations as appropriate for the environment:
+Initialize and migrate the PostgreSQL database:
 
 ```powershell
+cd server
+
+# Generate Drizzle migrations from schema
 npm run db:generate
+
+# Apply migrations to PostgreSQL
 npm run db:migrate
 ```
 
-`npm run db:push` is available for local schema iteration, but use reviewed migrations for shared or production databases.
+*Tip: For rapid local schema iteration, `npm run db:push` can be used to synchronize schema changes directly.*
 
-## Run locally
+---
 
-Open separate terminals:
+## 5. Running the Application
 
+To run the complete system locally, open three terminal windows:
+
+### Terminal 1: Backend Express Server
 ```powershell
-npm run dev:server
-npm run dev:client
+cd server
+npm run dev
 ```
+*Runs at `http://localhost:8000`.*
 
-The client defaults to `http://localhost:5173`. The server defaults to port `3000` unless `PORT` is supplied; set `PORT=8000` when using the default Inngest command below.
+### Terminal 2: Frontend Vite React Application
+```powershell
+cd client
+npm run dev
+```
+*Runs at `http://localhost:5173`.*
 
-Start Inngest in a third terminal after the API is running:
-
+### Terminal 3: Inngest Dev Server
 ```powershell
 cd server
 npm run inngest
 ```
+*Inngest Dev UI runs at `http://localhost:8288` communicating with the backend at `http://localhost:8000/api/inngest`.*
 
-Its configured endpoint is `http://localhost:8000/api/inngest`.
+---
 
-## Deployment
+## 6. Engineering & Testing Guidelines
 
-Vercel is configured to build the server and client, expose `api/index.ts`, serve `client/dist`, and rewrite `/api/*` to the serverless API. Set every required server environment variable in the deployment environment. Protected application routes are marked `noindex, nofollow` in `vercel.json`.
+As outlined in `AGENTS.md`:
+- **Development Testing**: Testing is not a primary concern until the project reaches alpha. **Do not run `npm run build` or `npm run lint`**. Instead, run `npm run dev`.
+- **Type Checking**: To verify TypeScript validity without triggering production build bundling, run:
+  ```powershell
+  # Frontend client check
+  cd client; npx tsc --noEmit --project tsconfig.app.json
 
+  # Backend server check
+  cd server; npx tsc --noEmit
+  ```
+- **Strict Pagination**: All listing endpoints must paginate data with 10 items per page by default.
+- **Validation**: Every request and response payload must be validated with Zod schemas.
