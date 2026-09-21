@@ -10,6 +10,7 @@ import {
   Bookmark,
   History,
   Settings,
+  Share2,
   Zap,
   LogOut,
   ChevronLeft,
@@ -113,6 +114,17 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
       path: "/history",
       icon: History,
       active: currentPath === "/history",
+    },
+    {
+      label: "Socials",
+      path: "/social",
+      icon: Share2,
+      badge: "AUTO",
+      active:
+        currentPath === "/social" ||
+        currentPath === "/socials" ||
+        currentPath === "/connections" ||
+        currentPath === "/social-accounts",
     },
   ];
 

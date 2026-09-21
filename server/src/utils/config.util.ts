@@ -57,4 +57,18 @@ if (!CLOUDFLARE_R2_ENDPOINT || !CLOUDFLARE_ACCESS_KEY_ID || !CLOUDFLARE_SECRET_A
 
 // Token Deduction & Allocation Configuration
 export const DOWNLOAD_WATERMARK_FREE_TOKEN_COST = Number(process.env.DOWNLOAD_WATERMARK_FREE_TOKEN_COST) || 1;
-export const DAILY_FREE_TOKENS = Number(process.env.DAILY_FREE_TOKENS) || 50;
+export const DAILY_FREE_TOKENS = Number(process.env.DAILY_FREE_TOKENS) || 50;
+
+// Meta / Instagram OAuth Configuration
+export const INSTAGRAM_APP_ID = (process.env.INSTAGRAM_APP_ID || process.env.META_APP_ID || '').trim();
+export const INSTAGRAM_APP_SECRET = (process.env.INSTAGRAM_APP_SECRET || process.env.META_APP_SECRET || '').trim();
+export const INSTAGRAM_REDIRECT_URI = (
+  process.env.INSTAGRAM_REDIRECT_URI || `${SERVER_URL}/api/integrations/instagram/callback`
+).trim();
+
+// Social Token Encryption Key (AES-256-GCM)
+export const SOCIAL_TOKEN_ENCRYPTION_KEY =
+  process.env.SOCIAL_TOKEN_ENCRYPTION_KEY ||
+  process.env.SESSION_SECRET ||
+  'vimitron_social_token_secret_key_32_bytes!';
+

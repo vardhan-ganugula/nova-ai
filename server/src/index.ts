@@ -42,11 +42,17 @@ app.get("/api", (req, res) => {
   res.json({ status: "ok", message: "Nova AI API is running" });
 });
 
+import socialRouter from "./routes/social.route.js";
+import instagramRouter from "./routes/instagram.route.js";
+
 // Inngest endpoint for async workflow processing
 app.use("/api/inngest", serve({ client: inngest, functions: inngestFunctions }));
 
 app.use("/api/auth", authRoutes);
 app.use("/api/ai", aiRouter);
+app.use("/api/socials", socialRouter);
+app.use("/api/integrations/instagram", instagramRouter);
+app.use("/api/socials/instagram", instagramRouter);
 app.use("/api/test", testRouter);
 
 if (!process.env.VERCEL) {

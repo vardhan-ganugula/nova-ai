@@ -24,7 +24,7 @@ const apiSlice = createApi({
   }),
 
   reducerPath: 'api',
-  tagTypes: ['User', 'History', 'Gallery', 'Collection'],
+  tagTypes: ['User', 'History', 'Gallery', 'Collection', 'SocialAccounts', 'SocialPosts', 'SocialWebhook'],
 
   endpoints: (builder) => ({
 

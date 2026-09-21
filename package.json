@@ -10,6 +10,10 @@
   "scripts": {
     "build": "npm run build --prefix client",
     "dev:client": "npm run dev --prefix client",
-    "dev:server": "npm run dev --prefix server"
+    "dev:server": "npm run dev --prefix server",
+    "docker:up": "docker compose up --build",
+    "docker:down": "docker compose down",
+    "docker:infra": "docker compose up postgres redis inngest",
+    "docker:db:push": "docker compose exec server npm run db:push"
   }
 }

@@ -1,0 +1,131 @@
+services:
+  # ==========================================================
+  # Database: PostgreSQL
+  # ==========================================================
+  postgres:
+    image: postgres:16-alpine
+    container_name: nova-postgres
+    restart: unless-stopped
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    environment:
+      POSTGRES_USER: vardhan
+      POSTGRES_PASSWORD: vardhan1
+      POSTGRES_DB: vimitron
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U vardhan -d vimitron"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - nova-network
+
+  # ==========================================================
+  # Cache & Pub/Sub: Redis
+  # ==========================================================
+  redis:
+    image: redis:7-alpine
+    container_name: nova-redis
+    restart: unless-stopped
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - nova-network
+
+  # ==========================================================
+  # Backend: Express + Node.js + Drizzle ORM
+  # ==========================================================
+  server:
+    build:
+      context: ./server
+      dockerfile: Dockerfile.dev
+    container_name: nova-server
+    restart: unless-stopped
+    ports:
+      - "${PORT:-8000}:8000"
+    env_file:
+      - path: ./server/.env
+        required: false
+    environment:
+      - PORT=8000
+      - NODE_ENV=development
+      - DATABASE_URL=postgresql://vardhan:vardhan1@postgres:5432/vimitron
+      - REDIS_URL=redis://redis:6379
+      - CLIENT_URL=http://localhost:5173
+      - SERVER_URL=http://localhost:8000
+      - INNGEST_DEV=1
+      - INNGEST_BASE_URL=http://inngest:8288
+    volumes:
+      - ./server:/app
+      - /app/node_modules
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - nova-network
+
+  # ==========================================================
+  # Workflow Engine: Inngest Dev Server
+  # ==========================================================
+  inngest:
+    image: inngest/inngest:latest
+    container_name: nova-inngest
+    restart: unless-stopped
+    ports:
+      - "8288:8288"
+    command: ["inngest", "dev", "-u", "http://server:8000/api/inngest", "--host", "0.0.0.0"]
+    environment:
+      - INNGEST_DEV=1
+    depends_on:
+      - server
+    networks:
+      - nova-network
+
+  # ==========================================================
+  # Frontend: React + Vite + TailwindCSS
+  # ==========================================================
+  client:
+    build:
+      context: ./client
+      dockerfile: Dockerfile.dev
+    container_name: nova-client
+    restart: unless-stopped
+    ports:
+      - "5173:5173"
+    environment:
+      - VITE_BACKEND_URL=http://localhost:8000
+      - VITE_USE_POLLING=true
+    volumes:
+      - ./client:/app
+      - /app/node_modules
+    depends_on:
+      - server
+    networks:
+      - nova-network
+
+  # ==========================================================
+  # Optional Workflow Automation: n8n (run with --profile n8n)
+  # ==========================================================
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  n8n_data:
+    driver: local
+
+networks:
+  nova-network:
+    driver: bridge

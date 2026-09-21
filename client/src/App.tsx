@@ -11,6 +11,7 @@ import LibraryPage from "./pages/LibraryPage";
 import CollectionsPage from "./pages/CollectionsPage";
 import HistoryPage from "./pages/HistoryPage";
 import SettingsPage from "./pages/SettingsPage";
+import SocialConnectionsPage from "./pages/SocialConnectionsPage";
 import { ProtectedRoute, PublicOnlyRoute } from "./components/ProtectedRoute";
 
 function App() {
@@ -84,6 +85,7 @@ function App() {
           </ProtectedRoute>
         }
       />
+      <Route path="/workflow" element={<Navigate to="/workflows" replace />} />
 
       {/* Personal Assets Library */}
       <Route
@@ -114,6 +116,26 @@ function App() {
           </ProtectedRoute>
         }
       />
+
+      {/* Social Handles & Automated Distribution Hub */}
+      <Route
+        path="/social"
+        element={
+          <ProtectedRoute>
+            <SocialConnectionsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/socials"
+        element={
+          <ProtectedRoute>
+            <SocialConnectionsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route path="/connections" element={<Navigate to="/social" replace />} />
+      <Route path="/social-accounts" element={<Navigate to="/social" replace />} />
 
       {/* Protected Settings & Telemetry */}
       <Route

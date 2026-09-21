@@ -221,9 +221,12 @@ export const dailyTokenGrantFn = inngest.createFunction(
 );
 
 
+import { publishSocialPostFn } from "./social.functions.js";
+
 export const inngestFunctions = [
   generateImageFn,
   generateVideoFn,
   generateAudioFn,
   dailyTokenGrantFn,
+  publishSocialPostFn,
 ];

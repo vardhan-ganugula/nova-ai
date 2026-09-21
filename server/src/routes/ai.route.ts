@@ -79,22 +79,6 @@ aiRouter.post("/generate-image", requireAuth, async (req: any, res: Response) =>
     }
 
     try {
-        // Trigger Inngest event for background observability & workflow handling
-        await inngest.send({
-            name: "ai/image.generate",
-            data: {
-                userId: user.id,
-                prompt,
-                negativePrompt,
-                style,
-                aspectRatio,
-                model: model || "Flux Schnell",
-                guidanceScale,
-                steps,
-                seed,
-            },
-        });
-
         // Generate image via Fal AI with selected options
         const falImageUrl = await generateImageWithFalAI(prompt, {
             aspectRatio,
@@ -133,6 +117,21 @@ aiRouter.post("/generate-image", requireAuth, async (req: any, res: Response) =>
             userId: user.id,
             imageId: savedImage.id,
         }).onConflictDoNothing();
+
+        // Send observability event (ai/image.completed) rather than triggering a second generation
+        try {
+            await inngest.send({
+                name: "ai/image.completed",
+                data: {
+                    userId: user.id,
+                    imageId: savedImage.id,
+                    prompt,
+                    model: model || "Flux Schnell",
+                },
+            });
+        } catch (inngestErr: any) {
+            console.warn("⚠️ [Inngest Warning]:", inngestErr?.message || inngestErr);
+        }
 
         res.json({
             message: "Image generated successfully and saved to public gallery",
@@ -259,11 +258,6 @@ aiRouter.post("/generate-video", requireAuth, async (req: any, res: Response) =>
     }
 
     try {
-        await inngest.send({
-            name: "ai/video.generate",
-            data: { userId: user.id, prompt },
-        });
-
         const videoUrl = await generateVideoWithFalAI(prompt);
 
         let finalUrl = videoUrl;

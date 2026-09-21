@@ -1,4 +1,4 @@
-import { pgTable, uuid, text, integer, boolean, timestamp, uniqueIndex } from 'drizzle-orm/pg-core';
+import { pgTable, uuid, text, integer, boolean, timestamp, uniqueIndex, index, jsonb } from 'drizzle-orm/pg-core';
 
 export const users = pgTable('users', {
   id: uuid('id').defaultRandom().primaryKey(),
@@ -65,3 +65,55 @@ export const imageLikes = pgTable('image_likes', {
 }, (table) => [
   uniqueIndex('user_image_like_idx').on(table.userId, table.imageId)
 ]);
+
+export const socialAccounts = pgTable('social_accounts', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
+  platform: text('platform').notNull(), // instagram, linkedin, x, youtube, tiktok, pinterest, facebook, discord
+  platformAccountId: text('platform_account_id').notNull(),
+  accountUsername: text('account_username').notNull(),
+  accountName: text('account_name').notNull(),
+  avatarUrl: text('avatar_url'),
+  accessToken: text('access_token'),
+  refreshToken: text('refresh_token'),
+  tokenExpiresAt: timestamp('token_expires_at'),
+  metadata: jsonb('metadata'), // e.g. { defaultHashtags: string[], aiDisclaimer: boolean }
+  status: text('status').default('active').notNull(), // active, expired, revoked
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => [
+  uniqueIndex('user_platform_account_idx').on(table.userId, table.platform, table.platformAccountId),
+  index('social_accounts_user_idx').on(table.userId)
+]);
+
+export const socialPosts = pgTable('social_posts', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
+  imageId: uuid('image_id').references(() => images.id, { onDelete: 'set null' }),
+  mediaUrl: text('media_url').notNull(),
+  mediaType: text('media_type').default('image').notNull(), // image, video, audio
+  caption: text('caption').notNull(),
+  targetPlatforms: jsonb('target_platforms').notNull(), // e.g. ['instagram', 'x']
+  status: text('status').default('draft').notNull(), // draft, scheduled, publishing, published, failed
+  scheduledFor: timestamp('scheduled_for'),
+  publishedAt: timestamp('published_at'),
+  platformPostIds: jsonb('platform_post_ids'), // e.g. { instagram: "post_123", x: "tweet_456" }
+  errorMessage: text('error_message'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => [
+  index('social_posts_user_status_idx').on(table.userId, table.status),
+  index('social_posts_scheduled_for_idx').on(table.scheduledFor)
+]);
+
+export const socialWebhooks = pgTable('social_webhooks', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull().unique(),
+  webhookUrl: text('webhook_url').notNull(),
+  secret: text('secret').notNull(),
+  isActive: boolean('is_active').default(true).notNull(),
+  events: jsonb('events').notNull(), // ['image.generated', 'video.generated', 'post.scheduled', 'post.published']
+  lastTriggeredAt: timestamp('last_triggered_at'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});

@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import toast from "react-hot-toast";
+import { Link } from "react-router-dom";
 import {
   User,
   Lock,
@@ -16,6 +17,7 @@ import {
   Scissors,
   FileText,
   Sliders,
+  Share2,
 } from "lucide-react";
 import { AppShell } from "@/components/layout/AppShell";
 import {
@@ -24,10 +26,12 @@ import {
   useChangePasswordMutation,
   useGetTokenUsageQuery,
 } from "@/store/authSlice";
+import { useGetSocialAccountsQuery } from "@/store/socialSlice";
 
 export default function SettingsPage() {
   const { data: userData } = useGetUserQuery();
   const { data: tokenUsageData, isLoading: isUsageLoading } = useGetTokenUsageQuery();
+  const { data: socialAccountsData } = useGetSocialAccountsQuery();
   const [updateProfileApi, { isLoading: isUpdatingProfile }] = useUpdateProfileMutation();
   const [changePasswordApi, { isLoading: isChangingPassword }] = useChangePasswordMutation();
 
@@ -35,6 +39,7 @@ export default function SettingsPage() {
   const credits = user?.credits ?? tokenUsageData?.credits ?? 0;
   const dailyCredits = user?.dailyCredits ?? tokenUsageData?.dailyCredits ?? 50;
   const purchasedCredits = user?.purchasedCredits ?? tokenUsageData?.purchasedCredits ?? 0;
+  const connectedSocialCount = socialAccountsData?.accounts?.filter((a: any) => a.status === "active" || a.status === "connected")?.length || 0;
 
   const [activeTab, setActiveTab] = useState<"profile" | "security" | "tokens">("profile");
 
@@ -162,6 +167,23 @@ export default function SettingsPage() {
             <Coins className="h-3.5 w-3.5" />
             <span>Token Usage & Logs</span>
           </button>
+
+          <Link
+            to="/social"
+            className="shrink-0 flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-semibold bg-[#121215] text-zinc-400 border border-white/5 hover:border-orange-500/30 hover:text-orange-400 transition-all ml-auto"
+          >
+            <Share2 className="h-3.5 w-3.5 text-orange-400" />
+            <span>Social Accounts</span>
+            {connectedSocialCount > 0 ? (
+              <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-bold">
+                {connectedSocialCount} LINKED
+              </span>
+            ) : (
+              <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-zinc-800 text-zinc-400 border border-zinc-700 font-normal">
+                NOT LINKED
+              </span>
+            )}
+          </Link>
         </div>
 
         {/* TAB 1: Profile Settings */}
