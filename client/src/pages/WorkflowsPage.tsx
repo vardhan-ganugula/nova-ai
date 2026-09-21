@@ -14,6 +14,7 @@ import {
   ChevronDown,
   X as XIcon,
   Trash2,
+  Sparkles,
 } from "lucide-react";
 import { AppShell } from "@/components/layout/AppShell";
 
@@ -60,69 +61,31 @@ const WIRE_COLORS: Record<string, string> = {
   any: "#71717a",
 };
 
-// ─── Default canvas layout ────────────────────────────────────────────────────
-const makeDefaultNodes = (): CanvasNode[] => [
-  {
-    id: "img-1",
-    type: "image-asset",
-    position: { x: 60, y: 60 },
-    data: { selectedImage: null } as ImageAssetNodeData,
-  },
-  {
-    id: "social-agg-1",
-    type: "socials-aggregator",
-    position: { x: 480, y: 60 },
-    data: { targets: { instagram: true, x: true, facebook: true }, caption: "" } as SocialsAggregatorData,
-  },
-  {
-    id: "http-1",
-    type: "http-request",
-    position: { x: 60, y: 600 },
-    data: {
-      method: "GET",
-      url: "https://api.nova.ai/v1/status",
-      headers: [{ key: "Content-Type", value: "application/json" }],
-      queryParams: [], body: "",
-      response: null, statusCode: null, latencyMs: null, isExecuting: false,
-    } as HttpNodeData,
-  },
-  {
-    id: "webhook-1",
-    type: "webhook",
-    position: { x: 480, y: 600 },
-    data: {
-      mode: "trigger",
-      webhookUrl: "https://nova.ai/webhook/a8f3b921",
-      eventFilter: "nova.*",
-      lastTriggeredAt: null, payloadPreview: "",
-      mappings: [{ from: "$.data.imageId", to: "payload.id" }],
-      outputPreview: "",
-    } as WebhookNodeData,
-  },
-  {
-    id: "social-ig-1",
-    type: "social-instagram",
-    position: { x: 940, y: 60 },
-    data: { platform: "instagram", caption: "", scheduledFor: null } as SocialAccountNodeData,
-  },
-  {
-    id: "social-x-1",
-    type: "social-x",
-    position: { x: 940, y: 540 },
-    data: { platform: "x", caption: "", scheduledFor: null } as SocialAccountNodeData,
-  },
-  {
-    id: "social-fb-1",
-    type: "social-facebook",
-    position: { x: 940, y: 1010 },
-    data: { platform: "facebook", caption: "", scheduledFor: null } as SocialAccountNodeData,
-  },
-];
+// ─── LocalStorage keys & defaults ─────────────────────────────────────────────
+const STORAGE_KEY_NODES = "nova_workflow_nodes_v3";
+const STORAGE_KEY_EDGES = "nova_workflow_edges_v3";
 
-const makeDefaultEdges = (): NodeEdge[] => [
-  { id: "e-img-agg", sourceNodeId: "img-1", sourcePort: "IMAGE_OUT", targetNodeId: "social-agg-1", targetPort: "MEDIA_IN", dataType: "image", animated: false },
-  { id: "e-http-webhook", sourceNodeId: "http-1", sourcePort: "RESPONSE_OUT", targetNodeId: "webhook-1", targetPort: "PAYLOAD_IN", dataType: "http-response", animated: false },
-];
+const loadSavedNodes = (): CanvasNode[] => {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY_NODES);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) return parsed;
+    }
+  } catch {}
+  return [];
+};
+
+const loadSavedEdges = (): NodeEdge[] => {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY_EDGES);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) return parsed;
+    }
+  } catch {}
+  return [];
+};
 
 const PORT_Y_OFFSET = 180; // default wire midpoint Y
 
@@ -144,9 +107,22 @@ export default function WorkflowsPage() {
   }, []);
 
   // ── Node / edge state ──────────────────────────────────────────────────────
-  const [nodes, setNodes] = useState<CanvasNode[]>(makeDefaultNodes);
-  const [edges, setEdges] = useState<NodeEdge[]>(makeDefaultEdges);
+  const [nodes, setNodes] = useState<CanvasNode[]>(loadSavedNodes);
+  const [edges, setEdges] = useState<NodeEdge[]>(loadSavedEdges);
   const [nodeStatuses, setNodeStatuses] = useState<Record<string, NodeStatus>>({});
+
+  // Persist user nodes & edges to localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEY_NODES, JSON.stringify(nodes));
+    } catch {}
+  }, [nodes]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEY_EDGES, JSON.stringify(edges));
+    } catch {}
+  }, [edges]);
 
   // ── Execution log ──────────────────────────────────────────────────────────
   const [logs, setLogs] = useState<LogEntry[]>([]);
@@ -514,6 +490,25 @@ export default function WorkflowsPage() {
               )}
             </div>
 
+            {/* ── Clear all nodes / canvas ── */}
+            {nodes.length > 0 && (
+              <button
+                type="button"
+                onClick={() => {
+                  setNodes([]);
+                  setEdges([]);
+                  localStorage.removeItem(STORAGE_KEY_NODES);
+                  localStorage.removeItem(STORAGE_KEY_EDGES);
+                  toast("Canvas cleared", { icon: "🧹" });
+                }}
+                title="Clear all nodes and connections"
+                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/[0.04] hover:bg-red-500/15 text-zinc-400 hover:text-red-400 border border-white/[0.07] transition text-xs font-medium"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Clear Canvas</span>
+              </button>
+            )}
+
             {/* ── Clear all edges ── */}
             {edges.length > 0 && (
               <button
@@ -737,6 +732,31 @@ export default function WorkflowsPage() {
               })}
             </div>
           </div>
+
+          {/* ── Empty Canvas State ── */}
+          {nodes.length === 0 && (
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
+              <div className="flex flex-col items-center gap-3 p-7 rounded-2xl bg-zinc-950/85 border border-white/[0.08] backdrop-blur-md shadow-2xl max-w-sm text-center pointer-events-auto">
+                <div className="w-12 h-12 rounded-xl bg-violet-600/20 border border-violet-500/30 flex items-center justify-center text-violet-400 shadow-inner">
+                  <Sparkles className="w-6 h-6" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-semibold text-white">Clean Canvas Ready</h3>
+                  <p className="text-xs text-zinc-400 mt-1 leading-relaxed">
+                    Build your custom workflow. Click <span className="text-violet-300 font-medium">+ Add Node</span> above to place your Image Library, Instagram, X, or other nodes.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowAddMenu(true)}
+                  className="mt-2 flex items-center gap-1.5 px-4 py-2 rounded-xl bg-violet-600 hover:bg-violet-500 text-white text-xs font-semibold shadow-lg shadow-violet-600/35 transition-all hover:scale-105 active:scale-95"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Add Node</span>
+                </button>
+              </div>
+            </div>
+          )}
 
           {/* ── Canvas Controls (outside transform) ── */}
           <CanvasControls
