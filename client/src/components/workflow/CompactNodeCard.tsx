@@ -6,6 +6,12 @@ import {
   Share2,
   SlidersHorizontal,
   Trash2,
+  Sparkles,
+  GitBranch,
+  Repeat,
+  Code2,
+  Sliders,
+  Hourglass,
 } from "lucide-react";
 import {
   FaInstagram,
@@ -21,6 +27,12 @@ import type {
   HttpNodeData,
   WebhookNodeData,
   ImageAssetNodeData,
+  AiImageGenNodeData,
+  IfNodeData,
+  ForNodeData,
+  CodeNodeData,
+  SetFieldsNodeData,
+  DelayNodeData,
   SocialAccountNodeData,
   SocialsAggregatorData,
 } from "./types";
@@ -53,8 +65,20 @@ export const CompactNodeCard: React.FC<CompactNodeCardProps> = ({
         return <Globe className="w-4 h-4 text-orange-400" />;
       case "image-asset":
         return <ImageIcon className="w-4 h-4 text-cyan-400" />;
+      case "ai-image-generator":
+        return <Sparkles className="w-4 h-4 text-pink-400" />;
       case "webhook":
         return <Webhook className="w-4 h-4 text-purple-400" />;
+      case "if-condition":
+        return <GitBranch className="w-4 h-4 text-emerald-400" />;
+      case "for-loop":
+        return <Repeat className="w-4 h-4 text-blue-400" />;
+      case "code-javascript":
+        return <Code2 className="w-4 h-4 text-amber-400" />;
+      case "set-fields":
+        return <Sliders className="w-4 h-4 text-purple-400" />;
+      case "delay-wait":
+        return <Hourglass className="w-4 h-4 text-cyan-400" />;
       case "socials-aggregator":
         return <Share2 className="w-4 h-4 text-pink-400" />;
       case "social-instagram":
@@ -127,6 +151,103 @@ export const CompactNodeCard: React.FC<CompactNodeCardProps> = ({
             ) : (
               <span className="text-[11px] text-zinc-500 italic">No image selected</span>
             )}
+          </div>
+        );
+      }
+
+      case "ai-image-generator": {
+        const d = node.data as AiImageGenNodeData;
+        return (
+          <div className="flex items-center gap-1.5 min-w-0 mt-0.5">
+            {d.generatedImage?.url ? (
+              <img
+                src={d.generatedImage.url}
+                alt="Gen"
+                className="w-4 h-4 rounded object-cover border border-pink-500/40 flex-shrink-0"
+              />
+            ) : null}
+            <span className="px-1 py-0.2 text-[9px] font-mono font-medium rounded border border-pink-500/30 bg-pink-500/10 text-pink-300 flex-shrink-0">
+              {d.model ? d.model.replace("Flux.1 Pro", "Flux").replace("Flux Schnell", "Schnell") : "Flux"}
+            </span>
+            <span className="text-[11px] text-zinc-300 truncate max-w-[120px]" title={d.prompt}>
+              {d.prompt || "No prompt"}
+            </span>
+          </div>
+        );
+      }
+
+      case "if-condition": {
+        const d = node.data as IfNodeData;
+        const opSym =
+          d.condition?.operator === "equals"
+            ? "=="
+            : d.condition?.operator === "not_equals"
+            ? "!="
+            : d.condition?.operator || "==";
+        return (
+          <div className="flex items-center gap-1.5 min-w-0 mt-0.5">
+            <span className="px-1 py-0.2 text-[9px] font-mono font-bold rounded border border-emerald-500/30 bg-emerald-500/10 text-emerald-300">
+              IF
+            </span>
+            <span className="text-[11px] text-zinc-300 truncate max-w-[140px]" title={`${d.condition?.field} ${opSym} ${d.condition?.value}`}>
+              {d.condition?.field || "val"} {opSym} {d.condition?.value || '""'}
+            </span>
+          </div>
+        );
+      }
+
+      case "for-loop": {
+        const d = node.data as ForNodeData;
+        return (
+          <div className="flex items-center gap-1.5 min-w-0 mt-0.5">
+            <span className="px-1 py-0.2 text-[9px] font-mono font-bold rounded border border-blue-500/30 bg-blue-500/10 text-blue-300">
+              LOOP
+            </span>
+            <span className="text-[11px] text-zinc-400 truncate max-w-[135px]">
+              {d.fieldPath || "items"} (batch: {d.batchSize || 1})
+            </span>
+          </div>
+        );
+      }
+
+      case "code-javascript": {
+        return (
+          <div className="flex items-center gap-1.5 min-w-0 mt-0.5">
+            <span className="px-1 py-0.2 text-[9px] font-mono font-bold rounded border border-amber-500/30 bg-amber-500/10 text-amber-300">
+              JS
+            </span>
+            <span className="text-[11px] text-zinc-400 truncate max-w-[140px]">
+              Execute code
+            </span>
+          </div>
+        );
+      }
+
+      case "set-fields": {
+        const d = node.data as SetFieldsNodeData;
+        const count = d.fields?.length || 0;
+        return (
+          <div className="flex items-center gap-1.5 min-w-0 mt-0.5">
+            <span className="px-1 py-0.2 text-[9px] font-mono font-bold rounded border border-purple-500/30 bg-purple-500/10 text-purple-300">
+              SET
+            </span>
+            <span className="text-[11px] text-zinc-400 truncate max-w-[140px]">
+              {count} {count === 1 ? "field" : "fields"}
+            </span>
+          </div>
+        );
+      }
+
+      case "delay-wait": {
+        const d = node.data as DelayNodeData;
+        return (
+          <div className="flex items-center gap-1.5 min-w-0 mt-0.5">
+            <span className="px-1 py-0.2 text-[9px] font-mono font-bold rounded border border-cyan-500/30 bg-cyan-500/10 text-cyan-300">
+              WAIT
+            </span>
+            <span className="text-[11px] text-zinc-400 truncate max-w-[140px]">
+              {d.duration} {d.unit}
+            </span>
           </div>
         );
       }

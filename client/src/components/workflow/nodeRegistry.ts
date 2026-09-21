@@ -17,6 +17,96 @@ export const NODE_REGISTRY: Record<NodeType, NodeRegistryEntry> = {
     defaultData: () => ({ selectedImage: null }),
   },
 
+  "ai-image-generator": {
+    type: "ai-image-generator",
+    label: "AI Image Generator",
+    description: "Generate AI artwork from prompt input or text wires",
+    accentColor: "#ec4899",
+    iconColor: "text-pink-400",
+    category: "source",
+    defaultSize: { w: 240, h: 64 },
+    defaultData: () => ({
+      prompt: "Cyberpunk iridescent android portrait, volumetric neon lighting",
+      model: "Flux Schnell",
+      aspectRatio: "1:1",
+      stylePreset: "photorealistic",
+      negativePrompt: "blurry, low quality, distorted",
+      generatedImage: null,
+      isGenerating: false,
+    }),
+  },
+
+  "if-condition": {
+    type: "if-condition",
+    label: "If (Condition)",
+    description: "Branch workflow conditionally to True or False outputs",
+    accentColor: "#10b981",
+    iconColor: "text-emerald-400",
+    category: "control",
+    defaultSize: { w: 240, h: 64 },
+    defaultData: () => ({
+      condition: { field: "status", operator: "equals" as const, value: "success" },
+    }),
+  },
+
+  "for-loop": {
+    type: "for-loop",
+    label: "For (Loop)",
+    description: "Iterate over array items or split into batches",
+    accentColor: "#3b82f6",
+    iconColor: "text-blue-400",
+    category: "control",
+    defaultSize: { w: 240, h: 64 },
+    defaultData: () => ({
+      batchSize: 1,
+      fieldPath: "items",
+      maxIterations: 10,
+      currentIteration: 0,
+    }),
+  },
+
+  "code-javascript": {
+    type: "code-javascript",
+    label: "Code (JavaScript)",
+    description: "Run custom JavaScript code to transform or filter data",
+    accentColor: "#f59e0b",
+    iconColor: "text-amber-400",
+    category: "transform",
+    defaultSize: { w: 240, h: 64 },
+    defaultData: () => ({
+      code: "// Transform payload\nreturn {\n  ...data,\n  processedAt: new Date().toISOString()\n};",
+      language: "javascript" as const,
+    }),
+  },
+
+  "set-fields": {
+    type: "set-fields",
+    label: "Set (Edit Fields)",
+    description: "Assign, update, or append variable fields to payload",
+    accentColor: "#8b5cf6",
+    iconColor: "text-purple-400",
+    category: "transform",
+    defaultSize: { w: 240, h: 64 },
+    defaultData: () => ({
+      fields: [{ key: "status", value: "active", type: "string" as const }],
+      mode: "append" as const,
+    }),
+  },
+
+  "delay-wait": {
+    type: "delay-wait",
+    label: "Delay / Wait",
+    description: "Pause workflow execution for a specified duration",
+    accentColor: "#06b6d4",
+    iconColor: "text-cyan-400",
+    category: "control",
+    defaultSize: { w: 240, h: 64 },
+    defaultData: () => ({
+      duration: 3,
+      unit: "seconds" as const,
+    }),
+  },
+
   "http-request": {
     type: "http-request",
     label: "HTTP Request",
@@ -142,6 +232,7 @@ export const NODE_REGISTRY: Record<NodeType, NodeRegistryEntry> = {
 export const NODE_CATEGORIES = {
   source: Object.values(NODE_REGISTRY).filter((n) => n.category === "source"),
   trigger: Object.values(NODE_REGISTRY).filter((n) => n.category === "trigger"),
+  control: Object.values(NODE_REGISTRY).filter((n) => n.category === "control"),
   transform: Object.values(NODE_REGISTRY).filter((n) => n.category === "transform"),
   destination: Object.values(NODE_REGISTRY).filter((n) => n.category === "destination"),
 };
@@ -149,8 +240,14 @@ export const NODE_CATEGORIES = {
 /** Width of each node type in px — used for SVG wire endpoint calculation */
 export const NODE_WIDTHS: Partial<Record<NodeType, number>> = {
   "image-asset": 240,
+  "ai-image-generator": 240,
   "http-request": 240,
   webhook: 240,
+  "if-condition": 240,
+  "for-loop": 240,
+  "code-javascript": 240,
+  "set-fields": 240,
+  "delay-wait": 240,
   "socials-aggregator": 240,
   "social-instagram": 240,
   "social-x": 240,

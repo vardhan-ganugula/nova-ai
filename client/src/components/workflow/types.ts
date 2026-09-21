@@ -211,7 +211,7 @@ export interface NodeRegistryEntry {
   description: string;
   accentColor: string;       // tailwind color string for glow / border
   iconColor: string;
-  category: "source" | "transform" | "destination" | "trigger";
+  category: "source" | "transform" | "destination" | "trigger" | "control";
   defaultData: () => CanvasNode["data"];
   defaultSize: { w: number; h: number };
 }

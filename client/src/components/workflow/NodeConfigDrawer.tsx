@@ -21,6 +21,11 @@ import {
   CheckCircle2,
   Loader2,
   Code2,
+  GitBranch,
+  Repeat,
+  Sliders,
+  Hourglass,
+  Wand2,
 } from "lucide-react";
 import {
   FaInstagram,
@@ -36,13 +41,21 @@ import type {
   HttpNodeData,
   WebhookNodeData,
   ImageAssetNodeData,
+  AiImageGenNodeData,
+  IfNodeData,
+  IfCondition,
+  ForNodeData,
+  CodeNodeData,
+  SetFieldsNodeData,
+  SetFieldItem,
+  DelayNodeData,
   SocialAccountNodeData,
   SocialsAggregatorData,
   WorkflowImageItem,
   PlatformId,
 } from "./types";
 import { NODE_REGISTRY } from "./nodeRegistry";
-import { useGetUserHistoryQuery } from "@/store/authSlice";
+import { useGetUserHistoryQuery, useGenerateImageMutation } from "@/store/authSlice";
 import { useGetSocialAccountsQuery } from "@/store/socialSlice";
 import toast from "react-hot-toast";
 
@@ -93,6 +106,9 @@ export const NodeConfigDrawer: React.FC<NodeConfigDrawerProps> = ({
   const [titleInput, setTitleInput] = useState("");
   const [copiedId, setCopiedId] = useState(false);
   const [copiedPayload, setCopiedPayload] = useState(false);
+
+  // Backend image generation mutation
+  const [generateImageApi] = useGenerateImageMutation();
 
   // Test execution state
   const [isExecutingTest, setIsExecutingTest] = useState(false);
@@ -225,6 +241,156 @@ export const NodeConfigDrawer: React.FC<NodeConfigDrawerProps> = ({
         break;
       }
 
+      case "ai-image-generator": {
+        const d = node.data as AiImageGenNodeData;
+        const promptToUse = d.prompt?.trim() || "Cyberpunk iridescent android portrait, volumetric neon lighting";
+        const modelToUse = d.model || "Flux Schnell";
+        const toastId = toast.loading(`Generating artwork with ${modelToUse}…`);
+        try {
+          const res = await generateImageApi({
+            prompt: promptToUse,
+            negativePrompt: d.negativePrompt,
+            style: d.stylePreset,
+            aspectRatio: d.aspectRatio || "1:1",
+            model: modelToUse,
+          }).unwrap();
+
+          const realUrl = res.url || res.image?.r2Url || res.image?.watermarkedR2Url;
+          const generatedImg: WorkflowImageItem = {
+            id: res.image?.id || `gen-${Date.now()}`,
+            url: realUrl,
+            prompt: promptToUse,
+            model: modelToUse,
+            aspectRatio: d.aspectRatio || "1:1",
+            createdAt: "Just now",
+          };
+          onUpdateData(node.id, { generatedImage: generatedImg, isGenerating: false });
+          const resp = {
+            success: true,
+            outputPort: "IMAGE_OUT",
+            promptUsed: promptToUse,
+            model: modelToUse,
+            aspectRatio: d.aspectRatio,
+            creditsRemaining: res.creditsRemaining,
+            tokensDeducted: res.tokensDeducted,
+            image: generatedImg,
+          };
+          setTestResponse(JSON.stringify(resp, null, 2));
+          setTestStatus(200);
+          setTestLatency(Date.now() - start);
+          toast.success("Artwork rendered & saved to R2!", { id: toastId });
+        } catch (apiErr: any) {
+          const errMsg = apiErr?.data?.error || apiErr?.message || "Failed to generate image via Fal AI";
+          const errResp = {
+            success: false,
+            error: errMsg,
+            creditsRemaining: apiErr?.data?.credits,
+          };
+          setTestResponse(JSON.stringify(errResp, null, 2));
+          setTestStatus(apiErr?.status || 500);
+          setTestLatency(Date.now() - start);
+          toast.error(errMsg, { id: toastId });
+        }
+        break;
+      }
+
+      case "if-condition": {
+        const d = node.data as IfNodeData;
+        const testPayload = { status: "success", count: 12, ok: true };
+        const op = d.condition?.operator || "equals";
+        const val = d.condition?.value ?? "success";
+        const actualVal = (testPayload as any)[d.condition?.field || "status"] ?? "success";
+        let isTrue = false;
+        if (op === "equals") isTrue = String(actualVal) === String(val);
+        else if (op === "not_equals") isTrue = String(actualVal) !== String(val);
+        else if (op === "contains") isTrue = String(actualVal).includes(String(val));
+        else if (op === "is_empty") isTrue = !actualVal;
+        else if (op === "is_not_empty") isTrue = Boolean(actualVal);
+        else if (op === "greater_than") isTrue = Number(actualVal) > Number(val);
+        else if (op === "less_than") isTrue = Number(actualVal) < Number(val);
+        else isTrue = Boolean(actualVal);
+
+        const resp = {
+          evaluatedField: d.condition?.field || "status",
+          operator: op,
+          compareValue: val,
+          actualValue: actualVal,
+          branchResult: isTrue ? "TRUE_OUT" : "FALSE_OUT",
+          isConditionMet: isTrue,
+          samplePayload: testPayload,
+        };
+        setTestResponse(JSON.stringify(resp, null, 2));
+        setTestStatus(200);
+        setTestLatency(latency);
+        break;
+      }
+
+      case "for-loop": {
+        const d = node.data as ForNodeData;
+        const sampleItems = ["Item 1: Cyberpunk Art", "Item 2: Ethereal Landscape", "Item 3: Neon Samurai"];
+        const resp = {
+          batchSize: d.batchSize || 1,
+          totalItems: sampleItems.length,
+          currentBatch: sampleItems.slice(0, d.batchSize || 1),
+          activePort: "LOOP_ITEM",
+          completedPort: "DONE_OUT",
+        };
+        setTestResponse(JSON.stringify(resp, null, 2));
+        setTestStatus(200);
+        setTestLatency(latency);
+        break;
+      }
+
+      case "code-javascript": {
+        const d = node.data as CodeNodeData;
+        let evalResult: any;
+        try {
+          const fn = new Function("data", d.code || "return data;");
+          evalResult = fn({ status: 200, message: "Sample input data" });
+        } catch (err: any) {
+          evalResult = { error: err.message };
+        }
+        const resp = {
+          executionSuccess: !evalResult.error,
+          transformedPayload: evalResult,
+        };
+        setTestResponse(JSON.stringify(resp, null, 2));
+        setTestStatus(evalResult.error ? 500 : 200);
+        setTestLatency(latency);
+        break;
+      }
+
+      case "set-fields": {
+        const d = node.data as SetFieldsNodeData;
+        const mergedFields: Record<string, any> = {};
+        d.fields?.forEach((f) => {
+          mergedFields[f.key] = f.type === "number" ? Number(f.value) : f.type === "boolean" ? f.value === "true" : f.value;
+        });
+        const resp = {
+          mode: d.mode || "append",
+          fieldsSet: mergedFields,
+          resultingPayload: { id: "req_demo_01", ...mergedFields },
+        };
+        setTestResponse(JSON.stringify(resp, null, 2));
+        setTestStatus(200);
+        setTestLatency(latency);
+        break;
+      }
+
+      case "delay-wait": {
+        const d = node.data as DelayNodeData;
+        const resp = {
+          status: "completed",
+          waitedMs: Math.min(latency, 2000),
+          configuredDuration: `${d.duration || 3} ${d.unit || "seconds"}`,
+          readyForNextNode: true,
+        };
+        setTestResponse(JSON.stringify(resp, null, 2));
+        setTestStatus(200);
+        setTestLatency(latency);
+        break;
+      }
+
       default: {
         const resp = {
           success: true,
@@ -250,8 +416,20 @@ export const NodeConfigDrawer: React.FC<NodeConfigDrawerProps> = ({
         return <Globe className="w-5 h-5 text-orange-400" />;
       case "image-asset":
         return <ImageIcon className="w-5 h-5 text-cyan-400" />;
+      case "ai-image-generator":
+        return <Sparkles className="w-5 h-5 text-pink-400" />;
       case "webhook":
         return <Webhook className="w-5 h-5 text-purple-400" />;
+      case "if-condition":
+        return <GitBranch className="w-5 h-5 text-emerald-400" />;
+      case "for-loop":
+        return <Repeat className="w-5 h-5 text-blue-400" />;
+      case "code-javascript":
+        return <Code2 className="w-5 h-5 text-amber-400" />;
+      case "set-fields":
+        return <Sliders className="w-5 h-5 text-purple-400" />;
+      case "delay-wait":
+        return <Hourglass className="w-5 h-5 text-cyan-400" />;
       case "socials-aggregator":
         return <Share2 className="w-5 h-5 text-pink-400" />;
       case "social-instagram":
@@ -457,6 +635,18 @@ const ParametersSection: React.FC<ParametersSectionProps> = ({
       return <WebhookParamsEditor node={node} onUpdateData={onUpdateData} />;
     case "image-asset":
       return <ImageParamsEditor node={node} onUpdateData={onUpdateData} />;
+    case "ai-image-generator":
+      return <AiImageGenParamsEditor node={node} onUpdateData={onUpdateData} />;
+    case "if-condition":
+      return <IfParamsEditor node={node} onUpdateData={onUpdateData} />;
+    case "for-loop":
+      return <ForParamsEditor node={node} onUpdateData={onUpdateData} />;
+    case "code-javascript":
+      return <CodeParamsEditor node={node} onUpdateData={onUpdateData} />;
+    case "set-fields":
+      return <SetFieldsParamsEditor node={node} onUpdateData={onUpdateData} />;
+    case "delay-wait":
+      return <DelayParamsEditor node={node} onUpdateData={onUpdateData} />;
     case "social-instagram":
     case "social-x":
     case "social-facebook":
@@ -1131,6 +1321,570 @@ const SocialsAggregatorParamsEditor: React.FC<{
             Connect an Image Library node to attach artwork.
           </div>
         )}
+      </div>
+    </div>
+  );
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 6. AI Image Generator Parameters Editor
+// ─────────────────────────────────────────────────────────────────────────────
+const AiImageGenParamsEditor: React.FC<{
+  node: CanvasNode;
+  onUpdateData: (nodeId: string, patch: Partial<AiImageGenNodeData>) => void;
+}> = ({ node, onUpdateData }) => {
+  const data = node.data as AiImageGenNodeData;
+  const [generateImageApi, { isLoading: isGenerating }] = useGenerateImageMutation();
+  const models = [
+    "Flux Schnell",
+    "Flux Dev",
+    "Flux Pro",
+    "Flux Realism LoRA",
+    "Stable Diffusion 3.5 Large",
+    "Ideogram v2",
+  ];
+  const aspectRatios = ["1:1", "16:9", "9:16", "4:3"];
+  const stylePresets = ["photorealistic", "cinematic", "anime", "digital-art", "cyberpunk"];
+
+  const handleGenerateDirect = async () => {
+    const promptToUse = data.prompt?.trim() || "Cyberpunk iridescent android portrait, volumetric neon lighting";
+    const modelToUse = data.model || "Flux Schnell";
+    const toastId = toast.loading(`Synthesizing artwork with ${modelToUse} via Fal AI…`);
+    try {
+      const res = await generateImageApi({
+        prompt: promptToUse,
+        negativePrompt: data.negativePrompt,
+        style: data.stylePreset,
+        aspectRatio: data.aspectRatio || "1:1",
+        model: modelToUse,
+      }).unwrap();
+
+      const realUrl = res.url || res.image?.r2Url || res.image?.watermarkedR2Url;
+      const generatedImg: WorkflowImageItem = {
+        id: res.image?.id || `gen-${Date.now()}`,
+        url: realUrl,
+        prompt: promptToUse,
+        model: modelToUse,
+        aspectRatio: data.aspectRatio || "1:1",
+        createdAt: "Just now",
+      };
+      onUpdateData(node.id, { generatedImage: generatedImg });
+      toast.success("Artwork rendered & saved to storage!", { id: toastId });
+    } catch (err: any) {
+      const msg = err?.data?.error || err?.message || "Failed to generate image";
+      toast.error(msg, { id: toastId });
+    }
+  };
+
+  return (
+    <div className="space-y-5">
+      {/* Dynamic input notice */}
+      <div className="p-3 rounded-xl bg-pink-500/10 border border-pink-500/30 text-xs text-pink-300 flex items-start gap-2.5">
+        <Sparkles className="w-4 h-4 text-pink-400 flex-shrink-0 mt-0.5" />
+        <div className="leading-relaxed">
+          <span className="font-semibold text-white">Prompt Input Handle: </span>
+          You can drag a wire from an upstream node (HTTP Request, Webhook, Code, etc.) to this node's <span className="font-mono text-pink-200 font-bold">Prompt In</span> port, or set a static prompt below.
+        </div>
+      </div>
+
+      {/* Prompt Textarea */}
+      <div>
+        <label className="block text-xs font-semibold text-zinc-300 mb-1.5">Default Prompt</label>
+        <textarea
+          value={data.prompt}
+          onChange={(e) => onUpdateData(node.id, { prompt: e.target.value })}
+          rows={3}
+          placeholder="Describe the image you want to generate in rich detail…"
+          className="w-full bg-[#181820] border border-white/[0.09] focus:border-pink-500 rounded-xl p-3 text-xs text-white placeholder:text-zinc-600 focus:outline-none leading-relaxed"
+        />
+      </div>
+
+      {/* Model selector */}
+      <div>
+        <label className="block text-xs font-semibold text-zinc-300 mb-1.5">AI Generation Model</label>
+        <div className="grid grid-cols-2 gap-2">
+          {models.map((m) => (
+            <button
+              key={m}
+              type="button"
+              onClick={() => onUpdateData(node.id, { model: m })}
+              className={`px-3 py-2 text-xs font-medium rounded-xl border transition text-left flex items-center justify-between ${
+                (data.model || "Flux Schnell") === m
+                  ? "bg-pink-500/20 border-pink-500 text-pink-300"
+                  : "bg-[#181820] border-white/[0.08] text-zinc-400 hover:text-zinc-200"
+              }`}
+            >
+              <span className="truncate">{m}</span>
+              {(data.model || "Flux Schnell") === m && <Check className="w-3.5 h-3.5 flex-shrink-0" />}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Aspect Ratio & Style */}
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className="block text-xs font-semibold text-zinc-300 mb-1.5">Aspect Ratio</label>
+          <div className="grid grid-cols-2 gap-1.5">
+            {aspectRatios.map((ar) => (
+              <button
+                key={ar}
+                type="button"
+                onClick={() => onUpdateData(node.id, { aspectRatio: ar })}
+                className={`py-1.5 text-xs font-mono rounded-lg border transition ${
+                  data.aspectRatio === ar
+                    ? "bg-pink-500/20 border-pink-500 text-pink-300"
+                    : "bg-[#181820] border-white/[0.08] text-zinc-400 hover:text-zinc-200"
+                }`}
+              >
+                {ar}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div>
+          <label className="block text-xs font-semibold text-zinc-300 mb-1.5">Style Preset</label>
+          <select
+            value={data.stylePreset || "photorealistic"}
+            onChange={(e) => onUpdateData(node.id, { stylePreset: e.target.value })}
+            className="w-full bg-[#181820] border border-white/[0.08] rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-pink-500 capitalize"
+          >
+            {stylePresets.map((s) => (
+              <option key={s} value={s} className="bg-[#181820] text-white capitalize">
+                {s.replace("-", " ")}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      {/* Negative Prompt */}
+      <div>
+        <label className="block text-xs font-semibold text-zinc-300 mb-1.5">Negative Prompt (Optional)</label>
+        <input
+          type="text"
+          value={data.negativePrompt || ""}
+          onChange={(e) => onUpdateData(node.id, { negativePrompt: e.target.value })}
+          placeholder="blurry, distorted, low quality, watermarks…"
+          className="w-full bg-[#181820] border border-white/[0.08] rounded-xl px-3 py-2 text-xs text-white placeholder:text-zinc-600 focus:outline-none focus:border-pink-500"
+        />
+      </div>
+
+      {/* Generated Image Output Preview */}
+      <div>
+        <label className="block text-xs font-semibold text-zinc-300 mb-1.5">Active Image Output</label>
+        {data.generatedImage?.url ? (
+          <div className="p-2.5 rounded-xl bg-[#181820] border border-pink-500/40 flex items-center gap-3">
+            <img
+              src={data.generatedImage.url}
+              alt="Generated"
+              className="w-14 h-14 rounded-lg object-cover border border-white/[0.1]"
+            />
+            <div className="min-w-0 flex-1">
+              <div className="text-xs font-medium text-white truncate">{data.generatedImage.prompt}</div>
+              <div className="text-[10px] text-pink-400 font-mono mt-0.5">
+                {data.generatedImage.aspectRatio} · Ready for downstream ports
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="p-3.5 rounded-xl border border-dashed border-white/[0.08] text-center text-xs text-zinc-500">
+            No artwork generated yet. Click below to generate now.
+          </div>
+        )}
+
+        <button
+          type="button"
+          disabled={isGenerating}
+          onClick={handleGenerateDirect}
+          className="w-full mt-3 py-2.5 px-3 rounded-xl bg-gradient-to-r from-pink-500 to-violet-600 hover:from-pink-400 hover:to-violet-500 text-white font-medium text-xs flex items-center justify-center gap-2 shadow-lg shadow-pink-500/20 disabled:opacity-50 transition cursor-pointer"
+        >
+          {isGenerating ? (
+            <>
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              <span>Synthesizing with Fal AI & R2…</span>
+            </>
+          ) : (
+            <>
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>Generate Artwork Now</span>
+            </>
+          )}
+        </button>
+      </div>
+    </div>
+  );
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 7. If (Condition) Parameters Editor
+// ─────────────────────────────────────────────────────────────────────────────
+const IfParamsEditor: React.FC<{
+  node: CanvasNode;
+  onUpdateData: (nodeId: string, patch: Partial<IfNodeData>) => void;
+}> = ({ node, onUpdateData }) => {
+  const data = node.data as IfNodeData;
+  const condition = data.condition || { field: "status", operator: "equals", value: "success" };
+
+  const updateCondition = (patch: Partial<IfCondition>) => {
+    onUpdateData(node.id, { condition: { ...condition, ...patch } });
+  };
+
+  const operators = [
+    { value: "equals", label: "Equals (==)" },
+    { value: "not_equals", label: "Not Equals (!=)" },
+    { value: "contains", label: "Contains text" },
+    { value: "greater_than", label: "Greater than (>)" },
+    { value: "less_than", label: "Less than (<)" },
+    { value: "is_empty", label: "Is Empty / Null" },
+    { value: "is_not_empty", label: "Is Not Empty" },
+  ];
+
+  return (
+    <div className="space-y-5">
+      {/* Branch visual diagram */}
+      <div className="p-3.5 rounded-xl bg-[#181820] border border-white/[0.08] space-y-2">
+        <div className="text-xs font-semibold text-white flex items-center gap-2">
+          <GitBranch className="w-4 h-4 text-emerald-400" />
+          <span>Conditional Routing Branches</span>
+        </div>
+        <div className="grid grid-cols-2 gap-2 text-xs">
+          <div className="p-2 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-300">
+            <div className="font-bold flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-emerald-400" />
+              <span>True Output</span>
+            </div>
+            <p className="text-[10px] text-zinc-400 mt-1">Routes payload when condition is met.</p>
+          </div>
+          <div className="p-2 rounded-lg bg-red-500/10 border border-red-500/30 text-red-300">
+            <div className="font-bold flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-red-400" />
+              <span>False Output</span>
+            </div>
+            <p className="text-[10px] text-zinc-400 mt-1">Routes payload when condition fails.</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Field Input */}
+      <div>
+        <label className="block text-xs font-semibold text-zinc-300 mb-1.5">Field / Variable Path</label>
+        <input
+          type="text"
+          value={condition.field}
+          onChange={(e) => updateCondition({ field: e.target.value })}
+          placeholder="e.g. status or data.ok or statusCode"
+          className="w-full bg-[#181820] border border-white/[0.09] focus:border-emerald-500 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder:text-zinc-600 focus:outline-none transition font-mono"
+        />
+      </div>
+
+      {/* Operator Selector */}
+      <div>
+        <label className="block text-xs font-semibold text-zinc-300 mb-1.5">Comparison Operator</label>
+        <select
+          value={condition.operator}
+          onChange={(e) => updateCondition({ operator: e.target.value as any })}
+          className="w-full bg-[#181820] border border-white/[0.09] rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-500"
+        >
+          {operators.map((op) => (
+            <option key={op.value} value={op.value} className="bg-[#181820] text-white">
+              {op.label}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      {/* Compare Value */}
+      {!["is_empty", "is_not_empty"].includes(condition.operator) && (
+        <div>
+          <label className="block text-xs font-semibold text-zinc-300 mb-1.5">Compare Value</label>
+          <input
+            type="text"
+            value={condition.value}
+            onChange={(e) => updateCondition({ value: e.target.value })}
+            placeholder="Value to compare against"
+            className="w-full bg-[#181820] border border-white/[0.09] focus:border-emerald-500 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder:text-zinc-600 focus:outline-none transition"
+          />
+        </div>
+      )}
+    </div>
+  );
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 8. For (Loop) Parameters Editor
+// ─────────────────────────────────────────────────────────────────────────────
+const ForParamsEditor: React.FC<{
+  node: CanvasNode;
+  onUpdateData: (nodeId: string, patch: Partial<ForNodeData>) => void;
+}> = ({ node, onUpdateData }) => {
+  const data = node.data as ForNodeData;
+
+  return (
+    <div className="space-y-5">
+      {/* Explanatory Diagram */}
+      <div className="p-3.5 rounded-xl bg-[#181820] border border-white/[0.08] space-y-2">
+        <div className="text-xs font-semibold text-white flex items-center gap-2">
+          <Repeat className="w-4 h-4 text-blue-400" />
+          <span>Batch & Loop Output Flow</span>
+        </div>
+        <div className="grid grid-cols-2 gap-2 text-xs">
+          <div className="p-2 rounded-lg bg-blue-500/10 border border-blue-500/30 text-blue-300">
+            <div className="font-bold flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-blue-400" />
+              <span>Loop Item</span>
+            </div>
+            <p className="text-[10px] text-zinc-400 mt-1">Iterates downstream for each item/batch.</p>
+          </div>
+          <div className="p-2 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-300">
+            <div className="font-bold flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-emerald-400" />
+              <span>Done</span>
+            </div>
+            <p className="text-[10px] text-zinc-400 mt-1">Triggers when all items finish.</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Field Path */}
+      <div>
+        <label className="block text-xs font-semibold text-zinc-300 mb-1.5">Array Field Path</label>
+        <input
+          type="text"
+          value={data.fieldPath}
+          onChange={(e) => onUpdateData(node.id, { fieldPath: e.target.value })}
+          placeholder="e.g. items, results, or data.records"
+          className="w-full bg-[#181820] border border-white/[0.09] focus:border-blue-500 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder:text-zinc-600 focus:outline-none transition font-mono"
+        />
+      </div>
+
+      {/* Batch Size */}
+      <div>
+        <label className="block text-xs font-semibold text-zinc-300 mb-1.5">Batch Size</label>
+        <input
+          type="number"
+          min={1}
+          max={100}
+          value={data.batchSize || 1}
+          onChange={(e) => onUpdateData(node.id, { batchSize: Math.max(1, parseInt(e.target.value) || 1) })}
+          className="w-full bg-[#181820] border border-white/[0.09] focus:border-blue-500 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none transition"
+        />
+        <p className="text-[11px] text-zinc-500 mt-1">Number of items emitted per iteration loop.</p>
+      </div>
+
+      {/* Max Iterations */}
+      <div>
+        <label className="block text-xs font-semibold text-zinc-300 mb-1.5">Max Iterations Limit</label>
+        <input
+          type="number"
+          min={1}
+          max={1000}
+          value={data.maxIterations || 10}
+          onChange={(e) => onUpdateData(node.id, { maxIterations: Math.max(1, parseInt(e.target.value) || 1) })}
+          className="w-full bg-[#181820] border border-white/[0.09] focus:border-blue-500 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none transition"
+        />
+      </div>
+    </div>
+  );
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 9. Code (JavaScript) Parameters Editor
+// ─────────────────────────────────────────────────────────────────────────────
+const CodeParamsEditor: React.FC<{
+  node: CanvasNode;
+  onUpdateData: (nodeId: string, patch: Partial<CodeNodeData>) => void;
+}> = ({ node, onUpdateData }) => {
+  const data = node.data as CodeNodeData;
+
+  const defaultSnippet = `// Incoming payload is available as "data"\nreturn {\n  ...data,\n  transformed: true,\n  processedAt: new Date().toISOString()\n};`;
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <label className="text-xs font-semibold text-zinc-300">JavaScript Transform Code</label>
+        <button
+          type="button"
+          onClick={() => onUpdateData(node.id, { code: defaultSnippet })}
+          className="text-[11px] text-amber-400 hover:text-amber-300 transition"
+        >
+          Reset to Template
+        </button>
+      </div>
+
+      <p className="text-[11px] text-zinc-400 leading-relaxed">
+        Write JavaScript function logic. The incoming node payload is exposed as <code className="text-amber-300 font-mono">data</code>. Return the transformed object.
+      </p>
+
+      <textarea
+        value={data.code}
+        onChange={(e) => onUpdateData(node.id, { code: e.target.value })}
+        rows={10}
+        className="w-full bg-[#0c0c10] font-mono text-xs border border-white/[0.09] focus:border-amber-500 rounded-xl p-3.5 text-amber-300 focus:outline-none leading-relaxed select-text"
+        placeholder={defaultSnippet}
+      />
+    </div>
+  );
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 10. Set (Edit Fields) Parameters Editor
+// ─────────────────────────────────────────────────────────────────────────────
+const SetFieldsParamsEditor: React.FC<{
+  node: CanvasNode;
+  onUpdateData: (nodeId: string, patch: Partial<SetFieldsNodeData>) => void;
+}> = ({ node, onUpdateData }) => {
+  const data = node.data as SetFieldsNodeData;
+  const fields = data.fields || [];
+
+  const addField = () => {
+    onUpdateData(node.id, {
+      fields: [...fields, { key: "", value: "", type: "string" }],
+    });
+  };
+
+  const removeField = (i: number) => {
+    onUpdateData(node.id, {
+      fields: fields.filter((_, idx) => idx !== i),
+    });
+  };
+
+  const updateField = (i: number, patch: Partial<SetFieldItem>) => {
+    const next = [...fields];
+    next[i] = { ...next[i], ...patch };
+    onUpdateData(node.id, { fields: next });
+  };
+
+  return (
+    <div className="space-y-5">
+      {/* Mode Switcher */}
+      <div>
+        <label className="block text-xs font-semibold text-zinc-300 mb-2">Payload Mode</label>
+        <div className="grid grid-cols-2 gap-2 bg-[#181820] p-1 rounded-xl border border-white/[0.08]">
+          <button
+            type="button"
+            onClick={() => onUpdateData(node.id, { mode: "append" })}
+            className={`py-2 text-xs font-medium rounded-lg transition ${
+              data.mode !== "replace" ? "bg-purple-600 text-white shadow" : "text-zinc-400 hover:text-white"
+            }`}
+          >
+            Append to Payload
+          </button>
+          <button
+            type="button"
+            onClick={() => onUpdateData(node.id, { mode: "replace" })}
+            className={`py-2 text-xs font-medium rounded-lg transition ${
+              data.mode === "replace" ? "bg-purple-600 text-white shadow" : "text-zinc-400 hover:text-white"
+            }`}
+          >
+            Replace Payload
+          </button>
+        </div>
+      </div>
+
+      {/* Fields list */}
+      <div>
+        <div className="flex items-center justify-between mb-2">
+          <label className="text-xs font-semibold text-zinc-300">Fields ({fields.length})</label>
+          <button
+            type="button"
+            onClick={addField}
+            className="flex items-center gap-1 text-[11px] text-purple-400 hover:text-purple-300 transition"
+          >
+            <Plus className="w-3 h-3" />
+            <span>Add Field</span>
+          </button>
+        </div>
+
+        <div className="space-y-2">
+          {fields.map((f, i) => (
+            <div key={i} className="flex gap-2 items-center">
+              <input
+                type="text"
+                value={f.key}
+                onChange={(e) => updateField(i, { key: e.target.value })}
+                placeholder="Field name"
+                className="w-2/5 bg-[#181820] border border-white/[0.08] rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none"
+              />
+              <input
+                type="text"
+                value={f.value}
+                onChange={(e) => updateField(i, { value: e.target.value })}
+                placeholder="Value"
+                className="w-2/5 bg-[#181820] border border-white/[0.08] rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none"
+              />
+              <select
+                value={f.type}
+                onChange={(e) => updateField(i, { type: e.target.value as any })}
+                className="w-1/5 bg-[#181820] border border-white/[0.08] rounded-lg px-1 py-1.5 text-xs text-zinc-300 focus:outline-none"
+              >
+                <option value="string">str</option>
+                <option value="number">num</option>
+                <option value="boolean">bool</option>
+              </select>
+              <button
+                type="button"
+                onClick={() => removeField(i)}
+                className="p-1.5 text-zinc-500 hover:text-red-400 rounded transition"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          ))}
+          {fields.length === 0 && (
+            <div className="p-3.5 rounded-xl border border-dashed border-white/[0.08] text-center text-xs text-zinc-500">
+              No fields configured. Click "Add Field" above.
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 11. Delay / Wait Parameters Editor
+// ─────────────────────────────────────────────────────────────────────────────
+const DelayParamsEditor: React.FC<{
+  node: CanvasNode;
+  onUpdateData: (nodeId: string, patch: Partial<DelayNodeData>) => void;
+}> = ({ node, onUpdateData }) => {
+  const data = node.data as DelayNodeData;
+
+  return (
+    <div className="space-y-5">
+      <div className="p-3.5 rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-xs text-cyan-300 flex items-start gap-2.5">
+        <Hourglass className="w-4 h-4 text-cyan-400 flex-shrink-0 mt-0.5" />
+        <div className="leading-relaxed">
+          The pipeline will pause at this node for the configured duration before delivering the payload downstream.
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className="block text-xs font-semibold text-zinc-300 mb-1.5">Wait Duration</label>
+          <input
+            type="number"
+            min={1}
+            max={3600}
+            value={data.duration || 3}
+            onChange={(e) => onUpdateData(node.id, { duration: Math.max(1, parseInt(e.target.value) || 1) })}
+            className="w-full bg-[#181820] border border-white/[0.09] focus:border-cyan-500 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none transition"
+          />
+        </div>
+
+        <div>
+          <label className="block text-xs font-semibold text-zinc-300 mb-1.5">Unit</label>
+          <select
+            value={data.unit || "seconds"}
+            onChange={(e) => onUpdateData(node.id, { unit: e.target.value as any })}
+            className="w-full bg-[#181820] border border-white/[0.09] rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-cyan-500"
+          >
+            <option value="seconds">Seconds</option>
+            <option value="minutes">Minutes</option>
+          </select>
+        </div>
       </div>
     </div>
   );

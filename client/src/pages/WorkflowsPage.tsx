@@ -48,6 +48,7 @@ import type {
   PortDataType,
 } from "@/components/workflow/types";
 import { useCreateSocialPostMutation } from "@/store/socialSlice";
+import { useGenerateImageMutation } from "@/store/authSlice";
 
 // ─── Wire colours ─────────────────────────────────────────────────────────────
 const WIRE_COLORS: Record<string, string> = {
@@ -334,6 +335,7 @@ export default function WorkflowsPage() {
 
   // ── Execute pipeline ───────────────────────────────────────────────────────
   const [createPost] = useCreateSocialPostMutation();
+  const [generateImageApi] = useGenerateImageMutation();
   const isRunningRef = useRef(false);
 
   const handleRunPipeline = async () => {
@@ -364,6 +366,19 @@ export default function WorkflowsPage() {
             imageId: isUuid(payload.imageId) ? payload.imageId : null,
           }).unwrap();
           return res;
+        },
+        onGenerateImage: async (params) => {
+          const res = await generateImageApi({
+            prompt: params.prompt,
+            style: params.style,
+            aspectRatio: params.aspectRatio,
+            model: params.model || "Flux Schnell",
+            negativePrompt: params.negativePrompt,
+          }).unwrap();
+          return {
+            url: res.url || res.image?.r2Url || res.image?.watermarkedR2Url,
+            image: res.image,
+          };
         },
         onComplete: () => {
           addLog({ nodeId: "system", nodeLabel: "System", message: "Pipeline execution complete ✓", level: "success" });
@@ -468,7 +483,7 @@ export default function WorkflowsPage() {
                     </button>
                   </div>
                   <div className="p-2 space-y-3 max-h-80 overflow-y-auto">
-                    {(["source", "trigger", "destination"] as const).map((cat) =>
+                    {(["source", "trigger", "control", "transform", "destination"] as const).map((cat) =>
                       NODE_CATEGORIES[cat].length > 0 && (
                         <div key={cat}>
                           <div className="text-[9px] font-mono text-zinc-600 uppercase tracking-wider px-1.5 mb-1 select-none">{cat}</div>

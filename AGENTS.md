@@ -23,3 +23,6 @@ so dont run npm run build or npm run lint, instead run "npm run dev" if it has e
 - use zod for data validation, request validation and response validation 
 - use redis for caching, rate limiting and pub/sub 
 - use inngest for asynchronous task processing and scheduling 
+
+## Documentation Guide
+update the documentation for existing features and also document the new features i have added, make it detailed and in md format , use mermaid diagrams for sequence diagrams and other diagrams.

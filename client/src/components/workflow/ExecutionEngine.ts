@@ -1,4 +1,17 @@
-import type { CanvasNode, NodeEdge, NodeType, ImageAssetNodeData, HttpNodeData, WebhookNodeData } from "./types";
+import type {
+  CanvasNode,
+  NodeEdge,
+  NodeType,
+  ImageAssetNodeData,
+  HttpNodeData,
+  WebhookNodeData,
+  AiImageGenNodeData,
+  IfNodeData,
+  ForNodeData,
+  CodeNodeData,
+  SetFieldsNodeData,
+  DelayNodeData,
+} from "./types";
 import { NODE_PORTS } from "./ports";
 import { NODE_REGISTRY, NODE_WIDTHS } from "./nodeRegistry";
 
@@ -152,6 +165,165 @@ async function executeNodeLogic(
       }
     }
 
+    case "ai-image-generator": {
+      const d = node.data as AiImageGenNodeData;
+      const incomingPrompt = inputs["PROMPT_IN"];
+      const prompt =
+        (typeof incomingPrompt === "string"
+          ? incomingPrompt
+          : (incomingPrompt as any)?.prompt || (incomingPrompt as any)?.text) ||
+        d.prompt ||
+        "Cinematic futuristic city at sunset, 8k octane render";
+      const model = d.model || "Flux Schnell";
+      log(`Calling AI image generation (${model})… Prompt: "${prompt.slice(0, 45)}…"`, "info");
+
+      if (callbacks?.onGenerateImage) {
+        try {
+          const genRes = await callbacks.onGenerateImage({
+            prompt,
+            style: d.stylePreset,
+            aspectRatio: d.aspectRatio || "1:1",
+            model,
+            negativePrompt: d.negativePrompt,
+          });
+
+          const generatedImg = {
+            id: genRes.image?.id || `gen-${Date.now()}`,
+            url: genRes.url,
+            prompt,
+            model,
+            aspectRatio: d.aspectRatio || "1:1",
+            createdAt: new Date().toISOString(),
+          };
+          log(`✓ Real AI image generated & stored in R2!`, "success");
+          return { IMAGE_OUT: generatedImg };
+        } catch (genErr: any) {
+          const msg = genErr?.data?.error || genErr?.message || "Failed to generate image";
+          log(`AI Image generation failed: ${msg}`, "error");
+          throw new Error(`[AI Generation Error]: ${msg}`);
+        }
+      } else {
+        await delay(900);
+        const generatedImg = {
+          id: `gen-${Date.now()}`,
+          url: `https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&auto=format&fit=crop&q=80`,
+          prompt,
+          model,
+          aspectRatio: d.aspectRatio || "1:1",
+          createdAt: new Date().toISOString(),
+        };
+        log(`✓ Image generated successfully (${model})`, "success");
+        return { IMAGE_OUT: generatedImg };
+      }
+    }
+
+    case "if-condition": {
+      const d = node.data as IfNodeData;
+      const incoming = inputs["VALUE_IN"] ?? inputs["PAYLOAD_IN"] ?? inputs;
+      const field = d.condition?.field;
+      let actualValue: any = incoming;
+      if (field && typeof incoming === "object" && incoming !== null) {
+        actualValue = (incoming as any)[field] ?? incoming;
+      }
+      const expectedValue = d.condition?.value;
+      let isTrue = false;
+      switch (d.condition?.operator) {
+        case "equals":
+          isTrue = String(actualValue) === String(expectedValue);
+          break;
+        case "not_equals":
+          isTrue = String(actualValue) !== String(expectedValue);
+          break;
+        case "contains":
+          isTrue = String(actualValue).toLowerCase().includes(String(expectedValue || "").toLowerCase());
+          break;
+        case "greater_than":
+          isTrue = Number(actualValue) > Number(expectedValue);
+          break;
+        case "less_than":
+          isTrue = Number(actualValue) < Number(expectedValue);
+          break;
+        case "is_empty":
+          isTrue = actualValue === undefined || actualValue === null || actualValue === "" || (Array.isArray(actualValue) && actualValue.length === 0);
+          break;
+        case "is_not_empty":
+          isTrue = actualValue !== undefined && actualValue !== null && actualValue !== "" && (!Array.isArray(actualValue) || actualValue.length > 0);
+          break;
+        default:
+          isTrue = Boolean(actualValue);
+      }
+      log(`Condition: "${field || "value"}" ${d.condition?.operator} "${expectedValue ?? ""}" → ${isTrue ? "TRUE" : "FALSE"}`, isTrue ? "success" : "info");
+      return isTrue ? { TRUE_OUT: incoming } : { FALSE_OUT: incoming };
+    }
+
+    case "for-loop": {
+      const d = node.data as ForNodeData;
+      const incoming = inputs["ARRAY_IN"] ?? inputs["PAYLOAD_IN"] ?? [];
+      let items: any[] = [];
+      if (Array.isArray(incoming)) {
+        items = incoming;
+      } else if (typeof incoming === "object" && incoming !== null) {
+        const arrayKey = d.fieldPath || "items";
+        if (Array.isArray((incoming as any)[arrayKey])) {
+          items = (incoming as any)[arrayKey];
+        } else {
+          items = Object.values(incoming);
+        }
+      } else {
+        items = [incoming];
+      }
+      const batchSize = Math.max(1, d.batchSize || 1);
+      const batch = items.slice(0, batchSize);
+      log(`Looping over array of ${items.length} item(s) (batch size: ${batchSize})`, "info");
+      return {
+        LOOP_ITEM: batchSize === 1 ? batch[0] : batch,
+        DONE_OUT: { totalItems: items.length, items },
+      };
+    }
+
+    case "code-javascript": {
+      const d = node.data as CodeNodeData;
+      const incoming = inputs["DATA_IN"] ?? inputs["PAYLOAD_IN"] ?? {};
+      log(`Executing JavaScript code (${(d.code || "").length} chars)…`, "info");
+      try {
+        const fn = new Function("data", d.code || "return data;");
+        const result = fn(incoming);
+        log(`✓ JS code executed successfully`, "success");
+        return { PAYLOAD_OUT: result !== undefined ? result : incoming };
+      } catch (err: any) {
+        throw new Error(`Code execution error: ${err?.message || String(err)}`);
+      }
+    }
+
+    case "set-fields": {
+      const d = node.data as SetFieldsNodeData;
+      const incoming = inputs["PAYLOAD_IN"] ?? {};
+      const base = d.mode === "replace" ? {} : (typeof incoming === "object" && incoming !== null ? { ...incoming } : { value: incoming });
+      const fields = d.fields || [];
+      for (const f of fields) {
+        if (!f.key) continue;
+        let val: any = f.value;
+        if (f.type === "number") val = Number(f.value);
+        else if (f.type === "boolean") val = f.value === "true";
+        (base as any)[f.key] = val;
+      }
+      log(`Set ${fields.length} field(s) (${d.mode} mode)`, "success");
+      return { PAYLOAD_OUT: base };
+    }
+
+    case "delay-wait": {
+      const d = node.data as DelayNodeData;
+      const incoming = inputs["FLOW_IN"] ?? inputs["PAYLOAD_IN"] ?? {};
+      const unit = d.unit || "seconds";
+      const amount = d.duration || 1;
+      const ms = unit === "minutes" ? amount * 60 * 1000 : amount * 1000;
+      const actualWait = Math.min(ms, 3000);
+      log(`Waiting ${amount} ${unit} (simulating ${actualWait}ms)…`, "info");
+      await delay(actualWait);
+      log(`✓ Delay completed`, "success");
+      return { FLOW_OUT: incoming };
+    }
+
     default:
       return {};
   }
@@ -175,6 +347,13 @@ export interface ExecutionCallbacks {
   onLog: (entry: Omit<LogEntry, "id" | "ts">) => void;
   onComplete: () => void;
   onPublishPost?: (payload: PublishPayload) => Promise<{ message: string; post?: any }>;
+  onGenerateImage?: (params: {
+    prompt: string;
+    style?: string;
+    aspectRatio?: string;
+    model?: string;
+    negativePrompt?: string;
+  }) => Promise<{ url: string; image?: any }>;
 }
 
 export async function runPipeline(
@@ -210,7 +389,11 @@ export async function runPipeline(
       if (edge.targetNodeId !== nodeId) continue;
       const srcOutput = outputs.get(edge.sourceNodeId);
       if (srcOutput) {
-        incoming[edge.targetPort] = srcOutput[edge.sourcePort] ?? Object.values(srcOutput)[0];
+        if (edge.sourcePort in srcOutput) {
+          incoming[edge.targetPort] = srcOutput[edge.sourcePort];
+        } else if (Object.keys(srcOutput).length === 1) {
+          incoming[edge.targetPort] = Object.values(srcOutput)[0];
+        }
       }
     }
     return incoming;
@@ -220,12 +403,30 @@ export async function runPipeline(
     const node = nodeMap.get(nodeId);
     if (!node) continue;
 
-    // If node requires inputs but has no incoming edges connected on the canvas, skip it
+    // If node requires inputs but has no incoming edges connected on the canvas, skip it (unless it's an AI generator configured with a prompt)
     const nodePorts = NODE_PORTS[node.type];
     const incomingEdges = edges.filter((e) => e.targetNodeId === nodeId);
-    if (nodePorts && nodePorts.inputs.length > 0 && incomingEdges.length === 0) {
+    if (
+      nodePorts &&
+      nodePorts.inputs.length > 0 &&
+      incomingEdges.length === 0 &&
+      node.type !== "ai-image-generator"
+    ) {
       onNodeStatus(nodeId, "idle");
       continue;
+    }
+
+    // Branching check: if node has incoming edges from prior executed nodes, but none produced a value for the connected ports (e.g. inactive If branch), skip execution
+    if (incomingEdges.length > 0) {
+      const hasActiveInput = incomingEdges.some((e) => {
+        const srcOutput = outputs.get(e.sourceNodeId);
+        return srcOutput && (e.sourcePort in srcOutput || Object.keys(srcOutput).length === 1);
+      });
+      if (!hasActiveInput) {
+        log(nodeId, `Skipped (inactive conditional branch)`);
+        onNodeStatus(nodeId, "idle");
+        continue;
+      }
     }
 
     onNodeStatus(nodeId, "running");
