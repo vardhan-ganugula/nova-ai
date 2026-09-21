@@ -94,13 +94,68 @@ export interface SocialsAggregatorData {
   caption: string;
 }
 
+export interface IfCondition {
+  field: string;
+  operator: "equals" | "not_equals" | "contains" | "greater_than" | "less_than" | "is_empty" | "is_not_empty";
+  value: string;
+}
+
+export interface IfNodeData {
+  condition: IfCondition;
+}
+
+export interface ForNodeData {
+  batchSize: number;
+  fieldPath: string;
+  maxIterations: number;
+  currentIteration?: number;
+}
+
+export interface CodeNodeData {
+  code: string;
+  language: "javascript";
+  lastOutput?: string;
+}
+
+export interface SetFieldItem {
+  key: string;
+  value: string;
+  type: "string" | "number" | "boolean";
+}
+
+export interface SetFieldsNodeData {
+  fields: SetFieldItem[];
+  mode: "append" | "replace";
+}
+
+export interface DelayNodeData {
+  duration: number;
+  unit: "seconds" | "minutes";
+}
+
+export interface AiImageGenNodeData {
+  prompt: string;
+  model: string;
+  aspectRatio: string;
+  stylePreset: string;
+  negativePrompt?: string;
+  generatedImage: WorkflowImageItem | null;
+  isGenerating?: boolean;
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Universal CanvasNode
 // ─────────────────────────────────────────────────────────────────────────────
 export type NodeType =
   | "image-asset"
+  | "ai-image-generator"
   | "http-request"
   | "webhook"
+  | "if-condition"
+  | "for-loop"
+  | "code-javascript"
+  | "set-fields"
+  | "delay-wait"
   | "social-instagram"
   | "social-x"
   | "social-facebook"
@@ -120,11 +175,18 @@ export interface CanvasNode {
   position: WorkflowPosition;
   data:
     | ImageAssetNodeData
+    | AiImageGenNodeData
     | HttpNodeData
     | WebhookNodeData
+    | IfNodeData
+    | ForNodeData
+    | CodeNodeData
+    | SetFieldsNodeData
+    | DelayNodeData
     | SocialAccountNodeData
     | SocialsAggregatorData;
   selected?: boolean;
+  label?: string;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

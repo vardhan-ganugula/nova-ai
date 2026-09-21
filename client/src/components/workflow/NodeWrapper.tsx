@@ -162,6 +162,7 @@ interface NodeWrapperProps {
   isDragging: boolean;
   pending: PendingConnection | null;
   onMouseDown: (e: React.MouseEvent) => void;
+  onDoubleClick?: () => void;
   onRemove: () => void;
   onStartConnection: (p: PendingConnection) => void;
   onCompleteConnection: (targetNodeId: string, targetPortId: string) => void;
@@ -174,16 +175,16 @@ export const NodeWrapper: React.FC<NodeWrapperProps> = ({
   isDragging,
   pending,
   onMouseDown,
+  onDoubleClick,
   onRemove,
   onStartConnection,
   onCompleteConnection,
   children,
 }) => {
   const ports = NODE_PORTS[node.type] ?? { inputs: [], outputs: [] };
-  const nodeWidth = NODE_WIDTHS[node.type] ?? 320;
+  const nodeWidth = NODE_WIDTHS[node.type] ?? 240;
   const accentColor = NODE_REGISTRY[node.type]?.accentColor ?? "#71717a";
 
-  // Status-driven border glow
   const statusGlow =
     status === "running" ? `0 0 20px ${accentColor}88, 0 0 40px ${accentColor}44` :
     status === "success" ? "0 0 20px #10b98166" :
@@ -200,6 +201,10 @@ export const NodeWrapper: React.FC<NodeWrapperProps> = ({
         zIndex: isDragging ? 100 : 10,
       }}
       onMouseDown={onMouseDown}
+      onDoubleClick={(e) => {
+        e.stopPropagation();
+        onDoubleClick?.();
+      }}
     >
       {/* Status badge */}
       <StatusBadge status={status} />

@@ -24,11 +24,8 @@ import { CanvasControls } from "@/components/workflow/CanvasControls";
 import { MiniMap } from "@/components/workflow/MiniMap";
 
 // ── Node UI components ────────────────────────────────────────────────────────
-import { ImageNode } from "@/components/workflow/ImageNode";
-import { SocialsNode } from "@/components/workflow/SocialsNode";
-import { SocialAccountNode } from "@/components/workflow/nodes/SocialAccountNode";
-import { HttpNode } from "@/components/workflow/nodes/HttpNode";
-import { WebhookNode } from "@/components/workflow/nodes/WebhookNode";
+import { CompactNodeCard } from "@/components/workflow/CompactNodeCard";
+import { NodeConfigDrawer } from "@/components/workflow/NodeConfigDrawer";
 
 // ── Workflow engine ───────────────────────────────────────────────────────────
 import { NodeWrapper, type PendingConnection } from "@/components/workflow/NodeWrapper";
@@ -87,7 +84,7 @@ const loadSavedEdges = (): NodeEdge[] => {
   return [];
 };
 
-const PORT_Y_OFFSET = 180; // default wire midpoint Y
+const PORT_Y_OFFSET = 32; // vertically centered in 64px compact card
 
 // ─────────────────────────────────────────────────────────────────────────────
 export default function WorkflowsPage() {
@@ -174,6 +171,13 @@ export default function WorkflowsPage() {
     return n ? (n.data as ImageAssetNodeData).selectedImage : null;
   }, [nodes]);
 
+  // ── Configuration Drawer state ────────────────────────────────────────────
+  const [activeConfigNodeId, setActiveConfigNodeId] = useState<string | null>(null);
+  const activeConfigNode = useMemo(
+    () => nodes.find((n) => n.id === activeConfigNodeId) || null,
+    [nodes, activeConfigNodeId]
+  );
+
   // ── Update helpers ─────────────────────────────────────────────────────────
   const updateNodeData = useCallback(<T extends CanvasNode["data"]>(id: string, patch: Partial<T>) => {
     setNodes((prev) =>
@@ -181,10 +185,17 @@ export default function WorkflowsPage() {
     );
   }, []);
 
+  const updateNodeLabel = useCallback((id: string, label: string) => {
+    setNodes((prev) =>
+      prev.map((n) => (n.id === id ? { ...n, label } : n))
+    );
+  }, []);
+
   const removeNode = useCallback((id: string) => {
     setNodes((prev) => prev.filter((n) => n.id !== id));
     setEdges((prev) => prev.filter((e) => e.sourceNodeId !== id && e.targetNodeId !== id));
     setNodeStatuses((prev) => { const s = { ...prev }; delete s[id]; return s; });
+    setActiveConfigNodeId((curr) => (curr === id ? null : curr));
   }, []);
 
   // ── Add Node ───────────────────────────────────────────────────────────────
@@ -677,56 +688,18 @@ export default function WorkflowsPage() {
                     isDragging={isDragging}
                     pending={pendingConn}
                     onMouseDown={(e) => handleNodeMouseDown(node.id, node.position, e)}
+                    onDoubleClick={() => setActiveConfigNodeId(node.id)}
                     onRemove={() => removeNode(node.id)}
                     onStartConnection={handleStartConnection}
                     onCompleteConnection={handleCompleteConnection}
                   >
-                    {/* ── Render node body by type ── */}
-                    {node.type === "image-asset" && (
-                      <ImageNode
-                        selectedImage={(node.data as ImageAssetNodeData).selectedImage}
-                        onSelectImage={(img) => updateNodeData<ImageAssetNodeData>(node.id, { selectedImage: img })}
-                        isExecuting={status === "running"}
-                      />
-                    )}
-                    {node.type === "socials-aggregator" && (
-                      <SocialsNode
-                        selectedImage={selectedImage}
-                        targets={(node.data as SocialsAggregatorData).targets}
-                        onToggleTarget={(platform) => {
-                          const d = node.data as SocialsAggregatorData;
-                          updateNodeData<SocialsAggregatorData>(node.id, {
-                            targets: { ...d.targets, [platform]: !d.targets[platform] },
-                          });
-                        }}
-                        caption={(node.data as SocialsAggregatorData).caption}
-                        onChangeCaption={(caption) => updateNodeData<SocialsAggregatorData>(node.id, { caption })}
-                        onPublish={handleRunPipeline}
-                        isPublishing={isRunning}
-                      />
-                    )}
-                    {node.type === "http-request" && (
-                      <HttpNode
-                        data={node.data as HttpNodeData}
-                        onChange={(patch) => updateNodeData<HttpNodeData>(node.id, patch)}
-                        isExecuting={status === "running"}
-                      />
-                    )}
-                    {node.type === "webhook" && (
-                      <WebhookNode
-                        data={node.data as WebhookNodeData}
-                        onChange={(patch) => updateNodeData<WebhookNodeData>(node.id, patch)}
-                        isExecuting={status === "running"}
-                      />
-                    )}
-                    {(["social-instagram", "social-x", "social-facebook", "social-linkedin", "social-youtube", "social-tiktok"] as NodeType[]).includes(node.type) && (
-                      <SocialAccountNode
-                        data={node.data as SocialAccountNodeData}
-                        onChange={(patch) => updateNodeData<SocialAccountNodeData>(node.id, patch)}
-                        selectedImage={selectedImage}
-                        isExecuting={status === "running"}
-                      />
-                    )}
+                    <CompactNodeCard
+                      node={node}
+                      status={status}
+                      isSelected={activeConfigNodeId === node.id}
+                      onOpenConfig={() => setActiveConfigNodeId(node.id)}
+                      onDelete={() => removeNode(node.id)}
+                    />
                   </NodeWrapper>
                 );
               })}
@@ -787,6 +760,16 @@ export default function WorkflowsPage() {
             </div>
           )}
         </div>
+
+        {/* ── Node Configuration Drawer (Double-click or hover configure) ── */}
+        <NodeConfigDrawer
+          node={activeConfigNode}
+          isOpen={!!activeConfigNodeId}
+          onClose={() => setActiveConfigNodeId(null)}
+          onUpdateData={updateNodeData}
+          onUpdateLabel={updateNodeLabel}
+          selectedPipelineImage={selectedImage}
+        />
 
         {/* ── Execution Log panel ── */}
         <ExecutionLog

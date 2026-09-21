@@ -13,7 +13,7 @@ export const NODE_REGISTRY: Record<NodeType, NodeRegistryEntry> = {
     accentColor: "#06b6d4",
     iconColor: "text-cyan-400",
     category: "source",
-    defaultSize: { w: 340, h: 460 },
+    defaultSize: { w: 240, h: 64 },
     defaultData: () => ({ selectedImage: null }),
   },
 
@@ -24,7 +24,7 @@ export const NODE_REGISTRY: Record<NodeType, NodeRegistryEntry> = {
     accentColor: "#f97316",
     iconColor: "text-orange-400",
     category: "trigger",
-    defaultSize: { w: 340, h: 360 },
+    defaultSize: { w: 240, h: 64 },
     defaultData: (): HttpNodeData => ({
       method: "GET",
       url: "",
@@ -45,7 +45,7 @@ export const NODE_REGISTRY: Record<NodeType, NodeRegistryEntry> = {
     accentColor: "#a855f7",
     iconColor: "text-violet-400",
     category: "trigger",
-    defaultSize: { w: 320, h: 340 },
+    defaultSize: { w: 240, h: 64 },
     defaultData: (): WebhookNodeData => ({
       mode: "trigger",
       webhookUrl: makeWebhookUrl(),
@@ -64,7 +64,7 @@ export const NODE_REGISTRY: Record<NodeType, NodeRegistryEntry> = {
     accentColor: "#E1306C",
     iconColor: "text-pink-400",
     category: "destination",
-    defaultSize: { w: 280, h: 420 },
+    defaultSize: { w: 240, h: 64 },
     defaultData: () => ({ platform: "instagram" as const, caption: "", scheduledFor: null }),
   },
 
@@ -75,7 +75,7 @@ export const NODE_REGISTRY: Record<NodeType, NodeRegistryEntry> = {
     accentColor: "#ffffff",
     iconColor: "text-white",
     category: "destination",
-    defaultSize: { w: 280, h: 420 },
+    defaultSize: { w: 240, h: 64 },
     defaultData: () => ({ platform: "x" as const, caption: "", scheduledFor: null }),
   },
 
@@ -86,7 +86,7 @@ export const NODE_REGISTRY: Record<NodeType, NodeRegistryEntry> = {
     accentColor: "#1877F2",
     iconColor: "text-blue-400",
     category: "destination",
-    defaultSize: { w: 280, h: 420 },
+    defaultSize: { w: 240, h: 64 },
     defaultData: () => ({ platform: "facebook" as const, caption: "", scheduledFor: null }),
   },
 
@@ -97,7 +97,7 @@ export const NODE_REGISTRY: Record<NodeType, NodeRegistryEntry> = {
     accentColor: "#0A66C2",
     iconColor: "text-sky-400",
     category: "destination",
-    defaultSize: { w: 280, h: 420 },
+    defaultSize: { w: 240, h: 64 },
     defaultData: () => ({ platform: "linkedin" as const, caption: "", scheduledFor: null }),
   },
 
@@ -108,7 +108,7 @@ export const NODE_REGISTRY: Record<NodeType, NodeRegistryEntry> = {
     accentColor: "#FF0000",
     iconColor: "text-red-400",
     category: "destination",
-    defaultSize: { w: 280, h: 420 },
+    defaultSize: { w: 240, h: 64 },
     defaultData: () => ({ platform: "youtube" as const, caption: "", scheduledFor: null }),
   },
 
@@ -119,7 +119,7 @@ export const NODE_REGISTRY: Record<NodeType, NodeRegistryEntry> = {
     accentColor: "#00F2FE",
     iconColor: "text-teal-300",
     category: "destination",
-    defaultSize: { w: 280, h: 420 },
+    defaultSize: { w: 240, h: 64 },
     defaultData: () => ({ platform: "tiktok" as const, caption: "", scheduledFor: null }),
   },
 
@@ -130,7 +130,7 @@ export const NODE_REGISTRY: Record<NodeType, NodeRegistryEntry> = {
     accentColor: "#ec4899",
     iconColor: "text-pink-400",
     category: "destination",
-    defaultSize: { w: 380, h: 500 },
+    defaultSize: { w: 240, h: 64 },
     defaultData: () => ({
       targets: { instagram: true, x: true, facebook: true },
       caption: "",
@@ -148,15 +148,15 @@ export const NODE_CATEGORIES = {
 
 /** Width of each node type in px — used for SVG wire endpoint calculation */
 export const NODE_WIDTHS: Partial<Record<NodeType, number>> = {
-  "image-asset": 340,
-  "http-request": 340,
-  webhook: 320,
-  "socials-aggregator": 384,
-  "social-instagram": 280,
-  "social-x": 280,
-  "social-facebook": 280,
-  "social-linkedin": 280,
-  "social-youtube": 280,
-  "social-tiktok": 280,
+  "image-asset": 240,
+  "http-request": 240,
+  webhook: 240,
+  "socials-aggregator": 240,
+  "social-instagram": 240,
+  "social-x": 240,
+  "social-facebook": 240,
+  "social-linkedin": 240,
+  "social-youtube": 240,
+  "social-tiktok": 240,
 };
 

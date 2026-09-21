@@ -98,13 +98,14 @@ export const ImageNode: React.FC<ImageNodeProps> = ({
 
   // Normalize images
   const userImages: WorkflowImageItem[] = useMemo(() => {
-    const rawImages = historyData?.images || [];
+    const rawImages = historyData?.images || (historyData as any)?.history || [];
     if (!rawImages.length) return DEMO_IMAGES;
 
     const mapped = rawImages
       .map((item: any, index: number) => {
         const url =
           item.r2Url ||
+          item.displayUrl ||
           item.watermarkedR2Url ||
           item.url ||
           item.imageUrl ||
@@ -187,9 +188,12 @@ export const ImageNode: React.FC<ImageNodeProps> = ({
       {activeItem ? (
         <div className="relative group rounded-xl overflow-hidden border border-white/10 bg-black/40 h-40">
           <img
-            src={activeItem.url}
-            alt={activeItem.prompt}
+            src={activeItem.url || DEMO_IMAGES[0].url}
+            alt={activeItem.prompt || "AI Image"}
             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+            onError={(e) => {
+              (e.target as HTMLImageElement).src = DEMO_IMAGES[0].url;
+            }}
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent pointer-events-none" />
 
@@ -300,11 +304,14 @@ export const ImageNode: React.FC<ImageNodeProps> = ({
                 title={img.prompt}
               >
                 <img
-                  src={img.url}
-                  alt=""
+                  src={img.url || DEMO_IMAGES[0].url}
+                  alt={img.prompt || "Gallery asset"}
                   className={`w-full h-full object-cover transition-transform duration-300 ${
                     isHovered ? "scale-110" : "scale-100"
                   }`}
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = DEMO_IMAGES[0].url;
+                  }}
                 />
                 {/* Hover info overlay */}
                 <div
