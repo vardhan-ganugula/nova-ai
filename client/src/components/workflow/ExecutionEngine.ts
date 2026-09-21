@@ -6,11 +6,13 @@ import type {
   HttpNodeData,
   WebhookNodeData,
   AiImageGenNodeData,
+  AiTextGenNodeData,
   IfNodeData,
   ForNodeData,
   CodeNodeData,
   SetFieldsNodeData,
   DelayNodeData,
+  PrintLogNodeData,
 } from "./types";
 import { NODE_PORTS } from "./ports";
 import { NODE_REGISTRY, NODE_WIDTHS } from "./nodeRegistry";
@@ -217,6 +219,60 @@ async function executeNodeLogic(
       }
     }
 
+    case "ai-text-generator": {
+      const d = node.data as AiTextGenNodeData;
+      const incomingPrompt = inputs["PROMPT_IN"] ?? inputs["DATA_IN"] ?? inputs["PAYLOAD_IN"];
+      const prompt =
+        (typeof incomingPrompt === "string"
+          ? incomingPrompt
+          : (incomingPrompt as any)?.text || (incomingPrompt as any)?.prompt) ||
+        d.prompt ||
+        "Write an engaging viral social media caption with hashtags";
+      const model = d.model || "NVIDIA Nemotron 3.5 Lightning";
+      log(`Calling AI text generation (${model})… Prompt: "${prompt.slice(0, 45)}…"`, "info");
+
+      if (callbacks?.onGenerateText) {
+        try {
+          const jsonConstraint = "The output should be in JSON format and there should only be alphanumeric characters and emojis, no special characters.";
+          const systemInstructions = d.systemPrompt
+            ? `${d.systemPrompt}\n${jsonConstraint}`
+            : jsonConstraint;
+          const fullPrompt = `[System Instructions: ${systemInstructions}]\n\nUser Request: ${prompt}`;
+          const res = await callbacks.onGenerateText({ prompt: fullPrompt, model });
+          log(`✓ AI Text generated (${res.text.length} chars)`, "success");
+
+          let parsedPayload: any = { text: res.text, prompt, model };
+          try {
+            const parsed = JSON.parse(res.text);
+            parsedPayload = typeof parsed === "object" && parsed !== null ? { ...parsed, prompt, model } : parsedPayload;
+          } catch {
+            const match = res.text.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+            if (match) {
+              try {
+                const parsed = JSON.parse(match[1]);
+                parsedPayload = typeof parsed === "object" && parsed !== null ? { ...parsed, prompt, model } : parsedPayload;
+              } catch {}
+            }
+          }
+
+          return { TEXT_OUT: res.text, PAYLOAD_OUT: parsedPayload };
+        } catch (err: any) {
+          const msg = err?.data?.error || err?.message || "Failed to generate text";
+          log(`AI text error: ${msg}`, "error");
+          throw new Error(`[AI Text Error]: ${msg}`);
+        }
+      } else {
+        await delay(800);
+        const mockJson = {
+          caption: "Unveiling the future where neon dreams collide with digital consciousness ✨🚀🤖",
+          tags: "NovaAI Cyberpunk FutureVibes 🔥🌟"
+        };
+        const mockText = JSON.stringify(mockJson, null, 2);
+        log(`✓ AI text generated (${mockText.length} chars)`, "success");
+        return { TEXT_OUT: mockText, PAYLOAD_OUT: { ...mockJson, prompt, model } };
+      }
+    }
+
     case "if-condition": {
       const d = node.data as IfNodeData;
       const incoming = inputs["VALUE_IN"] ?? inputs["PAYLOAD_IN"] ?? inputs;
@@ -324,6 +380,30 @@ async function executeNodeLogic(
       return { FLOW_OUT: incoming };
     }
 
+    case "debug-print": {
+      const d = node.data as PrintLogNodeData;
+      const incoming = inputs["PAYLOAD_IN"] ?? inputs["DATA_IN"] ?? inputs;
+      const label = d.label || "Debug Print";
+      const lvl = d.logLevel || "info";
+
+      let displayStr = "";
+      if (d.format === "string" && typeof incoming === "string") {
+        displayStr = incoming;
+      } else {
+        try {
+          displayStr = JSON.stringify(incoming, null, 2);
+        } catch {
+          displayStr = String(incoming);
+        }
+      }
+
+      log(`[${label}]: ${displayStr.slice(0, 150)}${displayStr.length > 150 ? "…" : ""}`, lvl);
+      return {
+        DATA_OUT: incoming,
+        PAYLOAD_OUT: incoming,
+      };
+    }
+
     default:
       return {};
   }
@@ -354,6 +434,10 @@ export interface ExecutionCallbacks {
     model?: string;
     negativePrompt?: string;
   }) => Promise<{ url: string; image?: any }>;
+  onGenerateText?: (params: {
+    prompt: string;
+    model?: string;
+  }) => Promise<{ text: string }>;
 }
 
 export async function runPipeline(
@@ -410,7 +494,8 @@ export async function runPipeline(
       nodePorts &&
       nodePorts.inputs.length > 0 &&
       incomingEdges.length === 0 &&
-      node.type !== "ai-image-generator"
+      node.type !== "ai-image-generator" &&
+      node.type !== "ai-text-generator"
     ) {
       onNodeStatus(nodeId, "idle");
       continue;

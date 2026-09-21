@@ -143,12 +143,30 @@ export interface AiImageGenNodeData {
   isGenerating?: boolean;
 }
 
+export interface AiTextGenNodeData {
+  prompt: string;
+  systemPrompt?: string;
+  model: string;
+  temperature?: number;
+  maxTokens?: number;
+  generatedText?: string;
+  isGenerating?: boolean;
+}
+
+export interface PrintLogNodeData {
+  label: string;
+  logLevel: "info" | "data" | "success";
+  format: "json" | "string";
+  lastPrintedData?: any;
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Universal CanvasNode
 // ─────────────────────────────────────────────────────────────────────────────
 export type NodeType =
   | "image-asset"
   | "ai-image-generator"
+  | "ai-text-generator"
   | "http-request"
   | "webhook"
   | "if-condition"
@@ -156,6 +174,7 @@ export type NodeType =
   | "code-javascript"
   | "set-fields"
   | "delay-wait"
+  | "debug-print"
   | "social-instagram"
   | "social-x"
   | "social-facebook"
@@ -176,6 +195,7 @@ export interface CanvasNode {
   data:
     | ImageAssetNodeData
     | AiImageGenNodeData
+    | AiTextGenNodeData
     | HttpNodeData
     | WebhookNodeData
     | IfNodeData
@@ -183,6 +203,7 @@ export interface CanvasNode {
     | CodeNodeData
     | SetFieldsNodeData
     | DelayNodeData
+    | PrintLogNodeData
     | SocialAccountNodeData
     | SocialsAggregatorData;
   selected?: boolean;

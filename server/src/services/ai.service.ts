@@ -10,8 +10,20 @@ import { applyStyleToPrompt } from '@/utils/style.util.js';
 const openrouter = createOpenRouter({ apiKey: OPENROUTER_API_KEY  });
 
 
-export async function generateTextWithOpenRouter(prompt: string, modelName: keyof typeof aiChatModels): Promise<string> {
-    const selectedModel = aiChatModels[modelName];
+export async function generateTextWithOpenRouter(prompt: string, modelName: keyof typeof aiChatModels | string): Promise<string> {
+    let selectedModel = (aiChatModels as Record<string, any>)[modelName];
+    if (!selectedModel) {
+        const entry = Object.entries(aiChatModels).find(([k, v]) => 
+            k.toLowerCase() === modelName?.toLowerCase() ||
+            v.name.toLowerCase() === modelName?.toLowerCase()
+        );
+        if (entry) {
+            selectedModel = entry[1];
+        } else {
+            selectedModel = (aiChatModels as Record<string, any>)["NVIDIA Nemotron 3.5 Lightning"] || Object.values(aiChatModels)[0];
+        }
+    }
+
     const llmModelName = selectedModel?.name ?? modelName;
     console.log(`Using model: ${llmModelName} for prompt: ${prompt}`);
     const model = openrouter(llmModelName, {
@@ -23,7 +35,12 @@ export async function generateTextWithOpenRouter(prompt: string, modelName: keyo
         }
     })
 
-    const { text } = await generateText({ model, prompt });
+    const jsonConstraint = "The output should be in JSON format and there should only be alphanumeric characters and emojis, no special characters.";
+    const enrichedPrompt = prompt.toLowerCase().includes("json format")
+        ? prompt
+        : `${prompt}\n\n[Instruction: ${jsonConstraint}]`;
+
+    const { text } = await generateText({ model, prompt: enrichedPrompt });
 
     return text;
 }

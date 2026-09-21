@@ -36,6 +36,25 @@ export const NODE_REGISTRY: Record<NodeType, NodeRegistryEntry> = {
     }),
   },
 
+  "ai-text-generator": {
+    type: "ai-text-generator",
+    label: "AI Text Generator",
+    description: "Generate copy, captions, or transform text using LLMs (Nemotron, Llama, Gemma, GPT OSS)",
+    accentColor: "#8b5cf6",
+    iconColor: "text-violet-400",
+    category: "source",
+    defaultSize: { w: 240, h: 64 },
+    defaultData: () => ({
+      prompt: "Write a viral Instagram caption for a futuristic cyberpunk artwork with hashtags",
+      systemPrompt: "You are a professional social media marketing copywriter. The output should be in JSON format and there should only be alphanumeric characters and emojis, no special characters.",
+      model: "NVIDIA Nemotron 3.5 Lightning",
+      temperature: 0.7,
+      maxTokens: 500,
+      generatedText: "",
+      isGenerating: false,
+    }),
+  },
+
   "if-condition": {
     type: "if-condition",
     label: "If (Condition)",
@@ -104,6 +123,21 @@ export const NODE_REGISTRY: Record<NodeType, NodeRegistryEntry> = {
     defaultData: () => ({
       duration: 3,
       unit: "seconds" as const,
+    }),
+  },
+
+  "debug-print": {
+    type: "debug-print",
+    label: "Print / Debug",
+    description: "Inspect and log incoming data payload to the workflow console",
+    accentColor: "#64748b",
+    iconColor: "text-slate-400",
+    category: "transform",
+    defaultSize: { w: 240, h: 64 },
+    defaultData: () => ({
+      label: "Debug Output",
+      logLevel: "info" as const,
+      format: "json" as const,
     }),
   },
 
@@ -241,6 +275,7 @@ export const NODE_CATEGORIES = {
 export const NODE_WIDTHS: Partial<Record<NodeType, number>> = {
   "image-asset": 240,
   "ai-image-generator": 240,
+  "ai-text-generator": 240,
   "http-request": 240,
   webhook: 240,
   "if-condition": 240,
@@ -248,6 +283,7 @@ export const NODE_WIDTHS: Partial<Record<NodeType, number>> = {
   "code-javascript": 240,
   "set-fields": 240,
   "delay-wait": 240,
+  "debug-print": 240,
   "socials-aggregator": 240,
   "social-instagram": 240,
   "social-x": 240,

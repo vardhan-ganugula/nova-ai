@@ -26,6 +26,7 @@ import {
   Sliders,
   Hourglass,
   Wand2,
+  Bot,
 } from "lucide-react";
 import {
   FaInstagram,
@@ -42,6 +43,7 @@ import type {
   WebhookNodeData,
   ImageAssetNodeData,
   AiImageGenNodeData,
+  AiTextGenNodeData,
   IfNodeData,
   IfCondition,
   ForNodeData,
@@ -49,14 +51,18 @@ import type {
   SetFieldsNodeData,
   SetFieldItem,
   DelayNodeData,
+  PrintLogNodeData,
   SocialAccountNodeData,
   SocialsAggregatorData,
   WorkflowImageItem,
   PlatformId,
 } from "./types";
 import { NODE_REGISTRY } from "./nodeRegistry";
-import { useGetUserHistoryQuery, useGenerateImageMutation } from "@/store/authSlice";
+import { useGetUserHistoryQuery, useGenerateImageMutation, useGenerateTextMutation } from "@/store/authSlice";
 import { useGetSocialAccountsQuery } from "@/store/socialSlice";
+import { useAppSelector } from "@/store";
+import { AI_IMAGE_MODELS, AI_CHAT_MODELS, type AiModelMeta } from "@/constants/aiModels";
+import { ModelSelectDropdown } from "./ModelSelectDropdown";
 import toast from "react-hot-toast";
 
 interface NodeConfigDrawerProps {
@@ -107,8 +113,9 @@ export const NodeConfigDrawer: React.FC<NodeConfigDrawerProps> = ({
   const [copiedId, setCopiedId] = useState(false);
   const [copiedPayload, setCopiedPayload] = useState(false);
 
-  // Backend image generation mutation
+  // Backend AI mutations
   const [generateImageApi] = useGenerateImageMutation();
+  const [generateTextApi] = useGenerateTextMutation();
 
   // Test execution state
   const [isExecutingTest, setIsExecutingTest] = useState(false);
@@ -294,6 +301,52 @@ export const NodeConfigDrawer: React.FC<NodeConfigDrawerProps> = ({
         break;
       }
 
+      case "ai-text-generator": {
+        const d = node.data as AiTextGenNodeData;
+        const promptToUse = d.prompt?.trim() || "Write a viral social media caption with trending hashtags";
+        const modelToUse = d.model || "NVIDIA Nemotron 3.5 Lightning";
+        const jsonConstraint = "The output should be in JSON format and there should only be alphanumeric characters and emojis, no special characters.";
+        const systemInstructions = d.systemPrompt
+          ? `${d.systemPrompt}\n${jsonConstraint}`
+          : jsonConstraint;
+        const fullPrompt = `[System Instructions: ${systemInstructions}]\n\nUser Request: ${promptToUse}`;
+        const toastId = toast.loading(`Synthesizing text with ${modelToUse}…`);
+        try {
+          const res = await generateTextApi({
+            prompt: fullPrompt,
+            model: modelToUse,
+          }).unwrap();
+
+          onUpdateData(node.id, { generatedText: res.text, isGenerating: false });
+          const resp = {
+            success: true,
+            outputPort: "TEXT_OUT",
+            model: modelToUse,
+            promptUsed: promptToUse,
+            systemPromptUsed: d.systemPrompt,
+            creditsRemaining: res.creditsRemaining,
+            tokensDeducted: res.tokensDeducted,
+            generatedText: res.text,
+          };
+          setTestResponse(JSON.stringify(resp, null, 2));
+          setTestStatus(200);
+          setTestLatency(Date.now() - start);
+          toast.success("Text generated successfully!", { id: toastId });
+        } catch (apiErr: any) {
+          const errMsg = apiErr?.data?.error || apiErr?.message || "Failed to generate text";
+          const errResp = {
+            success: false,
+            error: errMsg,
+            creditsRemaining: apiErr?.data?.credits,
+          };
+          setTestResponse(JSON.stringify(errResp, null, 2));
+          setTestStatus(apiErr?.status || 500);
+          setTestLatency(Date.now() - start);
+          toast.error(errMsg, { id: toastId });
+        }
+        break;
+      }
+
       case "if-condition": {
         const d = node.data as IfNodeData;
         const testPayload = { status: "success", count: 12, ok: true };
@@ -384,6 +437,36 @@ export const NodeConfigDrawer: React.FC<NodeConfigDrawerProps> = ({
           waitedMs: Math.min(latency, 2000),
           configuredDuration: `${d.duration || 3} ${d.unit || "seconds"}`,
           readyForNextNode: true,
+        };
+        setTestResponse(JSON.stringify(resp, null, 2));
+        setTestStatus(200);
+        setTestLatency(latency);
+        break;
+      }
+
+      case "debug-print": {
+        const d = node.data as PrintLogNodeData;
+        const sampleIncoming = {
+          status: 200,
+          data: {
+            id: "sample-101",
+            title: "Cyberpunk Art Collection",
+            author: "Nova Artist",
+            tags: ["ai", "future", "art"],
+          },
+          timestamp: new Date().toISOString(),
+        };
+        const label = d.label || "Debug Output";
+        const formatted = d.format === "string" ? JSON.stringify(sampleIncoming) : sampleIncoming;
+        onUpdateData(node.id, { lastPrintedData: formatted });
+        const resp = {
+          node: "debug-print",
+          label,
+          logLevel: d.logLevel || "info",
+          format: d.format || "json",
+          capturedPayload: formatted,
+          outputPort: "DATA_OUT",
+          note: "Incoming data is logged to execution console and passed downstream unchanged",
         };
         setTestResponse(JSON.stringify(resp, null, 2));
         setTestStatus(200);
@@ -637,6 +720,8 @@ const ParametersSection: React.FC<ParametersSectionProps> = ({
       return <ImageParamsEditor node={node} onUpdateData={onUpdateData} />;
     case "ai-image-generator":
       return <AiImageGenParamsEditor node={node} onUpdateData={onUpdateData} />;
+    case "ai-text-generator":
+      return <AiTextGenParamsEditor node={node} onUpdateData={onUpdateData} />;
     case "if-condition":
       return <IfParamsEditor node={node} onUpdateData={onUpdateData} />;
     case "for-loop":
@@ -647,6 +732,8 @@ const ParametersSection: React.FC<ParametersSectionProps> = ({
       return <SetFieldsParamsEditor node={node} onUpdateData={onUpdateData} />;
     case "delay-wait":
       return <DelayParamsEditor node={node} onUpdateData={onUpdateData} />;
+    case "debug-print":
+      return <PrintLogParamsEditor node={node} onUpdateData={onUpdateData} />;
     case "social-instagram":
     case "social-x":
     case "social-facebook":
@@ -1335,14 +1422,27 @@ const AiImageGenParamsEditor: React.FC<{
 }> = ({ node, onUpdateData }) => {
   const data = node.data as AiImageGenNodeData;
   const [generateImageApi, { isLoading: isGenerating }] = useGenerateImageMutation();
-  const models = [
-    "Flux Schnell",
-    "Flux Dev",
-    "Flux Pro",
-    "Flux Realism LoRA",
-    "Stable Diffusion 3.5 Large",
-    "Ideogram v2",
-  ];
+  const serverImageModels = useAppSelector((state) => state.models.imageModels);
+
+  const availableImageModels = useMemo(() => {
+    if (!serverImageModels || Object.keys(serverImageModels).length === 0) {
+      return AI_IMAGE_MODELS;
+    }
+    const merged: Record<string, AiModelMeta> = { ...AI_IMAGE_MODELS };
+    Object.entries(serverImageModels).forEach(([key, model]: [string, any]) => {
+      const existing = merged[key];
+      merged[key] = {
+        name: model.name,
+        price: model.price ?? existing?.price ?? 10,
+        provider: model.provider ?? existing?.provider ?? "fal",
+        badge: existing?.badge ?? model.badge,
+        category: existing?.category ?? "FLUX Series",
+        description: model.description ?? existing?.description ?? "",
+      };
+    });
+    return merged;
+  }, [serverImageModels]);
+
   const aspectRatios = ["1:1", "16:9", "9:16", "4:3"];
   const stylePresets = ["photorealistic", "cinematic", "anime", "digital-art", "cyberpunk"];
 
@@ -1399,27 +1499,14 @@ const AiImageGenParamsEditor: React.FC<{
         />
       </div>
 
-      {/* Model selector */}
-      <div>
-        <label className="block text-xs font-semibold text-zinc-300 mb-1.5">AI Generation Model</label>
-        <div className="grid grid-cols-2 gap-2">
-          {models.map((m) => (
-            <button
-              key={m}
-              type="button"
-              onClick={() => onUpdateData(node.id, { model: m })}
-              className={`px-3 py-2 text-xs font-medium rounded-xl border transition text-left flex items-center justify-between ${
-                (data.model || "Flux Schnell") === m
-                  ? "bg-pink-500/20 border-pink-500 text-pink-300"
-                  : "bg-[#181820] border-white/[0.08] text-zinc-400 hover:text-zinc-200"
-              }`}
-            >
-              <span className="truncate">{m}</span>
-              {(data.model || "Flux Schnell") === m && <Check className="w-3.5 h-3.5 flex-shrink-0" />}
-            </button>
-          ))}
-        </div>
-      </div>
+      {/* Model Dropdown */}
+      <ModelSelectDropdown
+        value={data.model || "Flux Schnell"}
+        onChange={(m) => onUpdateData(node.id, { model: m })}
+        models={availableImageModels}
+        themeColor="pink"
+        label="AI Image Generation Model (Fal AI)"
+      />
 
       {/* Aspect Ratio & Style */}
       <div className="grid grid-cols-2 gap-3">
@@ -1509,6 +1596,175 @@ const AiImageGenParamsEditor: React.FC<{
             <>
               <Sparkles className="w-3.5 h-3.5" />
               <span>Generate Artwork Now</span>
+            </>
+          )}
+        </button>
+      </div>
+    </div>
+  );
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 6b. AI Text Generator Parameters Editor
+// ─────────────────────────────────────────────────────────────────────────────
+const AiTextGenParamsEditor: React.FC<{
+  node: CanvasNode;
+  onUpdateData: (nodeId: string, patch: Partial<AiTextGenNodeData>) => void;
+}> = ({ node, onUpdateData }) => {
+  const data = node.data as AiTextGenNodeData;
+  const [generateTextApi, { isLoading: isGenerating }] = useGenerateTextMutation();
+  const serverChatModels = useAppSelector((state) => state.models.chatModels);
+
+  const availableChatModels = useMemo(() => {
+    if (!serverChatModels || Object.keys(serverChatModels).length === 0) {
+      return AI_CHAT_MODELS;
+    }
+    const merged: Record<string, AiModelMeta> = { ...AI_CHAT_MODELS };
+    Object.entries(serverChatModels).forEach(([key, model]: [string, any]) => {
+      const existing = merged[key];
+      const modelNameLower = `${key} ${model.name || ""}`.toLowerCase();
+      let category = existing?.category;
+      if (!category) {
+        if (modelNameLower.includes("nemotron")) category = "Nvidia Nemotron";
+        else if (modelNameLower.includes("ling")) category = "InclusionAI Ling";
+        else if (modelNameLower.includes("laguna") || modelNameLower.includes("cohere")) category = "Poolside & Cohere";
+        else if (modelNameLower.includes("gemma")) category = "Google Gemma";
+        else if (modelNameLower.includes("qwen")) category = "Qwen";
+        else if (modelNameLower.includes("inkling") || modelNameLower.includes("dots")) category = "Thinking Machines & Dots";
+        else if (modelNameLower.includes("nex")) category = "Nex AGI";
+        else if (modelNameLower.includes("lfm") || modelNameLower.includes("liquid")) category = "LiquidAI";
+        else if (modelNameLower.includes("gpt") || modelNameLower.includes("llama")) category = "OpenAI & Meta";
+        else category = "General";
+      }
+      merged[key] = {
+        name: model.name,
+        price: model.price ?? existing?.price ?? 10,
+        provider: model.provider ?? existing?.provider ?? "openrouter",
+        badge: existing?.badge ?? (model.name?.includes(":free") ? "Free" : undefined),
+        category,
+        description: model.description ?? existing?.description ?? "",
+        maxTokens: model.maxTokens ?? existing?.maxTokens,
+      };
+    });
+    return merged;
+  }, [serverChatModels]);
+
+  const activeModelName = useMemo(() => {
+    if (data.model && availableChatModels[data.model]) return data.model;
+    return "NVIDIA Nemotron 3.5 Lightning";
+  }, [data.model, availableChatModels]);
+
+  const handleGenerateDirect = async () => {
+    const promptToUse = data.prompt?.trim() || "Write a viral social media caption with trending hashtags";
+    const modelToUse = activeModelName;
+    const jsonConstraint = "The output should be in JSON format and there should only be alphanumeric characters and emojis, no special characters.";
+    const systemInstructions = data.systemPrompt
+      ? `${data.systemPrompt}\n${jsonConstraint}`
+      : jsonConstraint;
+    const fullPrompt = `[System Instructions: ${systemInstructions}]\n\nUser Request: ${promptToUse}`;
+
+    const toastId = toast.loading(`Synthesizing text with ${modelToUse}…`);
+    try {
+      const res = await generateTextApi({
+        prompt: fullPrompt,
+        model: modelToUse,
+      }).unwrap();
+
+      onUpdateData(node.id, { generatedText: res.text, isGenerating: false });
+      toast.success("Text generated successfully!", { id: toastId });
+    } catch (err: any) {
+      const msg = err?.data?.error || err?.message || "Failed to generate text";
+      toast.error(msg, { id: toastId });
+    }
+  };
+
+  return (
+    <div className="space-y-5">
+      {/* Dynamic input notice */}
+      <div className="p-3 rounded-xl bg-violet-500/10 border border-violet-500/30 text-xs text-violet-300 flex items-start gap-2.5">
+        <Bot className="w-4 h-4 text-violet-400 flex-shrink-0 mt-0.5" />
+        <div className="leading-relaxed">
+          <span className="font-semibold text-white">Prompt Input Handle: </span>
+          You can drag a wire from an upstream node (HTTP Request, Webhook, Code, etc.) to this node's <span className="font-mono text-violet-200 font-bold">Prompt In</span> port, or set a static prompt below.
+        </div>
+      </div>
+
+      {/* Prompt Textarea */}
+      <div>
+        <label className="block text-xs font-semibold text-zinc-300 mb-1.5">User Prompt</label>
+        <textarea
+          value={data.prompt}
+          onChange={(e) => onUpdateData(node.id, { prompt: e.target.value })}
+          rows={3}
+          placeholder="Enter prompt instructions for the LLM (e.g. Write a viral caption for an art post)…"
+          className="w-full bg-[#181820] border border-white/[0.09] focus:border-violet-500 rounded-xl p-3 text-xs text-white placeholder:text-zinc-600 focus:outline-none leading-relaxed"
+        />
+      </div>
+
+      {/* System Prompt */}
+      <div>
+        <label className="block text-xs font-semibold text-zinc-300 mb-1.5">System Prompt / Persona (Optional)</label>
+        <textarea
+          value={data.systemPrompt || ""}
+          onChange={(e) => onUpdateData(node.id, { systemPrompt: e.target.value })}
+          rows={2}
+          placeholder="You are a professional copywriter. The output should be in JSON format and there should only be alphanumeric characters and emojis, no special characters…"
+          className="w-full bg-[#181820] border border-white/[0.09] focus:border-violet-500 rounded-xl p-3 text-xs text-white placeholder:text-zinc-600 focus:outline-none leading-relaxed"
+        />
+      </div>
+
+      {/* Model Dropdown */}
+      <ModelSelectDropdown
+        value={activeModelName}
+        onChange={(m) => onUpdateData(node.id, { model: m })}
+        models={availableChatModels}
+        themeColor="violet"
+        label="AI Language Model (OpenRouter)"
+      />
+
+      {/* Generated Text Output Preview */}
+      <div>
+        <div className="flex items-center justify-between mb-1.5">
+          <label className="block text-xs font-semibold text-zinc-300">Active Text Output</label>
+          {data.generatedText && (
+            <button
+              type="button"
+              onClick={() => {
+                navigator.clipboard.writeText(data.generatedText || "");
+                toast.success("Text copied to clipboard");
+              }}
+              className="text-[10px] text-violet-400 hover:text-violet-300 flex items-center gap-1"
+            >
+              <Copy className="w-3 h-3" />
+              <span>Copy</span>
+            </button>
+          )}
+        </div>
+        {data.generatedText ? (
+          <div className="p-3 rounded-xl bg-[#181820] border border-violet-500/40 text-xs text-zinc-200 leading-relaxed font-mono whitespace-pre-wrap max-h-48 overflow-y-auto">
+            {data.generatedText}
+          </div>
+        ) : (
+          <div className="p-3.5 rounded-xl border border-dashed border-white/[0.08] text-center text-xs text-zinc-500">
+            No text generated yet. Click below to generate now.
+          </div>
+        )}
+
+        <button
+          type="button"
+          disabled={isGenerating}
+          onClick={handleGenerateDirect}
+          className="w-full mt-3 py-2.5 px-3 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white font-medium text-xs flex items-center justify-center gap-2 shadow-lg shadow-violet-500/20 disabled:opacity-50 transition cursor-pointer"
+        >
+          {isGenerating ? (
+            <>
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              <span>Generating with AI LLM…</span>
+            </>
+          ) : (
+            <>
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>Generate Text Now</span>
             </>
           )}
         </button>
@@ -1886,6 +2142,96 @@ const DelayParamsEditor: React.FC<{
           </select>
         </div>
       </div>
+    </div>
+  );
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 12. Print / Debug Parameters Editor
+// ─────────────────────────────────────────────────────────────────────────────
+const PrintLogParamsEditor: React.FC<{
+  node: CanvasNode;
+  onUpdateData: (nodeId: string, patch: Partial<PrintLogNodeData>) => void;
+}> = ({ node, onUpdateData }) => {
+  const data = node.data as PrintLogNodeData;
+  const logLevels: Array<"info" | "data" | "success"> = ["info", "data", "success"];
+  const formats: Array<"json" | "string"> = ["json", "string"];
+
+  return (
+    <div className="space-y-5">
+      <div className="p-3 rounded-xl bg-slate-500/10 border border-slate-500/30 text-xs text-slate-300 flex items-start gap-2.5">
+        <Terminal className="w-4 h-4 text-slate-400 flex-shrink-0 mt-0.5" />
+        <div className="leading-relaxed">
+          <span className="font-semibold text-white">Debug & Inspection: </span>
+          This node inspects incoming data, prints it into the execution log console, and passes it forward unchanged to downstream nodes.
+        </div>
+      </div>
+
+      {/* Label / Prefix */}
+      <div>
+        <label className="block text-xs font-semibold text-zinc-300 mb-1.5">Console Log Label</label>
+        <input
+          type="text"
+          value={data.label || ""}
+          onChange={(e) => onUpdateData(node.id, { label: e.target.value })}
+          placeholder="e.g. Inspect Payload, API Response, Image Data…"
+          className="w-full bg-[#181820] border border-white/[0.08] focus:border-slate-400 rounded-xl px-3 py-2 text-xs text-white placeholder:text-zinc-600 focus:outline-none"
+        />
+      </div>
+
+      {/* Log Level */}
+      <div>
+        <label className="block text-xs font-semibold text-zinc-300 mb-1.5">Log Level</label>
+        <div className="grid grid-cols-3 gap-2">
+          {logLevels.map((lvl) => (
+            <button
+              key={lvl}
+              type="button"
+              onClick={() => onUpdateData(node.id, { logLevel: lvl })}
+              className={`py-2 text-xs font-mono capitalize rounded-xl border transition ${
+                (data.logLevel || "info") === lvl
+                  ? "bg-slate-500/20 border-slate-400 text-slate-200"
+                  : "bg-[#181820] border-white/[0.08] text-zinc-400 hover:text-zinc-200"
+              }`}
+            >
+              {lvl}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Output Format */}
+      <div>
+        <label className="block text-xs font-semibold text-zinc-300 mb-1.5">Print Format</label>
+        <div className="grid grid-cols-2 gap-2">
+          {formats.map((fmt) => (
+            <button
+              key={fmt}
+              type="button"
+              onClick={() => onUpdateData(node.id, { format: fmt })}
+              className={`py-2 text-xs font-mono uppercase rounded-xl border transition ${
+                (data.format || "json") === fmt
+                  ? "bg-slate-500/20 border-slate-400 text-slate-200"
+                  : "bg-[#181820] border-white/[0.08] text-zinc-400 hover:text-zinc-200"
+              }`}
+            >
+              {fmt === "json" ? "Pretty JSON" : "Raw Text"}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Last Captured Payload */}
+      {data.lastPrintedData && (
+        <div>
+          <label className="block text-xs font-semibold text-zinc-300 mb-1.5">Last Captured Payload</label>
+          <pre className="p-3 rounded-xl bg-[#101014] border border-white/[0.08] text-[11px] font-mono text-zinc-300 max-h-40 overflow-auto">
+            {typeof data.lastPrintedData === "string"
+              ? data.lastPrintedData
+              : JSON.stringify(data.lastPrintedData, null, 2)}
+          </pre>
+        </div>
+      )}
     </div>
   );
 };

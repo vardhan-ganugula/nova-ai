@@ -48,7 +48,7 @@ import type {
   PortDataType,
 } from "@/components/workflow/types";
 import { useCreateSocialPostMutation } from "@/store/socialSlice";
-import { useGenerateImageMutation } from "@/store/authSlice";
+import { useGenerateImageMutation, useGenerateTextMutation, useGetAvailableModelsQuery } from "@/store/authSlice";
 
 // ─── Wire colours ─────────────────────────────────────────────────────────────
 const WIRE_COLORS: Record<string, string> = {
@@ -89,6 +89,9 @@ const PORT_Y_OFFSET = 32; // vertically centered in 64px compact card
 
 // ─────────────────────────────────────────────────────────────────────────────
 export default function WorkflowsPage() {
+  // ── Sync backend models dynamically ─────────────────────────────────────────
+  useGetAvailableModelsQuery();
+
   // ── Canvas engine (zoom/pan) ───────────────────────────────────────────────
   const engine = useCanvasEngine();
   const wrapperRef = useRef<HTMLDivElement>(null);
@@ -336,6 +339,7 @@ export default function WorkflowsPage() {
   // ── Execute pipeline ───────────────────────────────────────────────────────
   const [createPost] = useCreateSocialPostMutation();
   const [generateImageApi] = useGenerateImageMutation();
+  const [generateTextApi] = useGenerateTextMutation();
   const isRunningRef = useRef(false);
 
   const handleRunPipeline = async () => {
@@ -379,6 +383,13 @@ export default function WorkflowsPage() {
             url: res.url || res.image?.r2Url || res.image?.watermarkedR2Url,
             image: res.image,
           };
+        },
+        onGenerateText: async (params) => {
+          const res = await generateTextApi({
+            prompt: params.prompt,
+            model: params.model,
+          }).unwrap();
+          return { text: res.text };
         },
         onComplete: () => {
           addLog({ nodeId: "system", nodeLabel: "System", message: "Pipeline execution complete ✓", level: "success" });

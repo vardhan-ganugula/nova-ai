@@ -1,124 +1,235 @@
 
 export const aiChatModels = {
-
-    "Nometron 3.5 Lightening": {
-        "name": "nvidia/nemotron-3.5-lightning:free",
-        "maxTokens": 64000,
+    "NVIDIA Nemotron 3 Ultra": {
+        "name": "nvidia/nemotron-3-ultra-550b-a55b:free",
+        "maxTokens": 1000000,
         "price": 10,
         "provider": "openrouter",
-        "description": "Nvidia Nemotron 3.5 Lightning is a state-of-the-art language model designed for high-performance natural language understanding and generation tasks. It excels in various applications, including chatbots, content creation, and more."
+        "description": "NVIDIA Nemotron 3 Ultra is a 550B-parameter mixture-of-experts reasoning model with 55B active parameters, designed for complex reasoning, coding, agent orchestration, deep research, and long-context workflows."
     },
+
     "Poolside Laguna S 2.1": {
         "name": "poolside/laguna-s-2.1:free",
-        "maxTokens": 64000,
+        "maxTokens": 262144,
         "price": 10,
         "provider": "openrouter",
-        "description": "Poolside Laguna S 2.1 is a high-performance language model designed for seamless integration into various applications."
+        "description": "Poolside Laguna S 2.1 is a coding-agent model with 118B total parameters and 8B active parameters, optimized for software engineering, agentic coding, reasoning, and long-context workflows."
     },
-    "Poolside Laguna XS 2.1": {
-        "name": "poolside/laguna-xs-2.1:free",
-        "maxTokens": 64000,
+
+    "InclusionAI Ling 3.0 Flash": {
+        "name": "inclusionai/ling-3.0-flash:free",
+        "maxTokens": 262144,
         "price": 10,
         "provider": "openrouter",
-        "description": "Poolside Laguna XS 2.1 is a compact and efficient language model suitable for resource-constrained environments."
+        "description": "Ling 3.0 Flash is a 124B mixture-of-experts model with approximately 5.1B active parameters, optimized for fast inference, general reasoning, coding, and agentic workflows."
     },
-    "Cohere North Mini Code": {
-        "name": "cohere/north-mini-code:free",
-        "maxTokens": 64000,
+
+    "InclusionAI Ling 3.0 Flash Fin": {
+        "name": "inclusionai/ling-3.0-flash-fin:free",
+        "maxTokens": 262144,
         "price": 10,
         "provider": "openrouter",
-        "description": "Cohere North Mini Code is a lightweight language model optimized for code generation and understanding tasks."
+        "description": "Ling 3.0 Flash Fin is a finance-focused 124B mixture-of-experts model designed for financial reasoning, research, mathematics, coding, and long-horizon investment workflows."
     },
-    "Nvidia Nemotron 3 Ultra 550B A55B": {
-        "name": "nvidia/nemotron-3-ultra-550b-a55b:free",
-        "maxTokens": 64000,
+
+    "InclusionAI Ling 3.0 Flash Sante": {
+        "name": "inclusionai/ling-3.0-flash-sante:free",
+        "maxTokens": 262144,
         "price": 10,
         "provider": "openrouter",
-        "description": "Nvidia Nemotron 3 Ultra 550B A55B is a high-performance language model designed for complex natural language understanding and generation tasks."
+        "description": "Ling 3.0 Flash Sante is a healthcare and medicine-focused mixture-of-experts model designed for medical reasoning, clinical knowledge, evidence-based retrieval, coding, and long-horizon tasks."
     },
-    "Nvidia Nemotron 3 Nano Omni 30B A3B Reasoning": {
-        "name": "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free",
-        "maxTokens": 64000,
+
+    "InclusionAI Ling 3.0 Flash VL": {
+        "name": "inclusionai/ling-3.0-flash-vl:free",
+        "maxTokens": 262144,
         "price": 10,
         "provider": "openrouter",
-        "description": "Nvidia Nemotron 3 Nano Omni 30B A3B Reasoning is a compact language model optimized for reasoning tasks."
+        "description": "Ling 3.0 Flash VL is a multimodal mixture-of-experts model supporting text, image, and video understanding, with reasoning and tool-calling capabilities."
     },
-    "Google Gemma 4 26B A4B IT": {
-        "name": "google/gemma-4-26b-a4b-it:free",
-        "maxTokens": 64000,
+
+    "Dots3 Note Preview": {
+        "name": "dots-studio/dots-3-note-preview:free",
+        "maxTokens": 524288,
         "price": 10,
         "provider": "openrouter",
-        "description": "Google Gemma 4 26B A4B IT is a high-performance language model designed for various natural language processing tasks."
+        "description": "Dots3-Note Preview is a 280B-parameter open-weight mixture-of-experts model with 16B active parameters, designed for reasoning, coding, multimodal understanding, long-context processing, and agent workflows."
     },
-    "Google Gemma 4 31B IT": {
-        "name": "google/gemma-4-31b-it:free",
-        "maxTokens": 64000,
-        "price": 10,
-        "provider": "openrouter",
-        "description": "Google Gemma 4 31B IT is a powerful language model optimized for efficient and accurate natural language processing tasks."
-    },
-    "Nvidia Nemotron 3 Super 120B A12B": {
-        "name": "nvidia/nemotron-3-super-120b-a12b:free",
-        "maxTokens": 64000,
-        "price": 10,
-        "provider": "openrouter",
-        "description": "Nvidia Nemotron 3 Super 120B A12B is a high-performance language model designed for complex natural language understanding and generation tasks."
-    },
-    "Nvidia Nemotron 3 Nano 30B A3B": {
-        "name": "nvidia/nemotron-3-nano-30b-a3b:free",
-        "maxTokens": 64000,
-        "price": 10,
-        "provider": "openrouter",
-        "description": "Nvidia Nemotron 3 Nano 30B A3B is a compact language model optimized for efficient natural language processing tasks."
-    },
-    "Nvidia Nemotron Nano 12B V2 VL": {
-        "name": "nvidia/nemotron-nano-12b-v2-vl:free",
-        "maxTokens": 64000,
-        "price": 10,
-        "provider": "openrouter",
-        "description": "Nvidia Nemotron Nano 12B V2 VL is a compact language model optimized for efficient natural language processing tasks."
-    },
-    "Nvidia Nemotron Nano 9B V2": {
-        "name": "nvidia/nemotron-nano-9b-v2:free",
-        "maxTokens": 64000,
-        "price": 10,
-        "provider": "openrouter",
-        "description": "Nvidia Nemotron Nano 9B V2 is a compact language model optimized for efficient natural language processing tasks."
-    },
-    "OpenAI GPT OSS 20B": {
-        "name": "openai/gpt-oss-20b:free",
-        "maxTokens": 64000,
-        "price": 10,
-        "provider": "openrouter",
-        "description": "OpenAI GPT OSS 20B is a high-performance language model designed for various natural language processing tasks."
-    },
-    "Google Gemini 2.0 Flash": {
-        "name": "google/gemini-2.0-flash-exp:free",
+
+    "NVIDIA Nemotron 3.5 Lightning": {
+        "name": "nvidia/nemotron-3.5-lightning:free",
         "maxTokens": 1048576,
         "price": 10,
         "provider": "openrouter",
-        "description": "Google's ultra-fast multimodal model featuring high-speed inference, rich reasoning, and a 1M+ token context window."
+        "description": "NVIDIA Nemotron 3.5 Lightning is a 30B mixture-of-experts model with 3B active parameters, optimized for high-throughput reasoning, coding, and agentic workloads."
     },
-    "Google Gemini 1.5 Pro": {
-        "name": "google/gemini-pro-1.5",
-        "maxTokens": 2000000,
-        "price": 15,
+
+    "NVIDIA Nemotron 3 Super": {
+        "name": "nvidia/nemotron-3-super-120b-a12b:free",
+        "maxTokens": 262144,
+        "price": 10,
         "provider": "openrouter",
-        "description": "Google's most capable foundation model with a 2M token context window, designed for complex problem solving and analysis."
+        "description": "NVIDIA Nemotron 3 Super is a 120B hybrid mixture-of-experts model with 12B active parameters, designed for reasoning, coding, planning, multi-agent systems, and long-context tasks."
     },
-    "ChatGPT GPT-4o": {
-        "name": "openai/gpt-4o",
-        "maxTokens": 128000,
-        "price": 20,
+
+    "NVIDIA Nemotron 3 Nano 30B A3B": {
+        "name": "nvidia/nemotron-3-nano-30b-a3b:free",
+        "maxTokens": 262144,
+        "price": 10,
         "provider": "openrouter",
-        "description": "OpenAI's flagship omni model powering ChatGPT Plus, delivering top-tier intelligence across text, reasoning, and code."
+        "description": "NVIDIA Nemotron 3 Nano 30B A3B is a compact 30B-A3B mixture-of-experts model designed for efficient reasoning, coding, tool use, and specialized agentic AI systems."
     },
-    "ChatGPT GPT-4o Mini": {
-        "name": "openai/gpt-4o-mini",
-        "maxTokens": 128000,
-        "price": 8,
+
+    "NVIDIA Nemotron 3 Nano Omni 30B A3B Reasoning": {
+        "name": "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free",
+        "maxTokens": 262144,
+        "price": 10,
         "provider": "openrouter",
-        "description": "OpenAI's fast and cost-efficient intelligent model for everyday reasoning, conversation, and lightweight tasks."
+        "description": "NVIDIA Nemotron 3 Nano Omni is a multimodal 30B-A3B model that accepts text, images, video, and audio and produces text, designed for perception, reasoning, and agent sub-tasks."
+    },
+
+    "NVIDIA Nemotron Nano 12B V2 VL": {
+        "name": "nvidia/nemotron-nano-12b-v2-vl:free",
+        "maxTokens": 131072,
+        "price": 10,
+        "provider": "openrouter",
+        "description": "NVIDIA Nemotron Nano 2 VL is a 12B multimodal reasoning model designed for document intelligence, OCR, chart reasoning, image understanding, and video analysis."
+    },
+
+    "NVIDIA Nemotron Nano 9B V2": {
+        "name": "nvidia/nemotron-nano-9b-v2:free",
+        "maxTokens": 32768,
+        "price": 10,
+        "provider": "openrouter",
+        "description": "NVIDIA Nemotron Nano 9B V2 is a compact reasoning and non-reasoning language model designed for efficient inference, coding, analysis, and general-purpose tasks."
+    },
+
+    "Poolside Laguna XS 2.1": {
+        "name": "poolside/laguna-xs-2.1:free",
+        "maxTokens": 262144,
+        "price": 10,
+        "provider": "openrouter",
+        "description": "Poolside Laguna XS 2.1 is a compact 33B-A3B coding-agent model optimized for software engineering, reasoning, tool calling, and efficient agentic workflows."
+    },
+
+    "Cohere North Mini Code": {
+        "name": "cohere/north-mini-code:free",
+        "maxTokens": 262144,
+        "price": 10,
+        "provider": "openrouter",
+        "description": "Cohere North Mini Code is a 30B mixture-of-experts coding model with 3B active parameters, optimized for code generation, software engineering agents, terminal tasks, and tool use."
+    },
+
+    "Google Gemma 4 26B A4B": {
+        "name": "google/gemma-4-26b-a4b-it:free",
+        "maxTokens": 262144,
+        "price": 10,
+        "provider": "openrouter",
+        "description": "Google Gemma 4 26B A4B IT is a multimodal mixture-of-experts instruction model with approximately 3.8B active parameters, supporting reasoning, coding, function calling, structured output, and long-context tasks."
+    },
+
+    "Google Gemma 4 31B": {
+        "name": "google/gemma-4-31b-it:free",
+        "maxTokens": 262144,
+        "price": 10,
+        "provider": "openrouter",
+        "description": "Google Gemma 4 31B Instruct is a dense multimodal model supporting text and image input, reasoning, coding, function calling, structured outputs, and multilingual tasks."
+    },
+
+    "Qwen 3.8 27B": {
+        "name": "qwen/qwen3.8-27b:free",
+        "maxTokens": 262144,
+        "price": 10,
+        "provider": "openrouter",
+        "description": "Qwen3.8 27B is an open-weight dense vision-language model designed for coding, professional workflows, research, reasoning, multimodal interaction, and long-running agent tasks."
+    },
+
+    "Thinking Machines Inkling": {
+        "name": "thinkingmachines/inkling:free",
+        "maxTokens": 1048576,
+        "price": 10,
+        "provider": "openrouter",
+        "description": "Inkling is a 975B-parameter multimodal mixture-of-experts model with 41B active parameters, designed for reasoning, coding, agentic workflows, tool use, RAG, instruction following, and multilingual applications."
+    },
+
+    "Thinking Machines Inkling Small": {
+        "name": "thinkingmachines/inkling-small:free",
+        "maxTokens": 1048576,
+        "price": 10,
+        "provider": "openrouter",
+        "description": "Inkling Small is a 276B-parameter multimodal mixture-of-experts model with 12B active parameters, optimized for efficient reasoning, coding, agentic workflows, RAG, and multilingual conversation."
+    },
+
+    "Nex AGI Nex-N2.5-Pro": {
+        "name": "nex-agi/nex-n2.5-pro:free",
+        "maxTokens": 262144,
+        "price": 10,
+        "provider": "openrouter",
+        "description": "Nex-N2.5-Pro is an agentic model designed for autonomous software engineering, multi-file code changes, GUI-based QA, computer use, deep research, and verified task execution."
+    },
+
+    "Nex AGI Nex-N2.5-Mini": {
+        "name": "nex-agi/nex-n2.5-mini:free",
+        "maxTokens": 262144,
+        "price": 10,
+        "provider": "openrouter",
+        "description": "Nex-N2.5-Mini is a compact agentic coding model designed for software engineering, computer-use workflows, GUI testing, deep research, and automated task execution."
+    },
+
+    "OpenAI GPT OSS 120B": {
+        "name": "openai/gpt-oss-120b:free",
+        "maxTokens": 131072,
+        "price": 10,
+        "provider": "openrouter",
+        "description": "OpenAI gpt-oss-120b is an open-weight 117B mixture-of-experts reasoning model with 5.1B active parameters, designed for high-reasoning, coding, tool use, agents, and general-purpose workloads."
+    },
+
+    "OpenAI GPT OSS 20B": {
+        "name": "openai/gpt-oss-20b:free",
+        "maxTokens": 131072,
+        "price": 10,
+        "provider": "openrouter",
+        "description": "OpenAI gpt-oss-20b is an open-weight 21B mixture-of-experts model with 3.6B active parameters, optimized for reasoning, coding, function calling, structured outputs, and efficient deployment."
+    },
+
+    "Meta Llama 3.3 70B Instruct": {
+        "name": "meta-llama/llama-3.3-70b-instruct:free",
+        "maxTokens": 131072,
+        "price": 10,
+        "provider": "openrouter",
+        "description": "Meta Llama 3.3 70B Instruct is a multilingual text-only instruction model designed for general-purpose dialogue, reasoning, coding, and conversational applications."
+    },
+
+    "Qwen3 Next 80B A3B Instruct": {
+        "name": "qwen/qwen3-next-80b-a3b-instruct:free",
+        "maxTokens": 262144,
+        "price": 10,
+        "provider": "openrouter",
+        "description": "Qwen3 Next 80B A3B Instruct is an instruction-tuned mixture-of-experts model optimized for fast stable responses, coding, reasoning, knowledge tasks, RAG, tool use, and long-context conversations."
+    },
+
+    "LiquidAI LFM2.5 2.6B": {
+        "name": "liquid/lfm-2.5-2.6b:free",
+        "maxTokens": 65536,
+        "price": 10,
+        "provider": "openrouter",
+        "description": "LFM2.5 2.6B is a compact reasoning model designed for agent workflows, data extraction, RAG, and long-context processing."
+    },
+
+    "LiquidAI LFM2.5 1.2B Thinking": {
+        "name": "liquid/lfm-2.5-1.2b-thinking:free",
+        "maxTokens": 32768,
+        "price": 10,
+        "provider": "openrouter",
+        "description": "LFM2.5 1.2B Thinking is a lightweight reasoning model optimized for agentic tasks, data extraction, RAG, and efficient edge inference."
+    },
+
+    "LiquidAI LFM2.5 1.2B Instruct": {
+        "name": "liquid/lfm-2.5-1.2b-instruct:free",
+        "maxTokens": 32768,
+        "price": 10,
+        "provider": "openrouter",
+        "description": "LFM2.5 1.2B Instruct is a compact instruction-tuned model designed for fast conversational responses and efficient on-device inference."
     }
 };
 

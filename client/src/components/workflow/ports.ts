@@ -17,6 +17,7 @@ export interface NodePorts {
 const mediaIn   = (y = 32): PortDef => ({ id: "MEDIA_IN",      label: "Media In",      yOffset: y, dataType: "image",         color: "#06b6d4" });
 const imageOut  = (y = 32): PortDef => ({ id: "IMAGE_OUT",     label: "Image Out",     yOffset: y, dataType: "image",         color: "#06b6d4" });
 const promptIn  = (y = 32): PortDef => ({ id: "PROMPT_IN",     label: "Prompt In",     yOffset: y, dataType: "text",          color: "#eab308" });
+const textOut   = (y = 32): PortDef => ({ id: "TEXT_OUT",      label: "Text Out",      yOffset: y, dataType: "text",          color: "#a855f7" });
 const respOut   = (y = 32): PortDef => ({ id: "RESPONSE_OUT",  label: "Response Out",  yOffset: y, dataType: "http-response",  color: "#f97316" });
 const payloadIn = (y = 32): PortDef => ({ id: "PAYLOAD_IN",    label: "Payload In",    yOffset: y, dataType: "any",            color: "#a855f7" });
 const payloadOut= (y = 32): PortDef => ({ id: "PAYLOAD_OUT",   label: "Payload Out",   yOffset: y, dataType: "any",            color: "#a855f7" });
@@ -30,6 +31,7 @@ const doneOut   = (y = 44): PortDef => ({ id: "DONE_OUT",      label: "Done",   
 export const NODE_PORTS: Record<NodeType, NodePorts> = {
   "image-asset":        { inputs: [],              outputs: [imageOut(32)]  },
   "ai-image-generator": { inputs: [promptIn(32)],  outputs: [imageOut(32)]  },
+  "ai-text-generator":  { inputs: [promptIn(32)],  outputs: [textOut(32)]   },
   "http-request":       { inputs: [],              outputs: [respOut(32)]   },
   "webhook":            { inputs: [payloadIn(32)], outputs: [payloadOut(32)]},
   "if-condition":       { inputs: [payloadIn(32)], outputs: [outputTrue(20), outputFalse(44)] },
@@ -37,6 +39,7 @@ export const NODE_PORTS: Record<NodeType, NodePorts> = {
   "code-javascript":    { inputs: [payloadIn(32)], outputs: [payloadOut(32)]},
   "set-fields":         { inputs: [payloadIn(32)], outputs: [payloadOut(32)]},
   "delay-wait":         { inputs: [payloadIn(32)], outputs: [payloadOut(32)]},
+  "debug-print":        { inputs: [payloadIn(32)], outputs: [payloadOut(32)]},
   "socials-aggregator": { inputs: [mediaIn(32)],   outputs: [published(32)] },
   "social-instagram":   { inputs: [mediaIn(32)],   outputs: [published(32)] },
   "social-x":           { inputs: [mediaIn(32)],   outputs: [published(32)] },

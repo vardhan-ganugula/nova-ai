@@ -12,6 +12,8 @@ import {
   Code2,
   Sliders,
   Hourglass,
+  Bot,
+  Terminal,
 } from "lucide-react";
 import {
   FaInstagram,
@@ -28,11 +30,13 @@ import type {
   WebhookNodeData,
   ImageAssetNodeData,
   AiImageGenNodeData,
+  AiTextGenNodeData,
   IfNodeData,
   ForNodeData,
   CodeNodeData,
   SetFieldsNodeData,
   DelayNodeData,
+  PrintLogNodeData,
   SocialAccountNodeData,
   SocialsAggregatorData,
 } from "./types";
@@ -67,6 +71,10 @@ export const CompactNodeCard: React.FC<CompactNodeCardProps> = ({
         return <ImageIcon className="w-4 h-4 text-cyan-400" />;
       case "ai-image-generator":
         return <Sparkles className="w-4 h-4 text-pink-400" />;
+      case "ai-text-generator":
+        return <Bot className="w-4 h-4 text-violet-400" />;
+      case "debug-print":
+        return <Terminal className="w-4 h-4 text-slate-400" />;
       case "webhook":
         return <Webhook className="w-4 h-4 text-purple-400" />;
       case "if-condition":
@@ -171,6 +179,35 @@ export const CompactNodeCard: React.FC<CompactNodeCardProps> = ({
             </span>
             <span className="text-[11px] text-zinc-300 truncate max-w-[120px]" title={d.prompt}>
               {d.prompt || "No prompt"}
+            </span>
+          </div>
+        );
+      }
+
+      case "ai-text-generator": {
+        const d = node.data as AiTextGenNodeData;
+        const modelShort = (d.model || "Gemini").replace("Google Gemini ", "").replace("ChatGPT ", "").slice(0, 10);
+        return (
+          <div className="flex items-center gap-1.5 min-w-0 mt-0.5">
+            <span className="px-1 py-0.2 text-[9px] font-mono font-medium rounded border border-violet-500/30 bg-violet-500/10 text-violet-300 flex-shrink-0">
+              {modelShort}
+            </span>
+            <span className="text-[11px] text-zinc-300 truncate max-w-[120px]" title={d.generatedText || d.prompt}>
+              {d.generatedText ? `"${d.generatedText.slice(0, 30)}…"` : (d.prompt || "No prompt")}
+            </span>
+          </div>
+        );
+      }
+
+      case "debug-print": {
+        const d = node.data as PrintLogNodeData;
+        return (
+          <div className="flex items-center gap-1.5 min-w-0 mt-0.5">
+            <span className="px-1 py-0.2 text-[9px] font-mono font-medium rounded border border-slate-500/30 bg-slate-500/10 text-slate-300 flex-shrink-0 uppercase">
+              {d.format || "JSON"}
+            </span>
+            <span className="text-[11px] text-zinc-400 truncate max-w-[130px]">
+              {d.label || "Debug print"}
             </span>
           </div>
         );
